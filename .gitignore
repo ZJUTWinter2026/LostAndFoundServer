@@ -40,3 +40,5 @@ go.work.sum
 
 # generate
 /register/generate/status_codes_generated.go
+
+uploads/
