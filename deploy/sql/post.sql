@@ -1,0 +1,30 @@
+CREATE TABLE `post` (
+  `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
+  `publisher_id` BIGINT NOT NULL COMMENT '发布者ID',
+  `publish_type` TINYINT NOT NULL COMMENT '发布类型 1失物 2招领',
+  `item_name` VARCHAR(50) NOT NULL COMMENT '物品名称',
+  `item_type` VARCHAR(20) NOT NULL COMMENT '物品类型',
+  `item_type_other` VARCHAR(15) DEFAULT NULL COMMENT '其它类型说明',
+  `location` VARCHAR(100) NOT NULL COMMENT '地点',
+  `event_time` DATETIME(3) NOT NULL COMMENT '事件时间',
+  `features` VARCHAR(255) NOT NULL COMMENT '物品特征',
+  `contact_name` VARCHAR(30) NOT NULL COMMENT '联系人',
+  `contact_phone` VARCHAR(20) NOT NULL COMMENT '联系电话',
+  `has_reward` TINYINT NOT NULL DEFAULT 0 COMMENT '是否有悬赏',
+  `images` JSON DEFAULT NULL COMMENT '图片列表',
+  `status` TINYINT NOT NULL DEFAULT 0 COMMENT '状态 0待审核 1已通过 2已匹配 3已认领 4已取消 5已驳回',
+  `cancel_reason` VARCHAR(255) DEFAULT NULL COMMENT '取消原因',
+  `reject_reason` VARCHAR(255) DEFAULT NULL COMMENT '驳回原因',
+  `processed_at` TIMESTAMP(3) DEFAULT NULL COMMENT '处理时间',
+  `created_at` TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
+  `updated_at` TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT '更新时间',
+  `deleted_at` BIGINT NOT NULL DEFAULT 0 COMMENT '删除时间 (软删除)',
+  PRIMARY KEY (`id`),
+  KEY `idx_publisher_id` (`publisher_id`),
+  KEY `idx_status` (`status`),
+  KEY `idx_publisher_status` (`publisher_id`, `status`),
+  KEY `idx_created_at` (`created_at`),
+  KEY `idx_deleted_at` (`deleted_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='失物招领发布表';
+
+
