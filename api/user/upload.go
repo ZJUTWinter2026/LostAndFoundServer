@@ -3,6 +3,7 @@ package user
 import (
 	"app/dao/repo"
 	"mime/multipart"
+	"net/http"
 	"path/filepath"
 	"reflect"
 	"runtime"
@@ -21,7 +22,7 @@ import (
 
 const (
 	defaultUploadDir     = "uploads"
-	defaultUploadBaseURL = "/uploads"
+	defaultUploadBaseURL = ""
 )
 
 // UploadHandler API router注册点
@@ -48,6 +49,11 @@ type UploadApiResponse struct {
 func (u *UploadApi) Run(ctx *gin.Context) kit.Code {
 	urp := repo.NewUserRepo()
 
+	uploadDir, baseURL, maxSize := uploadConfig()
+
+	// 限制上传大小: 默认10MB，不可关闭
+	ctx.Request.Body = http.MaxBytesReader(ctx.Writer, ctx.Request.Body, maxSize)
+
 	files, err := collectFiles(ctx)
 	if err != nil {
 		return comm.CodeParameterInvalid
@@ -57,7 +63,6 @@ func (u *UploadApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeParameterInvalid
 	}
 
-	uploadDir, baseURL, maxSize := uploadConfig()
 	dateDir := time.Now().Format("20060102")
 	saveDir := filepath.Join(uploadDir, dateDir)
 	err = urp.EnsureDir(saveDir)
@@ -68,9 +73,6 @@ func (u *UploadApi) Run(ctx *gin.Context) kit.Code {
 
 	urls := make([]string, 0, len(files))
 	for _, file := range files {
-		if maxSize > 0 && file.Size > maxSize {
-			return comm.CodeParameterInvalid
-		}
 		ext := strings.ToLower(filepath.Ext(file.Filename))
 		name := uuid.NewString() + ext
 		savePath := filepath.Join(saveDir, name)
@@ -79,7 +81,10 @@ func (u *UploadApi) Run(ctx *gin.Context) kit.Code {
 			nlog.Pick().WithContext(ctx).WithError(err).Warn("保存上传文件失败")
 			return comm.CodeDatabaseError
 		}
-		urls = append(urls, urp.JoinURL(baseURL, dateDir, name))
+		// 拼接访问URL: baseURL + uploadDir + dateDir + name
+		// 例如: http://127.0.0.1:8000/uploads/20231027/uuid.jpg
+		fileURL := strings.TrimRight(baseURL, "/") + "/" + uploadDir + "/" + dateDir + "/" + name
+		urls = append(urls, fileURL)
 	}
 
 	u.Response = UploadApiResponse{Urls: urls}
@@ -127,7 +132,7 @@ func collectFiles(ctx *gin.Context) ([]*multipart.FileHeader, error) {
 func uploadConfig() (string, string, int64) {
 	uploadDir := defaultUploadDir
 	baseURL := defaultUploadBaseURL
-	maxSize := int64(0)
+	maxSize := int64(10 * 1024 * 1024) // 默认 10MB
 	if comm.BizConf != nil {
 		if strings.TrimSpace(comm.BizConf.Upload.Dir) != "" {
 			uploadDir = comm.BizConf.Upload.Dir
@@ -138,6 +143,10 @@ func uploadConfig() (string, string, int64) {
 		if comm.BizConf.Upload.MaxSizeMB > 0 {
 			maxSize = comm.BizConf.Upload.MaxSizeMB * 1024 * 1024
 		}
+	}
+	// 如果baseURL为空，且是默认配置，则使用相对路径/uploadDir
+	if baseURL == "" {
+		baseURL = "/"
 	}
 	return uploadDir, baseURL, maxSize
 }

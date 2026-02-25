@@ -155,3 +155,13 @@ func (r *PostRepo) RejectPost(ctx context.Context, postID int64, reason string) 
 			"processed_at":  time.Now(),
 		}).Error
 }
+
+// MarkAsMatched 标记为已匹配
+func (r *PostRepo) MarkAsMatched(ctx context.Context, postID int64) error {
+	return ndb.Pick().WithContext(ctx).Model(&model.Post{}).
+		Where("id = ?", postID).
+		Updates(map[string]interface{}{
+			"status":       2, // 已匹配
+			"processed_at": time.Now(),
+		}).Error
+}

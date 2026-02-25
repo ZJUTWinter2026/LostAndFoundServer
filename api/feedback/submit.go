@@ -26,11 +26,12 @@ const (
 
 // 投诉类型常量
 const (
-	TypeFraud        = "欺诈"   // 欺诈
-	TypeAbuse        = "辱骂"   // 辱骂
-	TypeInfringement = "侵权"   // 侵权
-	TypeFalseInfo    = "虚假信息" // 虚假信息
-	TypeOther        = "其它"   // 其它
+	TypeMalicious  = "恶意发布" // 恶意发布
+	TypeIncomplete = "信息不全" // 信息不全
+	TypeFakeNews   = "不实消息" // 不实消息
+	TypeGore       = "恶心血腥" // 恶心血腥
+	TypePorn       = "涉黄信息" // 涉黄信息
+	TypeOther      = "其它类型" // 其它类型
 )
 
 // SubmitHandler API router注册点
@@ -143,7 +144,7 @@ func hfSubmit(ctx *gin.Context) {
 
 // isValidFeedbackType 验证投诉类型是否有效
 func isValidFeedbackType(feedbackType string) bool {
-	validTypes := []string{TypeFraud, TypeAbuse, TypeInfringement, TypeFalseInfo, TypeOther}
+	validTypes := []string{TypeMalicious, TypeIncomplete, TypeFakeNews, TypeGore, TypePorn, TypeOther}
 	for _, t := range validTypes {
 		if t == feedbackType {
 			return true

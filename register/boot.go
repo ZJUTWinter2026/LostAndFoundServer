@@ -2,8 +2,8 @@ package register
 
 import (
 	"fmt"
+
 	"github.com/zjutjh/mygo/jwt"
-	"github.com/zjutjh/mygo/nedis"
 
 	"github.com/zjutjh/mygo/config"
 	"github.com/zjutjh/mygo/feishu"
@@ -25,8 +25,8 @@ func Boot() kernel.BootList {
 		generate.Boot(), // 导入生成代码
 
 		// Client引导器
-		ndb.Boot(),   // DB
-		nedis.Boot(), // Redis
+		ndb.Boot(), // DB
+		//nedis.Boot(), // Redis
 		nesty.Boot(), // HTTP Client
 		jwt.Boot[string](),
 

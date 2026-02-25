@@ -6,18 +6,24 @@ import (
 	"app/api/feedback"
 	"app/api/post"
 	"app/api/user"
+	"app/comm"
 	"slices"
 
 	"github.com/gin-gonic/gin"
 	"github.com/zjutjh/mygo/config"
 	"github.com/zjutjh/mygo/middleware/cors"
 	"github.com/zjutjh/mygo/swagger"
-
-	"app/api"
 )
 
 func Route(router *gin.Engine) {
 	router.Use(cors.Pick())
+
+	// 静态资源挂载 (上传文件)
+	uploadDir := "uploads"
+	if comm.BizConf != nil && comm.BizConf.Upload.Dir != "" {
+		uploadDir = comm.BizConf.Upload.Dir
+	}
+	router.Static("/"+uploadDir, "./"+uploadDir)
 
 	r := router.Group(routePrefix())
 	{
@@ -77,8 +83,4 @@ func routeBase(r *gin.RouterGroup, router *gin.Engine) {
 	if slices.Contains([]string{config.AppEnvDev, config.AppEnvTest}, config.AppEnv()) {
 		r.GET("/swagger.json", swagger.DocumentHandler(router))
 	}
-
-	// 健康检查
-	r.GET("/health", api.HealthHandler())
-
 }

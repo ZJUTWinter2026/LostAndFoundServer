@@ -13,6 +13,10 @@ http_server:
 
 # 业务私有配置
 biz:
+  upload:
+    dir: "uploads" # 上传目录
+    base_url: "http://127.0.0.1:8888" # 访问前缀
+    max_size_mb: 10 # 单文件最大 MB
 
 # 应用业务日志配置
 log:
@@ -26,14 +30,7 @@ resty:
 
 # 跨域中间件配置
 mid_cors:
-  allow_origins: [
-      # 本地/测试等环境配置 正式环境须去除
-      "*",
-      "https://test.*.com",
-
-      # 生产环境配置
-      "https://prod.*.com",
-    ]
+  allow_origins: ["*"]
 
 # 数据库配置
 db:
@@ -42,13 +39,6 @@ db:
   username: "jh_user"
   password: "jh_pass"
   database: "jh_db"
-
-# # Redis 配置 开启前请在 register/boot.go 中进行 nedis.Boot()
-# redis:
-#   addrs:
-#     - "127.0.0.1:6379"
-#   db: 0
-#   password: "jh_pass"
 
 # 飞书告警配置
 feishu:

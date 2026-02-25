@@ -2,11 +2,11 @@ package user
 
 import (
 	"app/dao/repo"
-	"fmt"
-	"github.com/zjutjh/mygo/jwt"
 	"reflect"
 	"runtime"
 	"strconv"
+
+	"github.com/zjutjh/mygo/jwt"
 
 	"github.com/gin-gonic/gin"
 	"github.com/zjutjh/mygo/foundation/reply"
@@ -53,8 +53,6 @@ func (l *LoginApi) Run(ctx *gin.Context) kit.Code {
 	if err != nil {
 		return comm.CodeDatabaseError
 	}
-	hash, _ := comm.HashPassword("123456")
-	fmt.Println(hash)
 	if user == nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("用户不存在")
 		return comm.CodeUserNotExist

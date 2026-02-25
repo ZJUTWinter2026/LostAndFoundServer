@@ -116,6 +116,15 @@ func (r *ReviewApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeDatabaseError
 	}
 
+	// 如果认领申请被同意，则更新发布记录状态为已匹配
+	if request.Action == 1 {
+		err = prp.MarkAsMatched(ctx, claimRecord.PostID)
+		if err != nil {
+			nlog.Pick().WithContext(ctx).WithError(err).Warn("更新发布记录状态失败")
+			return comm.CodeDatabaseError
+		}
+	}
+
 	r.Response = ReviewApiResponse{Success: true}
 	return comm.CodeOK
 }
