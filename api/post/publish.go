@@ -106,7 +106,7 @@ func (p *PublishApi) Run(ctx *gin.Context) kit.Code {
 		ContactName:     request.ContactName,
 		ContactPhone:    request.ContactPhone,
 		HasReward:       request.HasReward,
-		Images:          string(imagesJSON),
+		Images:          imagesJSON,
 		Status:          enum.PostStatusPending,
 	}
 

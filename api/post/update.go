@@ -26,7 +26,7 @@ func UpdateHandler() gin.HandlerFunc {
 }
 
 type UpdateApi struct {
-	Info     struct{}          `name:"修改我的发布信息" desc:"修改我的发布信息"`
+	Info     struct{} `name:"修改我的发布信息" desc:"修改我的发布信息"`
 	Request  UpdateApiRequest
 	Response UpdateApiResponse
 }
@@ -139,7 +139,7 @@ func (u *UpdateApi) Run(ctx *gin.Context) kit.Code {
 		if err != nil {
 			return comm.CodeParameterInvalid
 		}
-		updates["images"] = string(imagesJSON)
+		updates["images"] = imagesJSON
 	}
 
 	if len(updates) == 0 {

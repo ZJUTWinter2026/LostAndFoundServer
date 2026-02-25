@@ -3,10 +3,10 @@ package repo
 import (
 	"app/dao/model"
 	"context"
-	"encoding/json"
 	"errors"
 	"strconv"
 
+	"github.com/bytedance/sonic"
 	"github.com/zjutjh/mygo/ndb"
 	"gorm.io/gorm"
 )
@@ -57,7 +57,7 @@ func (r *SystemConfigRepo) GetFeedbackTypes(ctx context.Context) ([]string, erro
 	}
 
 	var types []string
-	if err := json.Unmarshal([]byte(config.ConfigValue), &types); err != nil {
+	if err := sonic.UnmarshalString(config.ConfigValue, &types); err != nil {
 		return r.getDefaultFeedbackTypes(), nil
 	}
 	return types, nil
@@ -73,7 +73,7 @@ func (r *SystemConfigRepo) GetItemTypes(ctx context.Context) ([]string, error) {
 	}
 
 	var types []string
-	if err := json.Unmarshal([]byte(config.ConfigValue), &types); err != nil {
+	if err := sonic.UnmarshalString(config.ConfigValue, &types); err != nil {
 		return r.getDefaultItemTypes(), nil
 	}
 	return types, nil
@@ -96,19 +96,19 @@ func (r *SystemConfigRepo) GetClaimValidityDays(ctx context.Context) (int, error
 }
 
 func (r *SystemConfigRepo) UpdateFeedbackTypes(ctx context.Context, types []string) error {
-	data, err := json.Marshal(types)
+	data, err := sonic.MarshalString(types)
 	if err != nil {
 		return err
 	}
-	return r.UpdateValue(ctx, ConfigKeyFeedbackTypes, string(data))
+	return r.UpdateValue(ctx, ConfigKeyFeedbackTypes, data)
 }
 
 func (r *SystemConfigRepo) UpdateItemTypes(ctx context.Context, types []string) error {
-	data, err := json.Marshal(types)
+	data, err := sonic.MarshalString(types)
 	if err != nil {
 		return err
 	}
-	return r.UpdateValue(ctx, ConfigKeyItemTypes, string(data))
+	return r.UpdateValue(ctx, ConfigKeyItemTypes, data)
 }
 
 func (r *SystemConfigRepo) UpdateClaimValidityDays(ctx context.Context, days int) error {

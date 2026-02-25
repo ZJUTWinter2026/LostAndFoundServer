@@ -1,6 +1,10 @@
 package claim
 
 import (
+	"app/comm"
+	"app/comm/enum"
+	"app/dao/model"
+	"app/dao/repo"
 	"reflect"
 	"runtime"
 
@@ -11,11 +15,6 @@ import (
 	"github.com/zjutjh/mygo/kit"
 	"github.com/zjutjh/mygo/nlog"
 	"github.com/zjutjh/mygo/swagger"
-
-	"app/comm"
-	"app/comm/enum"
-	"app/dao/model"
-	"app/dao/repo"
 )
 
 // ApplyHandler API router注册点
@@ -89,7 +88,7 @@ func (a *ApplyApi) Run(ctx *gin.Context) kit.Code {
 		if err != nil {
 			return comm.CodeParameterInvalid
 		}
-		proofImagesJSON = string(b)
+		proofImagesJSON = b
 	}
 
 	claimRecord := &model.Claim{

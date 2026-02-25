@@ -3,7 +3,7 @@ CREATE TABLE `claim` (
   `post_id` BIGINT NOT NULL COMMENT '发布记录ID',
   `claimant_id` BIGINT NOT NULL COMMENT '认领者ID',
   `description` VARCHAR(500) DEFAULT NULL COMMENT '补充说明',
-  `proof_images` JSON DEFAULT NULL COMMENT '证明图片',
+  `proof_images` TEXT DEFAULT NULL COMMENT '证明图片',
   `status` VARCHAR(32) NOT NULL DEFAULT 'PENDING' COMMENT '状态 PENDING待确认 MATCHED已匹配 REJECTED已拒绝',
   `reviewed_by` BIGINT DEFAULT NULL COMMENT '审核人ID',
   `reviewed_at` TIMESTAMP(3) DEFAULT NULL COMMENT '审核时间',

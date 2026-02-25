@@ -1,13 +1,12 @@
 package comm
 
 import (
-	"encoding/json"
 	"errors"
 	"strings"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/datatypes"
 )
 
 func HashPassword(pwd string) (string, error) {
@@ -52,7 +51,7 @@ func UnmarshalImages(raw string) []string {
 		return nil
 	}
 	var images []string
-	if err := json.Unmarshal([]byte(value), &images); err != nil {
+	if err := sonic.UnmarshalString(value, &images); err != nil {
 		return nil
 	}
 	return images
@@ -71,13 +70,9 @@ func ParseEventTime(input string) (time.Time, error) {
 }
 
 // MarshalImages 序列化图片列表为JSON
-func MarshalImages(images []string) (datatypes.JSON, error) {
+func MarshalImages(images []string) (string, error) {
 	if len(images) == 0 {
-		return nil, nil
+		return "", nil
 	}
-	b, err := json.Marshal(images)
-	if err != nil {
-		return nil, err
-	}
-	return b, nil
+	return sonic.MarshalString(images)
 }
