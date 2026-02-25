@@ -30,12 +30,13 @@ func (r *PostRepo) Create(ctx context.Context, record *model.Post) error {
 }
 
 type PostListFilter struct {
-	ItemType  string
-	Campus    string
-	Location  string
-	Status    *string
-	StartTime *time.Time
-	EndTime   *time.Time
+	PublishType string
+	ItemType    string
+	Campus      string
+	Location    string
+	Status      *string
+	StartTime   *time.Time
+	EndTime     *time.Time
 }
 
 // FindById 根据ID查询发布记录
@@ -55,6 +56,9 @@ func (r *PostRepo) FindById(ctx context.Context, id int64) (*model.Post, error) 
 func (r *PostRepo) ListByFilter(ctx context.Context, filter PostListFilter, offset int, limit int) (records []*model.Post, total int64, err error) {
 	db := ndb.Pick().WithContext(ctx).Model(&model.Post{})
 
+	if strings.TrimSpace(filter.PublishType) != "" {
+		db = db.Where("publish_type = ?", strings.TrimSpace(filter.PublishType))
+	}
 	if strings.TrimSpace(filter.ItemType) != "" {
 		db = db.Where("item_type = ?", strings.TrimSpace(filter.ItemType))
 	}
@@ -217,6 +221,54 @@ func (r *PostRepo) MarkAsMatched(ctx context.Context, postID int64) error {
 		Where("id = ?", postID).
 		Updates(map[string]interface{}{
 			"status":       enum.PostStatusMatched,
+			"processed_at": time.Now(),
+		}).Error
+}
+
+// DeletePostByAdmin 管理员删除发布记录（不限状态）
+func (r *PostRepo) DeletePostByAdmin(ctx context.Context, postID int64) error {
+	return ndb.Pick().WithContext(ctx).
+		Where("id = ?", postID).
+		Delete(&model.Post{}).Error
+}
+
+// CountTodayByPublisher 统计用户当天发布数量
+func (r *PostRepo) CountTodayByPublisher(ctx context.Context, publisherID int64) (int64, error) {
+	var count int64
+	today := time.Now().Format("2006-01-02")
+	startTime, _ := time.Parse("2006-01-02", today)
+	endTime := startTime.Add(24 * time.Hour)
+
+	err := ndb.Pick().WithContext(ctx).Model(&model.Post{}).
+		Where("publisher_id = ? AND created_at >= ? AND created_at < ?", publisherID, startTime, endTime).
+		Count(&count).Error
+	return count, err
+}
+
+// IncrementClaimCount 增加认领人数
+func (r *PostRepo) IncrementClaimCount(ctx context.Context, postID int64) error {
+	return ndb.Pick().WithContext(ctx).Model(&model.Post{}).
+		Where("id = ?", postID).
+		Update("claim_count", gorm.Expr("claim_count + 1")).Error
+}
+
+// ArchivePost 归档发布记录
+func (r *PostRepo) ArchivePost(ctx context.Context, postID int64, archiveMethod string) error {
+	return ndb.Pick().WithContext(ctx).Model(&model.Post{}).
+		Where("id = ?", postID).
+		Updates(map[string]interface{}{
+			"status":         enum.PostStatusArchived,
+			"archive_method": archiveMethod,
+			"processed_at":   time.Now(),
+		}).Error
+}
+
+// MarkAsClaimed 标记为已认领
+func (r *PostRepo) MarkAsClaimed(ctx context.Context, postID int64) error {
+	return ndb.Pick().WithContext(ctx).Model(&model.Post{}).
+		Where("id = ?", postID).
+		Updates(map[string]interface{}{
+			"status":       enum.PostStatusClaimed,
 			"processed_at": time.Now(),
 		}).Error
 }

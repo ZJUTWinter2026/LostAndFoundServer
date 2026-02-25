@@ -30,7 +30,7 @@ type UpdateApi struct {
 type UpdateApiRequest struct {
 	Body struct {
 		ID            int64  `json:"id" binding:"required" desc:"用户ID"`
-		UserType      string `json:"user_type" binding:"omitempty,oneof=STUDENT ADMIN SYSTEM_ADMIN" desc:"用户类型"`
+		UserType      string `json:"user_type" binding:"oneof=STUDENT ADMIN SYSTEM_ADMIN" desc:"用户类型"`
 		ResetPassword bool   `json:"reset_password" desc:"是否重置密码(重置为身份证后六位/默认密码)"`
 	}
 }
@@ -65,7 +65,7 @@ func (a *UpdateApi) Run(ctx *gin.Context) kit.Code {
 	if len(updates) > 0 {
 		if err := db.Model(&user).Updates(updates).Error; err != nil {
 			nlog.Pick().WithContext(ctx).WithError(err).Warn("更新用户信息失败")
-			return comm.CodeDatabaseError
+			return comm.CodeServerError
 		}
 	}
 

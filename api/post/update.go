@@ -34,18 +34,18 @@ type UpdateApi struct {
 type UpdateApiRequest struct {
 	Body struct {
 		PostID          int64    `json:"post_id" binding:"required" desc:"发布ID"`
-		ItemName        string   `json:"item_name" binding:"omitempty,max=50" desc:"物品名称"`
-		ItemType        string   `json:"item_type" binding:"omitempty,max=20" desc:"物品类型"`
-		ItemTypeOther   string   `json:"item_type_other" binding:"omitempty,max=15" desc:"其它类型说明"`
-		Campus          string   `json:"campus" binding:"omitempty,oneof=ZHAO_HUI PING_FENG MO_GAN_SHAN" desc:"校区"`
-		Location        string   `json:"location" binding:"omitempty,max=100" desc:"地点"`
-		StorageLocation string   `json:"storage_location" binding:"omitempty,max=100" desc:"存放地点"`
-		EventTime       string   `json:"event_time" binding:"omitempty" desc:"事件时间"`
-		Features        string   `json:"features" binding:"omitempty,max=255" desc:"物品特征"`
-		ContactName     string   `json:"contact_name" binding:"omitempty,max=30" desc:"联系人"`
-		ContactPhone    string   `json:"contact_phone" binding:"omitempty,max=20" desc:"联系电话"`
+		ItemName        string   `json:"item_name" binding:"max=50" desc:"物品名称"`
+		ItemType        string   `json:"item_type" binding:"max=20" desc:"物品类型"`
+		ItemTypeOther   string   `json:"item_type_other" binding:"max=15" desc:"其它类型说明"`
+		Campus          string   `json:"campus" binding:"oneof=ZHAO_HUI PING_FENG MO_GAN_SHAN" desc:"校区"`
+		Location        string   `json:"location" binding:"max=100" desc:"地点"`
+		StorageLocation string   `json:"storage_location" binding:"max=100" desc:"存放地点"`
+		EventTime       string   `json:"event_time" binding:"" desc:"事件时间"`
+		Features        string   `json:"features" binding:"max=255" desc:"物品特征"`
+		ContactName     string   `json:"contact_name" binding:"max=30" desc:"联系人"`
+		ContactPhone    string   `json:"contact_phone" binding:"max=20" desc:"联系电话"`
 		HasReward       *bool    `json:"has_reward" desc:"是否有悬赏"`
-		Images          []string `json:"images" binding:"omitempty,dive,max=255" desc:"图片列表"`
+		Images          []string `json:"images" binding:"max=255" desc:"图片列表"`
 	}
 }
 
@@ -66,7 +66,7 @@ func (u *UpdateApi) Run(ctx *gin.Context) kit.Code {
 	post, err := prp.FindById(ctx, request.PostID)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询发布记录失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 	if post == nil {
 		return comm.CodeDataNotFound
@@ -149,7 +149,7 @@ func (u *UpdateApi) Run(ctx *gin.Context) kit.Code {
 	err = prp.UpdatePost(ctx, request.PostID, publisherID, updates)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("更新发布记录失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 
 	u.Response = UpdateApiResponse{Success: true}

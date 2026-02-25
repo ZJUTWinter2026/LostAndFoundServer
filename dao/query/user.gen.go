@@ -29,6 +29,8 @@ func newUser(db *gorm.DB, opts ...gen.DOOption) user {
 	_user.ALL = field.NewAsterisk(tableName)
 	_user.ID = field.NewInt64(tableName, "id")
 	_user.UID = field.NewInt64(tableName, "uid")
+	_user.Name = field.NewString(tableName, "name")
+	_user.IDCard = field.NewString(tableName, "id_card")
 	_user.Password = field.NewString(tableName, "password")
 	_user.Usertype = field.NewString(tableName, "usertype")
 	_user.FirstLogin = field.NewBool(tableName, "first_login")
@@ -48,6 +50,8 @@ type user struct {
 	ALL           field.Asterisk
 	ID            field.Int64  // 自增ID
 	UID           field.Int64  // 学号/工号
+	Name          field.String // 姓名
+	IDCard        field.String // 身份证号
 	Password      field.String // 密码
 	Usertype      field.String // 用户类型: STUDENT, ADMIN, SYSTEM_ADMIN
 	FirstLogin    field.Bool   // 首次登陆
@@ -72,6 +76,8 @@ func (u *user) updateTableName(table string) *user {
 	u.ALL = field.NewAsterisk(table)
 	u.ID = field.NewInt64(table, "id")
 	u.UID = field.NewInt64(table, "uid")
+	u.Name = field.NewString(table, "name")
+	u.IDCard = field.NewString(table, "id_card")
 	u.Password = field.NewString(table, "password")
 	u.Usertype = field.NewString(table, "usertype")
 	u.FirstLogin = field.NewBool(table, "first_login")
@@ -102,9 +108,11 @@ func (u *user) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (u *user) fillFieldMap() {
-	u.fieldMap = make(map[string]field.Expr, 8)
+	u.fieldMap = make(map[string]field.Expr, 10)
 	u.fieldMap["id"] = u.ID
 	u.fieldMap["uid"] = u.UID
+	u.fieldMap["name"] = u.Name
+	u.fieldMap["id_card"] = u.IDCard
 	u.fieldMap["password"] = u.Password
 	u.fieldMap["usertype"] = u.Usertype
 	u.fieldMap["first_login"] = u.FirstLogin

@@ -37,10 +37,10 @@ type LoginApiRequest struct {
 }
 
 type LoginApiResponse struct {
-	NeedUpdate bool   `json:"need_update" binding:"required" desc:"需要修改密码"`
-	Id         int64  `json:"id" binding:"required" desc:"用户id"`
-	UserType   string `json:"user_type" binding:"required" desc:"用户类型"`
-	Token      string `json:"token" binding:"required" desc:"token"`
+	NeedUpdate bool   `json:"need_update" desc:"需要修改密码"`
+	Id         int64  `json:"id" desc:"用户id"`
+	UserType   string `json:"user_type" desc:"用户类型"`
+	Token      string `json:"token" desc:"token"`
 }
 
 func (l *LoginApi) Run(ctx *gin.Context) kit.Code {
@@ -49,7 +49,7 @@ func (l *LoginApi) Run(ctx *gin.Context) kit.Code {
 
 	user, err := urp.FindByUid(ctx, request.Uid)
 	if err != nil {
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 	if user == nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("用户不存在")

@@ -46,12 +46,12 @@ type PublishApiRequest struct {
 		ContactName     string   `json:"contact_name" binding:"required,max=30" desc:"联系人"`
 		ContactPhone    string   `json:"contact_phone" binding:"required,min=5,max=20" desc:"联系电话"`
 		HasReward       bool     `json:"has_reward" desc:"是否有悬赏"`
-		Images          []string `json:"images" binding:"omitempty,dive,max=3" desc:"图片列表"`
+		Images          []string `json:"images" binding:"max=3" desc:"图片列表"`
 	}
 }
 
 type PublishApiResponse struct {
-	Id int64 `json:"id" binding:"required" desc:"发布ID"`
+	Id int64 `json:"id" desc:"发布ID"`
 }
 
 func (p *PublishApi) Run(ctx *gin.Context) kit.Code {
@@ -62,6 +62,24 @@ func (p *PublishApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeNotLoggedIn
 	}
 	publisherID := cast.ToInt64(id)
+
+	prp := repo.NewPostRepo()
+	scr := repo.NewSystemConfigRepo()
+
+	publishLimit, err := scr.GetPublishLimit(ctx)
+	if err != nil {
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("获取发布限制失败")
+		return comm.CodeServerError
+	}
+
+	todayCount, err := prp.CountTodayByPublisher(ctx, publisherID)
+	if err != nil {
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("统计今日发布数量失败")
+		return comm.CodeServerError
+	}
+	if int(todayCount) >= publishLimit {
+		return comm.CodePublishLimitExceeded
+	}
 
 	if !system.IsValidItemType(ctx, request.ItemType) {
 		return comm.CodeParameterInvalid
@@ -110,11 +128,10 @@ func (p *PublishApi) Run(ctx *gin.Context) kit.Code {
 		Status:          enum.PostStatusPending,
 	}
 
-	prp := repo.NewPostRepo()
 	err = prp.Create(ctx, record)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("发布失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 
 	p.Response.Id = record.ID

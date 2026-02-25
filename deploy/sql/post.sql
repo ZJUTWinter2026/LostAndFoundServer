@@ -14,14 +14,20 @@ CREATE TABLE `post` (
   `contact_phone` varchar(32) NOT NULL COMMENT '联系电话',
   `has_reward` tinyint(4) NOT NULL DEFAULT '0' COMMENT '是否有悬赏 1是 0否',
   `images` text COMMENT '图片列表(JSON数组)',
-  `status` varchar(32) NOT NULL DEFAULT 'PENDING' COMMENT '状态: PENDING, APPROVED, MATCHED, CLAIMED, CANCELLED, REJECTED',
+  `status` varchar(32) NOT NULL DEFAULT 'PENDING' COMMENT '状态: PENDING, APPROVED, MATCHED, CLAIMED, CANCELLED, REJECTED, ARCHIVED',
   `cancel_reason` varchar(255) DEFAULT '' COMMENT '取消原因',
   `reject_reason` varchar(255) DEFAULT '' COMMENT '驳回原因',
+  `claim_count` int NOT NULL DEFAULT 0 COMMENT '认领人数',
+  `archive_method` varchar(255) DEFAULT '' COMMENT '物品处理方式(归档时填写)',
   `processed_at` datetime DEFAULT NULL COMMENT '处理时间',
   `created_at` timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
   `updated_at` timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT '更新时间',
   `deleted_at` bigint(20) unsigned DEFAULT '0' COMMENT '删除时间 (软删除)',
   PRIMARY KEY (`id`),
   KEY `idx_publisher_id` (`publisher_id`),
-  KEY `idx_status` (`status`)
+  KEY `idx_status` (`status`),
+  KEY `idx_publish_type` (`publish_type`),
+  KEY `idx_campus` (`campus`),
+  KEY `idx_event_time` (`event_time`),
+  KEY `idx_created_at` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='失物招领发布表';

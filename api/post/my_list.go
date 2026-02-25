@@ -33,10 +33,10 @@ type MyListApi struct {
 
 type MyListApiRequest struct {
 	Query struct {
-		PublishType *string `form:"publish_type" binding:"omitempty,oneof=LOST FOUND" desc:"发布类型 LOST/FOUND"`
-		Status      *string `form:"status" binding:"omitempty,oneof=PENDING APPROVED MATCHED CLAIMED CANCELLED REJECTED" desc:"状态"`
-		Page        int     `form:"page" binding:"omitempty,min=1" desc:"页码"`
-		PageSize    int     `form:"page_size" binding:"omitempty,min=1,max=50" desc:"每页数量"`
+		PublishType *string `form:"publish_type" binding:"oneof=LOST FOUND" desc:"发布类型 LOST/FOUND"`
+		Status      *string `form:"status" binding:"oneof=PENDING APPROVED MATCHED CLAIMED CANCELLED REJECTED" desc:"状态"`
+		Page        int     `form:"page" binding:"min=1" desc:"页码"`
+		PageSize    int     `form:"page_size" binding:"min=1,max=50" desc:"每页数量"`
 	}
 }
 
@@ -90,7 +90,7 @@ func (m *MyListApi) Run(ctx *gin.Context) kit.Code {
 	records, total, err := prp.ListByPublisher(ctx, publisherID, request.PublishType, request.Status, offset, pageSize)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询我的发布列表失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 
 	items := make([]MyPostListItem, 0, len(records))

@@ -28,8 +28,8 @@ type ListApi struct {
 
 type ListApiRequest struct {
 	Query struct {
-		Page     int `form:"page" binding:"omitempty,min=1" desc:"页码"`
-		PageSize int `form:"page_size" binding:"omitempty,min=1,max=50" desc:"每页数量"`
+		Page     int `form:"page" binding:"min=1" desc:"页码"`
+		PageSize int `form:"page_size" binding:"min=1,max=50" desc:"每页数量"`
 	}
 }
 
@@ -66,7 +66,7 @@ func (a *ListApi) Run(ctx *gin.Context) kit.Code {
 	arr := repo.NewAnnouncementRepo()
 	announcements, total, err := arr.ListApproved(ctx, offset, pageSize)
 	if err != nil {
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 
 	items := make([]AnnouncementItem, 0, len(announcements))

@@ -57,7 +57,7 @@ func (a *PublishApi) Run(ctx *gin.Context) kit.Code {
 	urp := repo.NewUserRepo()
 	user, err := urp.FindById(ctx, publisherID)
 	if err != nil {
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 	if user == nil || (user.Usertype != enum.UserTypeAdmin && user.Usertype != enum.UserTypeSystemAdmin) {
 		return comm.CodeAdminPermissionDenied
@@ -86,7 +86,7 @@ func (a *PublishApi) Run(ctx *gin.Context) kit.Code {
 	err = arr.Create(ctx, announcement)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("发布公告失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 
 	a.Response = PublishApiResponse{ID: announcement.ID}
@@ -125,8 +125,8 @@ type ReviewListApi struct {
 
 type ReviewListApiRequest struct {
 	Query struct {
-		Page     int `form:"page" binding:"omitempty,min=1" desc:"页码"`
-		PageSize int `form:"page_size" binding:"omitempty,min=1,max=50" desc:"每页数量"`
+		Page     int `form:"page" binding:"min=1" desc:"页码"`
+		PageSize int `form:"page_size" binding:"min=1,max=50" desc:"每页数量"`
 	}
 }
 
@@ -165,7 +165,7 @@ func (a *ReviewListApi) Run(ctx *gin.Context) kit.Code {
 	arr := repo.NewAnnouncementRepo()
 	announcements, total, err := arr.ListByStatus(ctx, enum.AnnouncementStatusPending, offset, pageSize)
 	if err != nil {
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 
 	items := make([]ReviewAnnouncementItem, 0, len(announcements))
@@ -240,7 +240,7 @@ func (a *ApproveApi) Run(ctx *gin.Context) kit.Code {
 	err = arr.Approve(ctx, a.Request.Body.ID, reviewerID)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("审核公告失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 
 	return comm.CodeOK
@@ -274,7 +274,7 @@ func checkSysAdmin(ctx *gin.Context) kit.Code {
 	urp := repo.NewUserRepo()
 	user, err := urp.FindById(ctx, adminID)
 	if err != nil {
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 	if user == nil || user.Usertype != enum.UserTypeSystemAdmin {
 		return comm.CodeAdminPermissionDenied

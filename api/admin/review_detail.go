@@ -71,7 +71,7 @@ func (r *ReviewDetailApi) Run(ctx *gin.Context) kit.Code {
 	user, err := urp.FindById(ctx, adminID)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询用户失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 	if user == nil || user.Usertype != enum.UserTypeAdmin {
 		return comm.CodeAdminPermissionDenied
@@ -82,7 +82,7 @@ func (r *ReviewDetailApi) Run(ctx *gin.Context) kit.Code {
 	post, err := prp.FindById(ctx, request.PostID)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询发布记录失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 	if post == nil {
 		return comm.CodeDataNotFound

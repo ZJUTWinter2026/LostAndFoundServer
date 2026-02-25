@@ -45,6 +45,8 @@ func newPost(db *gorm.DB, opts ...gen.DOOption) post {
 	_post.Status = field.NewString(tableName, "status")
 	_post.CancelReason = field.NewString(tableName, "cancel_reason")
 	_post.RejectReason = field.NewString(tableName, "reject_reason")
+	_post.ClaimCount = field.NewInt32(tableName, "claim_count")
+	_post.ArchiveMethod = field.NewString(tableName, "archive_method")
 	_post.ProcessedAt = field.NewTime(tableName, "processed_at")
 	_post.CreatedAt = field.NewTime(tableName, "created_at")
 	_post.UpdatedAt = field.NewTime(tableName, "updated_at")
@@ -75,9 +77,11 @@ type post struct {
 	ContactPhone    field.String // 联系电话
 	HasReward       field.Bool   // 是否有悬赏 1是 0否
 	Images          field.String // 图片列表(JSON数组)
-	Status          field.String // 状态: PENDING, APPROVED, MATCHED, CLAIMED, CANCELLED, REJECTED
+	Status          field.String // 状态: PENDING, APPROVED, MATCHED, CLAIMED, CANCELLED, REJECTED, ARCHIVED
 	CancelReason    field.String // 取消原因
 	RejectReason    field.String // 驳回原因
+	ClaimCount      field.Int32  // 认领人数
+	ArchiveMethod   field.String // 物品处理方式(归档时填写)
 	ProcessedAt     field.Time   // 处理时间
 	CreatedAt       field.Time   // 创建时间
 	UpdatedAt       field.Time   // 更新时间
@@ -116,6 +120,8 @@ func (p *post) updateTableName(table string) *post {
 	p.Status = field.NewString(table, "status")
 	p.CancelReason = field.NewString(table, "cancel_reason")
 	p.RejectReason = field.NewString(table, "reject_reason")
+	p.ClaimCount = field.NewInt32(table, "claim_count")
+	p.ArchiveMethod = field.NewString(table, "archive_method")
 	p.ProcessedAt = field.NewTime(table, "processed_at")
 	p.CreatedAt = field.NewTime(table, "created_at")
 	p.UpdatedAt = field.NewTime(table, "updated_at")
@@ -144,7 +150,7 @@ func (p *post) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (p *post) fillFieldMap() {
-	p.fieldMap = make(map[string]field.Expr, 22)
+	p.fieldMap = make(map[string]field.Expr, 24)
 	p.fieldMap["id"] = p.ID
 	p.fieldMap["publisher_id"] = p.PublisherID
 	p.fieldMap["publish_type"] = p.PublishType
@@ -163,6 +169,8 @@ func (p *post) fillFieldMap() {
 	p.fieldMap["status"] = p.Status
 	p.fieldMap["cancel_reason"] = p.CancelReason
 	p.fieldMap["reject_reason"] = p.RejectReason
+	p.fieldMap["claim_count"] = p.ClaimCount
+	p.fieldMap["archive_method"] = p.ArchiveMethod
 	p.fieldMap["processed_at"] = p.ProcessedAt
 	p.fieldMap["created_at"] = p.CreatedAt
 	p.fieldMap["updated_at"] = p.UpdatedAt

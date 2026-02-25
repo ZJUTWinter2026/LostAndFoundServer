@@ -42,7 +42,7 @@ type UploadApiRequest struct {
 }
 
 type UploadApiResponse struct {
-	Urls []string `json:"urls" binding:"required" desc:"图片访问地址"`
+	Urls []string `json:"urls" desc:"图片访问地址"`
 }
 
 // Run Api业务逻辑执行点
@@ -68,7 +68,7 @@ func (u *UploadApi) Run(ctx *gin.Context) kit.Code {
 	err = urp.EnsureDir(saveDir)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("创建上传目录失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 
 	urls := make([]string, 0, len(files))
@@ -79,7 +79,7 @@ func (u *UploadApi) Run(ctx *gin.Context) kit.Code {
 		err = ctx.SaveUploadedFile(file, savePath)
 		if err != nil {
 			nlog.Pick().WithContext(ctx).WithError(err).Warn("保存上传文件失败")
-			return comm.CodeDatabaseError
+			return comm.CodeServerError
 		}
 		// 拼接访问URL: baseURL + uploadDir + dateDir + name
 		// 例如: http://127.0.0.1:8000/uploads/20231027/uuid.jpg

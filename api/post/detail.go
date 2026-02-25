@@ -56,6 +56,8 @@ type DetailApiResponse struct {
 	Status          string    `json:"status" desc:"状态"`
 	CancelReason    string    `json:"cancel_reason" desc:"取消原因"`
 	RejectReason    string    `json:"reject_reason" desc:"驳回原因"`
+	ClaimCount      int32     `json:"claim_count" desc:"认领人数"`
+	ArchiveMethod   string    `json:"archive_method" desc:"物品处理方式"`
 	ProcessedAt     time.Time `json:"processed_at" desc:"处理时间"`
 	CreatedAt       time.Time `json:"created_at" desc:"创建时间"`
 }
@@ -68,7 +70,7 @@ func (d *DetailApi) Run(ctx *gin.Context) kit.Code {
 	record, err := prp.FindById(ctx, request.ID)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询发布详情失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 	if record == nil {
 		return comm.CodeDataNotFound
@@ -92,6 +94,8 @@ func (d *DetailApi) Run(ctx *gin.Context) kit.Code {
 		Status:          record.Status,
 		CancelReason:    record.CancelReason,
 		RejectReason:    record.RejectReason,
+		ClaimCount:      record.ClaimCount,
+		ArchiveMethod:   record.ArchiveMethod,
 		ProcessedAt:     record.ProcessedAt,
 		CreatedAt:       record.CreatedAt,
 	}
@@ -107,7 +111,7 @@ func (d *DetailApi) Run(ctx *gin.Context) kit.Code {
 			// 判断是否为管理员
 			urp := repo.NewUserRepo()
 			user, err := urp.FindById(ctx, userID)
-			if err == nil && user != nil && user.Usertype == enum.UserTypeAdmin {
+			if err == nil && user != nil && (user.Usertype == enum.UserTypeAdmin || user.Usertype == enum.UserTypeSystemAdmin) {
 				resp.ContactName = record.ContactName
 				resp.ContactPhone = record.ContactPhone
 			}

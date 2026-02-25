@@ -58,9 +58,9 @@ func (a *ApproveApi) Run(ctx *gin.Context) kit.Code {
 	user, err := urp.FindById(ctx, adminID)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询用户失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
-	if user == nil || user.Usertype != enum.UserTypeAdmin {
+	if user == nil || (user.Usertype != enum.UserTypeAdmin && user.Usertype != enum.UserTypeSystemAdmin) {
 		return comm.CodeAdminPermissionDenied
 	}
 
@@ -69,7 +69,7 @@ func (a *ApproveApi) Run(ctx *gin.Context) kit.Code {
 	post, err := prp.FindById(ctx, request.PostID)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询发布记录失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 	if post == nil {
 		return comm.CodeDataNotFound
@@ -84,7 +84,7 @@ func (a *ApproveApi) Run(ctx *gin.Context) kit.Code {
 	err = prp.ApprovePost(ctx, request.PostID)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("审核通过失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 
 	// 记录审计日志
@@ -92,7 +92,7 @@ func (a *ApproveApi) Run(ctx *gin.Context) kit.Code {
 	err = alr.CreateAuditLog(ctx, adminID, enum.AuditLogTypeUpdate, "", request.PostID, post.Status, enum.PostStatusApproved)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("记录审计日志失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 
 	a.Response = ApproveApiResponse{Success: true}
@@ -171,9 +171,9 @@ func (r *RejectApi) Run(ctx *gin.Context) kit.Code {
 	user, err := urp.FindById(ctx, adminID)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询用户失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
-	if user == nil || user.Usertype != enum.UserTypeAdmin {
+	if user == nil || (user.Usertype != enum.UserTypeAdmin && user.Usertype != enum.UserTypeSystemAdmin) {
 		return comm.CodeAdminPermissionDenied
 	}
 
@@ -182,7 +182,7 @@ func (r *RejectApi) Run(ctx *gin.Context) kit.Code {
 	post, err := prp.FindById(ctx, request.PostID)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询发布记录失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 	if post == nil {
 		return comm.CodeDataNotFound
@@ -197,7 +197,7 @@ func (r *RejectApi) Run(ctx *gin.Context) kit.Code {
 	err = prp.RejectPost(ctx, request.PostID, request.Reason)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("审核驳回失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 
 	// 记录审计日志
@@ -205,7 +205,7 @@ func (r *RejectApi) Run(ctx *gin.Context) kit.Code {
 	err = alr.CreateAuditLog(ctx, adminID, enum.AuditLogTypeUpdate, request.Reason, request.PostID, post.Status, enum.PostStatusRejected)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("记录审计日志失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 
 	r.Response = RejectApiResponse{Success: true}

@@ -36,7 +36,7 @@ type SubmitApiRequest struct {
 		PostID      int64  `json:"post_id" binding:"required" desc:"物品ID"`
 		Type        string `json:"type" binding:"required,max=50" desc:"投诉类型"`
 		TypeOther   string `json:"type_other" binding:"max=15" desc:"其它类型说明"`
-		Description string `json:"description" binding:"omitempty,max=500" desc:"详细说明"`
+		Description string `json:"description" binding:"max=500" desc:"详细说明"`
 	}
 }
 
@@ -70,7 +70,7 @@ func (s *SubmitApi) Run(ctx *gin.Context) kit.Code {
 	post, err := prp.FindById(ctx, request.PostID)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询物品失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 	if post == nil {
 		return comm.CodeDataNotFound
@@ -89,7 +89,7 @@ func (s *SubmitApi) Run(ctx *gin.Context) kit.Code {
 	err = frp.Create(ctx, feedback)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("创建投诉反馈失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 
 	s.Response = SubmitApiResponse{FeedbackID: feedback.ID}

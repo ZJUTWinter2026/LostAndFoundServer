@@ -1,6 +1,9 @@
 package claim
 
 import (
+	"app/comm"
+	"app/comm/enum"
+	"app/dao/repo"
 	"reflect"
 	"runtime"
 
@@ -11,10 +14,6 @@ import (
 	"github.com/zjutjh/mygo/kit"
 	"github.com/zjutjh/mygo/nlog"
 	"github.com/zjutjh/mygo/swagger"
-
-	"app/comm"
-	"app/comm/enum"
-	"app/dao/repo"
 )
 
 // ReviewHandler API router注册点
@@ -57,7 +56,7 @@ func (r *ReviewApi) Run(ctx *gin.Context) kit.Code {
 	claimRecord, err := crp.FindById(ctx, request.ClaimID)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询认领申请失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 	if claimRecord == nil {
 		return comm.CodeClaimNotFound
@@ -73,7 +72,7 @@ func (r *ReviewApi) Run(ctx *gin.Context) kit.Code {
 	post, err := prp.FindById(ctx, claimRecord.PostID)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询发布记录失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 	if post == nil {
 		return comm.CodeDataNotFound
@@ -98,7 +97,7 @@ func (r *ReviewApi) Run(ctx *gin.Context) kit.Code {
 		hasMatched, err := crp.HasMatchedClaim(ctx, claimRecord.PostID)
 		if err != nil {
 			nlog.Pick().WithContext(ctx).WithError(err).Warn("检查已匹配认领失败")
-			return comm.CodeDatabaseError
+			return comm.CodeServerError
 		}
 		if hasMatched {
 			return comm.CodeClaimAlreadyMatched
@@ -116,7 +115,7 @@ func (r *ReviewApi) Run(ctx *gin.Context) kit.Code {
 	err = crp.UpdateStatus(ctx, request.ClaimID, targetStatus, reviewerID)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("更新认领状态失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 
 	// 如果同意认领，更新发布记录状态为已匹配
@@ -124,7 +123,13 @@ func (r *ReviewApi) Run(ctx *gin.Context) kit.Code {
 		err = prp.UpdateStatus(ctx, claimRecord.PostID, enum.PostStatusMatched)
 		if err != nil {
 			nlog.Pick().WithContext(ctx).WithError(err).Warn("更新发布状态失败")
-			return comm.CodeDatabaseError
+			return comm.CodeServerError
+		}
+
+		err = prp.IncrementClaimCount(ctx, claimRecord.PostID)
+		if err != nil {
+			nlog.Pick().WithContext(ctx).WithError(err).Warn("增加认领人数失败")
+			return comm.CodeServerError
 		}
 	}
 

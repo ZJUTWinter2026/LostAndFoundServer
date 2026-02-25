@@ -57,7 +57,7 @@ func (a *DisableApi) Run(ctx *gin.Context) kit.Code {
 		"disabled_until": disabledUntil,
 	}).Error; err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("禁用用户失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 
 	return comm.CodeOK
@@ -116,7 +116,7 @@ func (a *EnableApi) Run(ctx *gin.Context) kit.Code {
 		"disabled_until": nil,
 	}).Error; err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("恢复用户失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 
 	return comm.CodeOK

@@ -56,7 +56,7 @@ func (d *DeleteApi) Run(ctx *gin.Context) kit.Code {
 	post, err := prp.FindById(ctx, request.PostID)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询发布记录失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 	if post == nil {
 		return comm.CodeDataNotFound
@@ -76,7 +76,7 @@ func (d *DeleteApi) Run(ctx *gin.Context) kit.Code {
 	err = prp.DeletePost(ctx, request.PostID, publisherID)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("删除发布记录失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 
 	d.Response = DeleteApiResponse{Success: true}
@@ -123,7 +123,7 @@ type CancelApi struct {
 type CancelApiRequest struct {
 	Body struct {
 		PostID int64  `json:"post_id" binding:"required" desc:"发布ID"`
-		Reason string `json:"reason" binding:"omitempty,max=255" desc:"取消原因"`
+		Reason string `json:"reason" binding:"max=255" desc:"取消原因"`
 	}
 }
 
@@ -147,7 +147,7 @@ func (c *CancelApi) Run(ctx *gin.Context) kit.Code {
 	post, err := prp.FindById(ctx, request.PostID)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询发布记录失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 	if post == nil {
 		return comm.CodeDataNotFound
@@ -167,7 +167,7 @@ func (c *CancelApi) Run(ctx *gin.Context) kit.Code {
 	err = prp.CancelPost(ctx, request.PostID, publisherID, request.Reason)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("取消发布失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 
 	c.Response = CancelApiResponse{Success: true}

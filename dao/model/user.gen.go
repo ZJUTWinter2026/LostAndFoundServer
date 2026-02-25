@@ -14,6 +14,8 @@ const TableNameUser = "user"
 type User struct {
 	ID            int64     `gorm:"column:id;primaryKey;autoIncrement:true;comment:自增ID" json:"id"`                                      // 自增ID
 	UID           int64     `gorm:"column:uid;not null;comment:学号/工号" json:"uid"`                                                        // 学号/工号
+	Name          string    `gorm:"column:name;comment:姓名" json:"name"`                                                                  // 姓名
+	IDCard        string    `gorm:"column:id_card;comment:身份证号" json:"id_card"`                                                          // 身份证号
 	Password      string    `gorm:"column:password;not null;comment:密码" json:"password"`                                                 // 密码
 	Usertype      string    `gorm:"column:usertype;not null;default:STUDENT;comment:用户类型: STUDENT, ADMIN, SYSTEM_ADMIN" json:"usertype"` // 用户类型: STUDENT, ADMIN, SYSTEM_ADMIN
 	FirstLogin    bool      `gorm:"column:first_login;not null;default:1;comment:首次登陆" json:"first_login"`                               // 首次登陆

@@ -56,7 +56,7 @@ func (l *ListApi) Run(ctx *gin.Context) kit.Code {
 	post, err := prp.FindById(ctx, request.PostID)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询发布记录失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 	if post == nil {
 		return comm.CodeDataNotFound
@@ -67,7 +67,7 @@ func (l *ListApi) Run(ctx *gin.Context) kit.Code {
 	claims, err := crp.ListByPostID(ctx, request.PostID)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询认领申请列表失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 
 	items := make([]ClaimItem, 0, len(claims))

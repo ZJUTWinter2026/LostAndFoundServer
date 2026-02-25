@@ -14,28 +14,30 @@ const TableNamePost = "post"
 
 // Post 失物招领发布表
 type Post struct {
-	ID              int64                 `gorm:"column:id;primaryKey;autoIncrement:true;comment:自增ID" json:"id"`                                                            // 自增ID
-	PublisherID     int64                 `gorm:"column:publisher_id;not null;comment:发布者ID" json:"publisher_id"`                                                            // 发布者ID
-	PublishType     string                `gorm:"column:publish_type;not null;comment:发布类型: LOST, FOUND" json:"publish_type"`                                                // 发布类型: LOST, FOUND
-	ItemName        string                `gorm:"column:item_name;not null;comment:物品名称" json:"item_name"`                                                                   // 物品名称
-	ItemType        string                `gorm:"column:item_type;not null;comment:物品类型" json:"item_type"`                                                                   // 物品类型
-	ItemTypeOther   string                `gorm:"column:item_type_other;comment:其它类型说明" json:"item_type_other"`                                                              // 其它类型说明
-	Campus          string                `gorm:"column:campus;not null;comment:校区: ZhaoHui, PingFeng, MoGanShan" json:"campus"`                                             // 校区: ZhaoHui, PingFeng, MoGanShan
-	Location        string                `gorm:"column:location;not null;comment:地点" json:"location"`                                                                       // 地点
-	StorageLocation string                `gorm:"column:storage_location;comment:存放地点" json:"storage_location"`                                                              // 存放地点
-	EventTime       time.Time             `gorm:"column:event_time;not null;comment:事件时间" json:"event_time"`                                                                 // 事件时间
-	Features        string                `gorm:"column:features;not null;comment:物品特征" json:"features"`                                                                     // 物品特征
-	ContactName     string                `gorm:"column:contact_name;not null;comment:联系人" json:"contact_name"`                                                              // 联系人
-	ContactPhone    string                `gorm:"column:contact_phone;not null;comment:联系电话" json:"contact_phone"`                                                           // 联系电话
-	HasReward       bool                  `gorm:"column:has_reward;not null;comment:是否有悬赏 1是 0否" json:"has_reward"`                                                          // 是否有悬赏 1是 0否
-	Images          string                `gorm:"column:images;comment:图片列表(JSON数组)" json:"images"`                                                                          // 图片列表(JSON数组)
-	Status          string                `gorm:"column:status;not null;default:PENDING;comment:状态: PENDING, APPROVED, MATCHED, CLAIMED, CANCELLED, REJECTED" json:"status"` // 状态: PENDING, APPROVED, MATCHED, CLAIMED, CANCELLED, REJECTED
-	CancelReason    string                `gorm:"column:cancel_reason;comment:取消原因" json:"cancel_reason"`                                                                    // 取消原因
-	RejectReason    string                `gorm:"column:reject_reason;comment:驳回原因" json:"reject_reason"`                                                                    // 驳回原因
-	ProcessedAt     time.Time             `gorm:"column:processed_at;comment:处理时间" json:"processed_at"`                                                                      // 处理时间
-	CreatedAt       time.Time             `gorm:"column:created_at;not null;default:CURRENT_TIMESTAMP(3);comment:创建时间" json:"created_at"`                                    // 创建时间
-	UpdatedAt       time.Time             `gorm:"column:updated_at;not null;default:CURRENT_TIMESTAMP(3);comment:更新时间" json:"updated_at"`                                    // 更新时间
-	DeletedAt       soft_delete.DeletedAt `gorm:"column:deleted_at;comment:删除时间 (软删除);softDelete:milli" json:"-"`                                                            // 删除时间 (软删除)
+	ID              int64                 `gorm:"column:id;primaryKey;autoIncrement:true;comment:自增ID" json:"id"`                                                                      // 自增ID
+	PublisherID     int64                 `gorm:"column:publisher_id;not null;comment:发布者ID" json:"publisher_id"`                                                                      // 发布者ID
+	PublishType     string                `gorm:"column:publish_type;not null;comment:发布类型: LOST, FOUND" json:"publish_type"`                                                          // 发布类型: LOST, FOUND
+	ItemName        string                `gorm:"column:item_name;not null;comment:物品名称" json:"item_name"`                                                                             // 物品名称
+	ItemType        string                `gorm:"column:item_type;not null;comment:物品类型" json:"item_type"`                                                                             // 物品类型
+	ItemTypeOther   string                `gorm:"column:item_type_other;comment:其它类型说明" json:"item_type_other"`                                                                        // 其它类型说明
+	Campus          string                `gorm:"column:campus;not null;comment:校区: ZhaoHui, PingFeng, MoGanShan" json:"campus"`                                                       // 校区: ZhaoHui, PingFeng, MoGanShan
+	Location        string                `gorm:"column:location;not null;comment:地点" json:"location"`                                                                                 // 地点
+	StorageLocation string                `gorm:"column:storage_location;comment:存放地点" json:"storage_location"`                                                                        // 存放地点
+	EventTime       time.Time             `gorm:"column:event_time;not null;comment:事件时间" json:"event_time"`                                                                           // 事件时间
+	Features        string                `gorm:"column:features;not null;comment:物品特征" json:"features"`                                                                               // 物品特征
+	ContactName     string                `gorm:"column:contact_name;not null;comment:联系人" json:"contact_name"`                                                                        // 联系人
+	ContactPhone    string                `gorm:"column:contact_phone;not null;comment:联系电话" json:"contact_phone"`                                                                     // 联系电话
+	HasReward       bool                  `gorm:"column:has_reward;not null;comment:是否有悬赏 1是 0否" json:"has_reward"`                                                                    // 是否有悬赏 1是 0否
+	Images          string                `gorm:"column:images;comment:图片列表(JSON数组)" json:"images"`                                                                                    // 图片列表(JSON数组)
+	Status          string                `gorm:"column:status;not null;default:PENDING;comment:状态: PENDING, APPROVED, MATCHED, CLAIMED, CANCELLED, REJECTED, ARCHIVED" json:"status"` // 状态: PENDING, APPROVED, MATCHED, CLAIMED, CANCELLED, REJECTED, ARCHIVED
+	CancelReason    string                `gorm:"column:cancel_reason;comment:取消原因" json:"cancel_reason"`                                                                              // 取消原因
+	RejectReason    string                `gorm:"column:reject_reason;comment:驳回原因" json:"reject_reason"`                                                                              // 驳回原因
+	ClaimCount      int32                 `gorm:"column:claim_count;not null;comment:认领人数" json:"claim_count"`                                                                         // 认领人数
+	ArchiveMethod   string                `gorm:"column:archive_method;comment:物品处理方式(归档时填写)" json:"archive_method"`                                                                   // 物品处理方式(归档时填写)
+	ProcessedAt     time.Time             `gorm:"column:processed_at;comment:处理时间" json:"processed_at"`                                                                                // 处理时间
+	CreatedAt       time.Time             `gorm:"column:created_at;not null;default:CURRENT_TIMESTAMP(3);comment:创建时间" json:"created_at"`                                              // 创建时间
+	UpdatedAt       time.Time             `gorm:"column:updated_at;not null;default:CURRENT_TIMESTAMP(3);comment:更新时间" json:"updated_at"`                                              // 更新时间
+	DeletedAt       soft_delete.DeletedAt `gorm:"column:deleted_at;comment:删除时间 (软删除);softDelete:milli" json:"-"`                                                                      // 删除时间 (软删除)
 }
 
 // TableName Post's table name

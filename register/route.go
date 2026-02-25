@@ -56,6 +56,8 @@ func Route(router *gin.Engine) {
 			adminGroup.POST("/approve", admin.ApproveHandler())
 			adminGroup.POST("/reject", admin.RejectHandler())
 			adminGroup.GET("/statistics", admin.StatisticsHandler())
+			adminGroup.POST("/claim", admin.ClaimPostHandler())
+			adminGroup.POST("/archive", admin.ArchivePostHandler())
 		}
 
 		claimGroup := r.Group("/claim")
@@ -70,6 +72,7 @@ func Route(router *gin.Engine) {
 			feedbackGroup.POST("/submit", feedback.SubmitHandler())
 			feedbackGroup.GET("/my-list", feedback.MyListHandler())
 			feedbackGroup.GET("/list", feedback.ListHandler())
+			feedbackGroup.GET("/detail", feedback.DetailHandler())
 			feedbackGroup.POST("/process", feedback.ProcessHandler())
 		}
 
@@ -90,9 +93,16 @@ func Route(router *gin.Engine) {
 		accountGroup := r.Group("/account")
 		{
 			accountGroup.GET("/list", account.ListHandler())
+			accountGroup.POST("/create", account.CreateHandler())
 			accountGroup.POST("/update", account.UpdateHandler())
 			accountGroup.POST("/disable", account.DisableHandler())
 			accountGroup.POST("/enable", account.EnableHandler())
+			accountGroup.POST("/notification", account.SendNotificationHandler())
+		}
+
+		adminPostGroup := r.Group("/admin/post")
+		{
+			adminPostGroup.DELETE("/delete", admin.DeletePostHandler())
 		}
 
 		r.GET("/public/config", system.PublicConfigHandler())

@@ -2,11 +2,12 @@ package user
 
 import (
 	"app/dao/repo"
-	"github.com/spf13/cast"
-	"github.com/zjutjh/mygo/jwt"
 	"reflect"
 	"runtime"
 	"strconv"
+
+	"github.com/spf13/cast"
+	"github.com/zjutjh/mygo/jwt"
 
 	"github.com/gin-gonic/gin"
 	"github.com/zjutjh/mygo/foundation/reply"
@@ -55,7 +56,7 @@ func (u *UpdateApi) Run(ctx *gin.Context) kit.Code {
 	user, err := urp.FindById(ctx, uid)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询用户失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 	if user == nil {
 		return comm.CodeUserNotExist
@@ -74,13 +75,13 @@ func (u *UpdateApi) Run(ctx *gin.Context) kit.Code {
 	err = urp.UpdatePassword(ctx, uid, newHash)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("更新密码失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 
 	err = urp.UpdateFirstLogin(ctx, uid)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("更新首次登录状态失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 
 	token, err := jwt.Pick[string]().GenerateToken(strconv.FormatInt(uid, 10))

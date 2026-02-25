@@ -33,8 +33,8 @@ type ReviewListApi struct {
 
 type ReviewListApiRequest struct {
 	Body struct {
-		Page     int `form:"page" binding:"omitempty,min=1" desc:"页码"`
-		PageSize int `form:"page_size" binding:"omitempty,min=1,max=50" desc:"每页数量"`
+		Page     int `form:"page" binding:"min=1" desc:"页码"`
+		PageSize int `form:"page_size" binding:"min=1,max=50" desc:"每页数量"`
 	}
 }
 
@@ -72,9 +72,9 @@ func (r *ReviewListApi) Run(ctx *gin.Context) kit.Code {
 	user, err := urp.FindById(ctx, adminID)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询用户失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
-	if user == nil || user.Usertype != enum.UserTypeAdmin {
+	if user == nil || (user.Usertype != enum.UserTypeAdmin && user.Usertype != enum.UserTypeSystemAdmin) {
 		return comm.CodeAdminPermissionDenied
 	}
 
@@ -96,7 +96,7 @@ func (r *ReviewListApi) Run(ctx *gin.Context) kit.Code {
 	posts, total, err := prp.ListPendingReview(ctx, offset, pageSize)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询待审核列表失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 
 	items := make([]ReviewListItem, 0, len(posts))

@@ -32,10 +32,10 @@ type ListApi struct {
 
 type ListApiRequest struct {
 	Query struct {
-		UID      int64  `form:"uid" binding:"omitempty" desc:"学号/工号"`
-		UserType string `form:"user_type" binding:"omitempty" desc:"用户类型"`
-		Page     int    `form:"page" binding:"omitempty,min=1" desc:"页码"`
-		PageSize int    `form:"page_size" binding:"omitempty,min=1,max=50" desc:"每页数量"`
+		UID      int64  `form:"uid" binding:"" desc:"学号/工号"`
+		UserType string `form:"user_type" binding:"" desc:"用户类型"`
+		Page     int    `form:"page" binding:"min=1" desc:"页码"`
+		PageSize int    `form:"page_size" binding:"min=1,max=50" desc:"每页数量"`
 	}
 }
 
@@ -49,6 +49,7 @@ type ListApiResponse struct {
 type AccountItem struct {
 	ID            int64      `json:"id"`
 	UID           int64      `json:"uid"`
+	Name          string     `json:"name"`
 	UserType      string     `json:"user_type"`
 	FirstLogin    bool       `json:"first_login"`
 	DisabledUntil *time.Time `json:"disabled_until,omitempty"`
@@ -80,13 +81,13 @@ func (a *ListApi) Run(ctx *gin.Context) kit.Code {
 
 	var total int64
 	if err := db.Count(&total).Error; err != nil {
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 
 	var users []*model.User
 	offset := (page - 1) * pageSize
 	if err := db.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&users).Error; err != nil {
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 
 	list := make([]AccountItem, 0, len(users))
@@ -94,6 +95,7 @@ func (a *ListApi) Run(ctx *gin.Context) kit.Code {
 		item := AccountItem{
 			ID:         u.ID,
 			UID:        u.UID,
+			Name:       u.Name,
 			UserType:   u.Usertype,
 			FirstLogin: u.FirstLogin,
 			CreatedAt:  u.CreatedAt,
@@ -141,7 +143,7 @@ func checkSysAdmin(ctx *gin.Context) kit.Code {
 	urp := repo.NewUserRepo()
 	user, err := urp.FindById(ctx, adminID)
 	if err != nil {
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 	if user == nil || user.Usertype != enum.UserTypeSystemAdmin {
 		return comm.CodeAdminPermissionDenied

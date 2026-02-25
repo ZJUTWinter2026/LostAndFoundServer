@@ -15,6 +15,7 @@ const (
 	ConfigKeyFeedbackTypes     = "feedback_types"
 	ConfigKeyItemTypes         = "item_types"
 	ConfigKeyClaimValidityDays = "claim_validity_days"
+	ConfigKeyPublishLimit      = "publish_limit"
 )
 
 type SystemConfigRepo struct{}
@@ -121,4 +122,24 @@ func (r *SystemConfigRepo) getDefaultFeedbackTypes() []string {
 
 func (r *SystemConfigRepo) getDefaultItemTypes() []string {
 	return []string{"电子", "饭卡", "文体", "证件", "衣包", "饰品", "其它类型"}
+}
+
+func (r *SystemConfigRepo) GetPublishLimit(ctx context.Context) (int, error) {
+	config, err := r.GetByKey(ctx, ConfigKeyPublishLimit)
+	if err != nil {
+		return 10, err
+	}
+	if config == nil {
+		return 10, nil
+	}
+
+	limit, err := strconv.Atoi(config.ConfigValue)
+	if err != nil {
+		return 10, nil
+	}
+	return limit, nil
+}
+
+func (r *SystemConfigRepo) UpdatePublishLimit(ctx context.Context, limit int) error {
+	return r.UpdateValue(ctx, ConfigKeyPublishLimit, strconv.Itoa(limit))
 }

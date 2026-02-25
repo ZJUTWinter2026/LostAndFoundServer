@@ -55,9 +55,9 @@ func (s *StatisticsApi) Run(ctx *gin.Context) kit.Code {
 	user, err := urp.FindById(ctx, adminID)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询用户失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
-	if user == nil || user.Usertype != enum.UserTypeAdmin {
+	if user == nil || (user.Usertype != enum.UserTypeAdmin && user.Usertype != enum.UserTypeSystemAdmin) {
 		return comm.CodeAdminPermissionDenied
 	}
 
@@ -67,14 +67,14 @@ func (s *StatisticsApi) Run(ctx *gin.Context) kit.Code {
 	statusCounts, err := prp.CountByStatus(ctx)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("获取状态统计失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 
 	// 获取类型统计
 	typeCounts, err := prp.CountByItemType(ctx)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("获取类型统计失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 
 	// 计算总数和占比

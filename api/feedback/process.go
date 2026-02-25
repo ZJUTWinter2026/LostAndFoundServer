@@ -52,7 +52,7 @@ func (p *ProcessApi) Run(ctx *gin.Context) kit.Code {
 	user, err := urp.FindById(ctx, processorID)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询用户失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 	if user == nil || user.Usertype != enum.UserTypeAdmin {
 		return comm.CodePermissionDenied
@@ -62,7 +62,7 @@ func (p *ProcessApi) Run(ctx *gin.Context) kit.Code {
 	feedback, err := frp.FindById(ctx, request.FeedbackID)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询投诉记录失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 	if feedback == nil {
 		return comm.CodeDataNotFound
@@ -75,7 +75,7 @@ func (p *ProcessApi) Run(ctx *gin.Context) kit.Code {
 	err = frp.MarkAsProcessed(ctx, request.FeedbackID, processorID)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("处理投诉反馈失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 
 	p.Response = ProcessApiResponse{Success: true}

@@ -37,6 +37,7 @@ type ConfigListApiResponse struct {
 	FeedbackTypes     []string `json:"feedback_types" desc:"投诉反馈类型"`
 	ItemTypes         []string `json:"item_types" desc:"物品类型分类"`
 	ClaimValidityDays int      `json:"claim_validity_days" desc:"认领时效(天)"`
+	PublishLimit      int      `json:"publish_limit" desc:"每日发布限制"`
 }
 
 func (a *ConfigListApi) Run(ctx *gin.Context) kit.Code {
@@ -49,25 +50,32 @@ func (a *ConfigListApi) Run(ctx *gin.Context) kit.Code {
 	feedbackTypes, err := scr.GetFeedbackTypes(ctx)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("获取投诉类型失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 
 	itemTypes, err := scr.GetItemTypes(ctx)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("获取物品类型失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 
 	claimValidityDays, err := scr.GetClaimValidityDays(ctx)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("获取认领时效失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
+	}
+
+	publishLimit, err := scr.GetPublishLimit(ctx)
+	if err != nil {
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("获取发布限制失败")
+		return comm.CodeServerError
 	}
 
 	a.Response = ConfigListApiResponse{
 		FeedbackTypes:     feedbackTypes,
 		ItemTypes:         itemTypes,
 		ClaimValidityDays: claimValidityDays,
+		PublishLimit:      publishLimit,
 	}
 	return comm.CodeOK
 }
@@ -96,10 +104,11 @@ type ConfigUpdateApi struct {
 
 type ConfigUpdateApiRequest struct {
 	Body struct {
-		ConfigKey         string   `json:"config_key" binding:"required,oneof=feedback_types item_types claim_validity_days" desc:"配置键名"`
+		ConfigKey         string   `json:"config_key" binding:"required,oneof=feedback_types item_types claim_validity_days publish_limit" desc:"配置键名"`
 		FeedbackTypes     []string `json:"feedback_types" desc:"投诉反馈类型(当config_key为feedback_types时必填)"`
 		ItemTypes         []string `json:"item_types" desc:"物品类型分类(当config_key为item_types时必填)"`
 		ClaimValidityDays *int     `json:"claim_validity_days" desc:"认领时效天数(当config_key为claim_validity_days时必填)"`
+		PublishLimit      *int     `json:"publish_limit" desc:"每日发布限制(当config_key为publish_limit时必填)"`
 	}
 }
 
@@ -118,7 +127,7 @@ func (a *ConfigUpdateApi) Run(ctx *gin.Context) kit.Code {
 		}
 		if err := scr.UpdateFeedbackTypes(ctx, req.FeedbackTypes); err != nil {
 			nlog.Pick().WithContext(ctx).WithError(err).Warn("更新投诉类型失败")
-			return comm.CodeDatabaseError
+			return comm.CodeServerError
 		}
 
 	case "item_types":
@@ -127,7 +136,7 @@ func (a *ConfigUpdateApi) Run(ctx *gin.Context) kit.Code {
 		}
 		if err := scr.UpdateItemTypes(ctx, req.ItemTypes); err != nil {
 			nlog.Pick().WithContext(ctx).WithError(err).Warn("更新物品类型失败")
-			return comm.CodeDatabaseError
+			return comm.CodeServerError
 		}
 
 	case "claim_validity_days":
@@ -136,7 +145,16 @@ func (a *ConfigUpdateApi) Run(ctx *gin.Context) kit.Code {
 		}
 		if err := scr.UpdateClaimValidityDays(ctx, *req.ClaimValidityDays); err != nil {
 			nlog.Pick().WithContext(ctx).WithError(err).Warn("更新认领时效失败")
-			return comm.CodeDatabaseError
+			return comm.CodeServerError
+		}
+
+	case "publish_limit":
+		if req.PublishLimit == nil || *req.PublishLimit <= 0 {
+			return comm.CodeParameterInvalid
+		}
+		if err := scr.UpdatePublishLimit(ctx, *req.PublishLimit); err != nil {
+			nlog.Pick().WithContext(ctx).WithError(err).Warn("更新发布限制失败")
+			return comm.CodeServerError
 		}
 	}
 
@@ -171,7 +189,7 @@ func checkSysAdmin(ctx *gin.Context) kit.Code {
 	urp := repo.NewUserRepo()
 	user, err := urp.FindById(ctx, adminID)
 	if err != nil {
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 	if user == nil || user.Usertype != enum.UserTypeSystemAdmin {
 		return comm.CodeAdminPermissionDenied
@@ -205,7 +223,7 @@ func (a *PublicConfigApi) Run(ctx *gin.Context) kit.Code {
 	itemTypes, err := scr.GetItemTypes(ctx)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("获取物品类型失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 
 	a.Response = PublicConfigApiResponse{

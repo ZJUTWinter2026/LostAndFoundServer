@@ -33,8 +33,8 @@ type ApplyApi struct {
 type ApplyApiRequest struct {
 	Body struct {
 		PostID      int64    `json:"post_id" binding:"required" desc:"发布记录ID"`
-		Description string   `json:"description" binding:"required,omitempty,max=500" desc:"补充说明"`
-		ProofImages []string `json:"proof_images" binding:"omitempty,dive,max=255" desc:"证明图片"`
+		Description string   `json:"description" binding:"required,max=500" desc:"补充说明"`
+		ProofImages []string `json:"proof_images" binding:"max=255" desc:"证明图片"`
 	}
 }
 
@@ -58,7 +58,7 @@ func (a *ApplyApi) Run(ctx *gin.Context) kit.Code {
 	post, err := prp.FindById(ctx, request.PostID)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询发布记录失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 	if post == nil {
 		return comm.CodeDataNotFound
@@ -75,7 +75,7 @@ func (a *ApplyApi) Run(ctx *gin.Context) kit.Code {
 	hasClaim, err := crp.HasPendingOrMatchedClaim(ctx, request.PostID, claimantID)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("检查重复申请失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 	if hasClaim {
 		return comm.CodeClaimDuplicate
@@ -102,7 +102,7 @@ func (a *ApplyApi) Run(ctx *gin.Context) kit.Code {
 	err = crp.Create(ctx, claimRecord)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("创建认领申请失败")
-		return comm.CodeDatabaseError
+		return comm.CodeServerError
 	}
 
 	a.Response = ApplyApiResponse{ClaimID: claimRecord.ID}
