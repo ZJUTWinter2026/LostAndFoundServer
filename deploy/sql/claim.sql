@@ -4,7 +4,7 @@ CREATE TABLE `claim` (
   `claimant_id` BIGINT NOT NULL COMMENT '认领者ID',
   `description` VARCHAR(500) DEFAULT NULL COMMENT '补充说明',
   `proof_images` JSON DEFAULT NULL COMMENT '证明图片',
-  `status` TINYINT NOT NULL DEFAULT 0 COMMENT '状态 0待确认 1已匹配 2已拒绝',
+  `status` VARCHAR(32) NOT NULL DEFAULT 'PENDING' COMMENT '状态 PENDING待确认 MATCHED已匹配 REJECTED已拒绝',
   `reviewed_by` BIGINT DEFAULT NULL COMMENT '审核人ID',
   `reviewed_at` TIMESTAMP(3) DEFAULT NULL COMMENT '审核时间',
   `created_at` TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',

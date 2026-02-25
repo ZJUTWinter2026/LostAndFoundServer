@@ -1,7 +1,6 @@
 package claim
 
 import (
-	"encoding/json"
 	"reflect"
 	"runtime"
 
@@ -12,17 +11,11 @@ import (
 	"github.com/zjutjh/mygo/kit"
 	"github.com/zjutjh/mygo/nlog"
 	"github.com/zjutjh/mygo/swagger"
-	"gorm.io/datatypes"
 
 	"app/comm"
+	"app/comm/enum"
 	"app/dao/model"
 	"app/dao/repo"
-)
-
-const (
-	statusPending  int8 = 0 // 待确认
-	statusMatched  int8 = 1 // 已匹配
-	statusRejected int8 = 2 // 已拒绝
 )
 
 // ApplyHandler API router注册点
@@ -90,22 +83,21 @@ func (a *ApplyApi) Run(ctx *gin.Context) kit.Code {
 	}
 
 	// 序列化图片列表
-	var proofImagesJSON datatypes.JSON
+	var proofImagesJSON string
 	if len(request.ProofImages) > 0 {
-		b, err := json.Marshal(request.ProofImages)
+		b, err := comm.MarshalImages(request.ProofImages)
 		if err != nil {
 			return comm.CodeParameterInvalid
 		}
-		proofImagesJSON = b
+		proofImagesJSON = string(b)
 	}
 
-	// 创建认领申请
 	claimRecord := &model.Claim{
 		PostID:      request.PostID,
 		ClaimantID:  claimantID,
 		Description: request.Description,
-		ProofImages: string(proofImagesJSON),
-		Status:      statusPending,
+		ProofImages: proofImagesJSON,
+		Status:      enum.ClaimStatusPending,
 	}
 
 	err = crp.Create(ctx, claimRecord)

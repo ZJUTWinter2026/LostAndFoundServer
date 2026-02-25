@@ -1,11 +1,12 @@
 package post
 
 import (
-	"github.com/spf13/cast"
-	"github.com/zjutjh/mygo/jwt"
 	"reflect"
 	"runtime"
 	"time"
+
+	"github.com/spf13/cast"
+	"github.com/zjutjh/mygo/jwt"
 
 	"github.com/gin-gonic/gin"
 	"github.com/zjutjh/mygo/foundation/reply"
@@ -14,6 +15,7 @@ import (
 	"github.com/zjutjh/mygo/swagger"
 
 	"app/comm"
+	"app/comm/enum"
 	"app/dao/repo"
 )
 
@@ -37,18 +39,25 @@ type DetailApiRequest struct {
 }
 
 type DetailApiResponse struct {
-	ID            int64     `json:"id" desc:"发布ID"`
-	PublishType   int8      `json:"publish_type" desc:"发布类型 1失物 2招领"`
-	ItemName      string    `json:"item_name" desc:"物品名称"`
-	ItemType      string    `json:"item_type" desc:"物品类型"`
-	ItemTypeOther string    `json:"item_type_other" desc:"其它类型说明"`
-	Location      string    `json:"location" desc:"地点"`
-	EventTime     time.Time `json:"event_time" desc:"事件时间"`
-	Features      string    `json:"features" desc:"物品特征"`
-	Status        int8      `json:"status" desc:"状态"`
-	ContactName   string    `json:"contact_name,omitempty" desc:"联系人"`
-	ContactPhone  string    `json:"contact_phone,omitempty" desc:"联系电话"`
-	Images        []string  `json:"images" desc:"图片"`
+	ID              int64     `json:"id" desc:"发布ID"`
+	PublishType     string    `json:"publish_type" desc:"发布类型 LOST/FOUND"`
+	ItemName        string    `json:"item_name" desc:"物品名称"`
+	ItemType        string    `json:"item_type" desc:"物品类型"`
+	ItemTypeOther   string    `json:"item_type_other" desc:"其它类型说明"`
+	Campus          string    `json:"campus" desc:"校区"`
+	Location        string    `json:"location" desc:"地点"`
+	StorageLocation string    `json:"storage_location" desc:"存放地点"`
+	EventTime       time.Time `json:"event_time" desc:"事件时间"`
+	Features        string    `json:"features" desc:"物品特征"`
+	ContactName     string    `json:"contact_name" desc:"联系人"`
+	ContactPhone    string    `json:"contact_phone" desc:"联系电话"`
+	HasReward       bool      `json:"has_reward" desc:"是否有悬赏"`
+	Images          []string  `json:"images" desc:"图片"`
+	Status          string    `json:"status" desc:"状态"`
+	CancelReason    string    `json:"cancel_reason" desc:"取消原因"`
+	RejectReason    string    `json:"reject_reason" desc:"驳回原因"`
+	ProcessedAt     time.Time `json:"processed_at" desc:"处理时间"`
+	CreatedAt       time.Time `json:"created_at" desc:"创建时间"`
 }
 
 // Run Api业务逻辑执行点
@@ -66,16 +75,25 @@ func (d *DetailApi) Run(ctx *gin.Context) kit.Code {
 	}
 
 	resp := DetailApiResponse{
-		ID:            record.ID,
-		PublishType:   record.PublishType,
-		ItemName:      record.ItemName,
-		ItemType:      record.ItemType,
-		ItemTypeOther: record.ItemTypeOther,
-		Location:      record.Location,
-		EventTime:     record.EventTime,
-		Features:      record.Features,
-		Status:        record.Status,
-		Images:        comm.UnmarshalImages(record.Images),
+		ID:              record.ID,
+		PublishType:     record.PublishType,
+		ItemName:        record.ItemName,
+		ItemType:        record.ItemType,
+		ItemTypeOther:   record.ItemTypeOther,
+		Campus:          record.Campus,
+		Location:        record.Location,
+		StorageLocation: record.StorageLocation,
+		EventTime:       record.EventTime,
+		Features:        record.Features,
+		ContactName:     record.ContactName,
+		ContactPhone:    record.ContactPhone,
+		HasReward:       record.HasReward,
+		Images:          comm.UnmarshalImages(record.Images),
+		Status:          record.Status,
+		CancelReason:    record.CancelReason,
+		RejectReason:    record.RejectReason,
+		ProcessedAt:     record.ProcessedAt,
+		CreatedAt:       record.CreatedAt,
 	}
 
 	// 权限判断：发布者本人或管理员可查看联系方式
@@ -89,7 +107,7 @@ func (d *DetailApi) Run(ctx *gin.Context) kit.Code {
 			// 判断是否为管理员
 			urp := repo.NewUserRepo()
 			user, err := urp.FindById(ctx, userID)
-			if err == nil && user != nil && user.Usertype == 1 {
+			if err == nil && user != nil && user.Usertype == enum.UserTypeAdmin {
 				resp.ContactName = record.ContactName
 				resp.ContactPhone = record.ContactPhone
 			}

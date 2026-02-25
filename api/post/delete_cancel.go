@@ -13,6 +13,7 @@ import (
 	"github.com/zjutjh/mygo/swagger"
 
 	"app/comm"
+	"app/comm/enum"
 	"app/dao/repo"
 )
 
@@ -66,8 +67,8 @@ func (d *DeleteApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodePostNotOwner
 	}
 
-	// 状态验证：仅待审核状态(0)可删除
-	if post.Status != StatusPending {
+	// 状态验证：仅待审核状态可删除
+	if post.Status != enum.PostStatusPending {
 		return comm.CodePostStatusInvalid
 	}
 
@@ -157,8 +158,8 @@ func (c *CancelApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodePostNotOwner
 	}
 
-	// 状态验证：仅已通过状态(1)可取消
-	if post.Status != StatusApproved {
+	// 状态验证：仅已通过状态可取消
+	if post.Status != enum.PostStatusApproved {
 		return comm.CodePostStatusInvalid
 	}
 

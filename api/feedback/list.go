@@ -6,17 +6,19 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/cast"
 	"github.com/zjutjh/mygo/foundation/reply"
+	"github.com/zjutjh/mygo/jwt"
 	"github.com/zjutjh/mygo/kit"
 	"github.com/zjutjh/mygo/nlog"
 	"github.com/zjutjh/mygo/swagger"
 
 	"app/comm"
+	"app/comm/enum"
 	"app/dao/model"
 	"app/dao/repo"
 )
 
-// ListHandler API router注册点
 func ListHandler() gin.HandlerFunc {
 	api := ListApi{}
 	swagger.CM[runtime.FuncForPC(reflect.ValueOf(hfList).Pointer()).Name()] = api
@@ -25,15 +27,15 @@ func ListHandler() gin.HandlerFunc {
 
 type ListApi struct {
 	Info     struct{}        `name:"投诉反馈列表" desc:"投诉反馈列表"`
-	Request  ListApiRequest  // API请求参数
-	Response ListApiResponse // API响应数据
+	Request  ListApiRequest
+	Response ListApiResponse
 }
 
 type ListApiRequest struct {
 	Query struct {
-		Status   *int8 `form:"status" binding:"omitempty,oneof=0 1" desc:"状态 0未处理 1已处理"`
-		Page     int   `form:"page" binding:"omitempty,min=1" desc:"页码"`
-		PageSize int   `form:"page_size" binding:"omitempty,min=1,max=50" desc:"每页数量"`
+		Processed *bool `form:"processed" binding:"omitempty" desc:"是否已处理"`
+		Page      int   `form:"page" binding:"omitempty,min=1" desc:"页码"`
+		PageSize  int   `form:"page_size" binding:"omitempty,min=1,max=50" desc:"每页数量"`
 	}
 }
 
@@ -45,21 +47,36 @@ type ListApiResponse struct {
 }
 
 type FeedbackItem struct {
-	ID          int64     `json:"id" desc:"投诉ID"`
-	PostID      int64     `json:"post_id" desc:"物品ID"`
-	ReporterID  int64     `json:"reporter_id" desc:"投诉者ID"`
-	Type        string    `json:"type" desc:"投诉类型"`
-	TypeOther   string    `json:"type_other" desc:"其它类型说明"`
-	Description string    `json:"description" desc:"详细说明"`
-	Status      int8      `json:"status" desc:"状态 0未处理 1已处理"`
-	ProcessedBy int64     `json:"processed_by,omitempty" desc:"处理人ID"`
-	ProcessedAt time.Time `json:"processed_at,omitempty" desc:"处理时间"`
-	CreatedAt   time.Time `json:"created_at" desc:"创建时间"`
+	ID          int64      `json:"id" desc:"投诉ID"`
+	PostID      int64      `json:"post_id" desc:"物品ID"`
+	ReporterID  int64      `json:"reporter_id" desc:"投诉者ID"`
+	Type        string     `json:"type" desc:"投诉类型"`
+	TypeOther   string     `json:"type_other" desc:"其它类型说明"`
+	Description string     `json:"description" desc:"详细说明"`
+	Processed   bool       `json:"processed" desc:"是否已处理"`
+	ProcessedBy int64      `json:"processed_by,omitempty" desc:"处理人ID"`
+	ProcessedAt *time.Time `json:"processed_at,omitempty" desc:"处理时间"`
+	CreatedAt   time.Time  `json:"created_at" desc:"创建时间"`
 }
 
-// Run Api业务逻辑执行点
 func (l *ListApi) Run(ctx *gin.Context) kit.Code {
 	request := l.Request.Query
+
+	id, err := jwt.GetIdentity[string](ctx)
+	if err != nil {
+		return comm.CodeNotLoggedIn
+	}
+	adminID := cast.ToInt64(id)
+
+	urp := repo.NewUserRepo()
+	user, err := urp.FindById(ctx, adminID)
+	if err != nil {
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询用户失败")
+		return comm.CodeDatabaseError
+	}
+	if user == nil || user.Usertype != enum.UserTypeAdmin {
+		return comm.CodeAdminPermissionDenied
+	}
 
 	page := request.Page
 	pageSize := request.PageSize
@@ -78,10 +95,9 @@ func (l *ListApi) Run(ctx *gin.Context) kit.Code {
 
 	var feedbacks []*model.Feedback
 	var total int64
-	var err error
 
-	if request.Status != nil {
-		feedbacks, total, err = frp.ListByStatus(ctx, *request.Status, offset, pageSize)
+	if request.Processed != nil {
+		feedbacks, total, err = frp.ListByProcessed(ctx, *request.Processed, offset, pageSize)
 	} else {
 		feedbacks, total, err = frp.ListAll(ctx, offset, pageSize)
 	}
@@ -93,18 +109,21 @@ func (l *ListApi) Run(ctx *gin.Context) kit.Code {
 
 	items := make([]FeedbackItem, 0, len(feedbacks))
 	for _, fb := range feedbacks {
-		items = append(items, FeedbackItem{
+		item := FeedbackItem{
 			ID:          fb.ID,
 			PostID:      fb.PostID,
 			ReporterID:  fb.ReporterID,
 			Type:        fb.Type,
 			TypeOther:   fb.TypeOther,
 			Description: fb.Description,
-			Status:      fb.Status,
+			Processed:   fb.Processed,
 			ProcessedBy: fb.ProcessedBy,
-			ProcessedAt: fb.ProcessedAt,
 			CreatedAt:   fb.CreatedAt,
-		})
+		}
+		if !fb.ProcessedAt.IsZero() {
+			item.ProcessedAt = &fb.ProcessedAt
+		}
+		items = append(items, item)
 	}
 
 	l.Response = ListApiResponse{
@@ -116,12 +135,10 @@ func (l *ListApi) Run(ctx *gin.Context) kit.Code {
 	return comm.CodeOK
 }
 
-// Init Api初始化
 func (l *ListApi) Init(ctx *gin.Context) (err error) {
 	return ctx.ShouldBindQuery(&l.Request.Query)
 }
 
-// hfList API执行入口
 func hfList(ctx *gin.Context) {
 	api := &ListApi{}
 	err := api.Init(ctx)

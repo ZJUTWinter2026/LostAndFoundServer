@@ -13,6 +13,7 @@ import (
 	"github.com/zjutjh/mygo/swagger"
 
 	"app/comm"
+	"app/comm/enum"
 	"app/dao/repo"
 )
 
@@ -63,7 +64,7 @@ func (r *ReviewApi) Run(ctx *gin.Context) kit.Code {
 	}
 
 	// 只能审核待确认状态的申请
-	if claimRecord.Status != statusPending {
+	if claimRecord.Status != enum.ClaimStatusPending {
 		return comm.CodeClaimStatusInvalid
 	}
 
@@ -84,7 +85,7 @@ func (r *ReviewApi) Run(ctx *gin.Context) kit.Code {
 	if !isPublisher {
 		urp := repo.NewUserRepo()
 		user, err := urp.FindById(ctx, reviewerID)
-		if err == nil && user != nil && user.Usertype == 1 {
+		if err == nil && user != nil && user.Usertype == enum.UserTypeAdmin {
 			isAdmin = true
 		}
 	}
@@ -105,22 +106,24 @@ func (r *ReviewApi) Run(ctx *gin.Context) kit.Code {
 	}
 
 	// 更新状态
-	newStatus := statusMatched
-	if request.Action == 2 {
-		newStatus = statusRejected
+	var targetStatus string
+	if request.Action == 1 {
+		targetStatus = enum.ClaimStatusMatched
+	} else {
+		targetStatus = enum.ClaimStatusRejected
 	}
 
-	err = crp.UpdateStatus(ctx, request.ClaimID, newStatus, reviewerID)
+	err = crp.UpdateStatus(ctx, request.ClaimID, targetStatus, reviewerID)
 	if err != nil {
-		nlog.Pick().WithContext(ctx).WithError(err).Warn("更新认领申请状态失败")
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("更新认领状态失败")
 		return comm.CodeDatabaseError
 	}
 
-	// 如果认领申请被同意，则更新发布记录状态为已匹配
-	if request.Action == 1 {
-		err = prp.MarkAsMatched(ctx, claimRecord.PostID)
+	// 如果同意认领，更新发布记录状态为已匹配
+	if targetStatus == enum.ClaimStatusMatched {
+		err = prp.UpdateStatus(ctx, claimRecord.PostID, enum.PostStatusMatched)
 		if err != nil {
-			nlog.Pick().WithContext(ctx).WithError(err).Warn("更新发布记录状态失败")
+			nlog.Pick().WithContext(ctx).WithError(err).Warn("更新发布状态失败")
 			return comm.CodeDatabaseError
 		}
 	}

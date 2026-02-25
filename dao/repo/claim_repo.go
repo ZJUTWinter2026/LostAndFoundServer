@@ -8,6 +8,7 @@ import (
 	"github.com/zjutjh/mygo/ndb"
 	"gorm.io/gorm"
 
+	"app/comm/enum"
 	"app/dao/model"
 )
 
@@ -39,7 +40,7 @@ func (r *ClaimRepo) FindById(ctx context.Context, id int64) (*model.Claim, error
 func (r *ClaimRepo) HasPendingOrMatchedClaim(ctx context.Context, postID int64, claimantID int64) (bool, error) {
 	var count int64
 	err := ndb.Pick().WithContext(ctx).Model(&model.Claim{}).
-		Where("post_id = ? AND claimant_id = ? AND status IN (0, 1)", postID, claimantID).
+		Where("post_id = ? AND claimant_id = ? AND status IN (?, ?)", postID, claimantID, enum.ClaimStatusPending, enum.ClaimStatusMatched).
 		Count(&count).Error
 	if err != nil {
 		return false, err
@@ -51,7 +52,7 @@ func (r *ClaimRepo) HasPendingOrMatchedClaim(ctx context.Context, postID int64, 
 func (r *ClaimRepo) HasMatchedClaim(ctx context.Context, postID int64) (bool, error) {
 	var count int64
 	err := ndb.Pick().WithContext(ctx).Model(&model.Claim{}).
-		Where("post_id = ? AND status = 1", postID).
+		Where("post_id = ? AND status = ?", postID, enum.ClaimStatusMatched).
 		Count(&count).Error
 	if err != nil {
 		return false, err
@@ -70,7 +71,7 @@ func (r *ClaimRepo) ListByPostID(ctx context.Context, postID int64) ([]*model.Cl
 }
 
 // UpdateStatus 更新认领申请状态
-func (r *ClaimRepo) UpdateStatus(ctx context.Context, id int64, status int8, reviewedBy int64) error {
+func (r *ClaimRepo) UpdateStatus(ctx context.Context, id int64, status string, reviewedBy int64) error {
 	now := time.Now()
 	return ndb.Pick().WithContext(ctx).Model(&model.Claim{}).
 		Where("id = ?", id).

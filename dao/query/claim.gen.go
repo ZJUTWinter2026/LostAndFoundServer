@@ -32,7 +32,7 @@ func newClaim(db *gorm.DB, opts ...gen.DOOption) claim {
 	_claim.ClaimantID = field.NewInt64(tableName, "claimant_id")
 	_claim.Description = field.NewString(tableName, "description")
 	_claim.ProofImages = field.NewString(tableName, "proof_images")
-	_claim.Status = field.NewInt8(tableName, "status")
+	_claim.Status = field.NewString(tableName, "status")
 	_claim.ReviewedBy = field.NewInt64(tableName, "reviewed_by")
 	_claim.ReviewedAt = field.NewTime(tableName, "reviewed_at")
 	_claim.CreatedAt = field.NewTime(tableName, "created_at")
@@ -54,7 +54,7 @@ type claim struct {
 	ClaimantID  field.Int64  // 认领者ID
 	Description field.String // 补充说明
 	ProofImages field.String // 证明图片
-	Status      field.Int8   // 状态 0待确认 1已匹配 2已拒绝
+	Status      field.String // 状态 PENDING待确认 MATCHED已匹配 REJECTED已拒绝
 	ReviewedBy  field.Int64  // 审核人ID
 	ReviewedAt  field.Time   // 审核时间
 	CreatedAt   field.Time   // 创建时间
@@ -81,7 +81,7 @@ func (c *claim) updateTableName(table string) *claim {
 	c.ClaimantID = field.NewInt64(table, "claimant_id")
 	c.Description = field.NewString(table, "description")
 	c.ProofImages = field.NewString(table, "proof_images")
-	c.Status = field.NewInt8(table, "status")
+	c.Status = field.NewString(table, "status")
 	c.ReviewedBy = field.NewInt64(table, "reviewed_by")
 	c.ReviewedAt = field.NewTime(table, "reviewed_at")
 	c.CreatedAt = field.NewTime(table, "created_at")

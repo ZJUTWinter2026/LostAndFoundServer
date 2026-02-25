@@ -16,54 +16,64 @@ import (
 )
 
 var (
-	Q        = new(Query)
-	AuditLog *auditLog
-	Claim    *claim
-	Feedback *feedback
-	Post     *post
-	User     *user
+	Q            = new(Query)
+	Announcement *announcement
+	AuditLog     *auditLog
+	Claim        *claim
+	Feedback     *feedback
+	Post         *post
+	SystemConfig *systemConfig
+	User         *user
 )
 
 func SetDefault(db *gorm.DB, opts ...gen.DOOption) {
 	*Q = *Use(db, opts...)
+	Announcement = &Q.Announcement
 	AuditLog = &Q.AuditLog
 	Claim = &Q.Claim
 	Feedback = &Q.Feedback
 	Post = &Q.Post
+	SystemConfig = &Q.SystemConfig
 	User = &Q.User
 }
 
 func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 	return &Query{
-		db:       db,
-		AuditLog: newAuditLog(db, opts...),
-		Claim:    newClaim(db, opts...),
-		Feedback: newFeedback(db, opts...),
-		Post:     newPost(db, opts...),
-		User:     newUser(db, opts...),
+		db:           db,
+		Announcement: newAnnouncement(db, opts...),
+		AuditLog:     newAuditLog(db, opts...),
+		Claim:        newClaim(db, opts...),
+		Feedback:     newFeedback(db, opts...),
+		Post:         newPost(db, opts...),
+		SystemConfig: newSystemConfig(db, opts...),
+		User:         newUser(db, opts...),
 	}
 }
 
 type Query struct {
 	db *gorm.DB
 
-	AuditLog auditLog
-	Claim    claim
-	Feedback feedback
-	Post     post
-	User     user
+	Announcement announcement
+	AuditLog     auditLog
+	Claim        claim
+	Feedback     feedback
+	Post         post
+	SystemConfig systemConfig
+	User         user
 }
 
 func (q *Query) Available() bool { return q.db != nil }
 
 func (q *Query) clone(db *gorm.DB) *Query {
 	return &Query{
-		db:       db,
-		AuditLog: q.AuditLog.clone(db),
-		Claim:    q.Claim.clone(db),
-		Feedback: q.Feedback.clone(db),
-		Post:     q.Post.clone(db),
-		User:     q.User.clone(db),
+		db:           db,
+		Announcement: q.Announcement.clone(db),
+		AuditLog:     q.AuditLog.clone(db),
+		Claim:        q.Claim.clone(db),
+		Feedback:     q.Feedback.clone(db),
+		Post:         q.Post.clone(db),
+		SystemConfig: q.SystemConfig.clone(db),
+		User:         q.User.clone(db),
 	}
 }
 
@@ -77,30 +87,36 @@ func (q *Query) WriteDB() *Query {
 
 func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 	return &Query{
-		db:       db,
-		AuditLog: q.AuditLog.replaceDB(db),
-		Claim:    q.Claim.replaceDB(db),
-		Feedback: q.Feedback.replaceDB(db),
-		Post:     q.Post.replaceDB(db),
-		User:     q.User.replaceDB(db),
+		db:           db,
+		Announcement: q.Announcement.replaceDB(db),
+		AuditLog:     q.AuditLog.replaceDB(db),
+		Claim:        q.Claim.replaceDB(db),
+		Feedback:     q.Feedback.replaceDB(db),
+		Post:         q.Post.replaceDB(db),
+		SystemConfig: q.SystemConfig.replaceDB(db),
+		User:         q.User.replaceDB(db),
 	}
 }
 
 type queryCtx struct {
-	AuditLog IAuditLogDo
-	Claim    IClaimDo
-	Feedback IFeedbackDo
-	Post     IPostDo
-	User     IUserDo
+	Announcement IAnnouncementDo
+	AuditLog     IAuditLogDo
+	Claim        IClaimDo
+	Feedback     IFeedbackDo
+	Post         IPostDo
+	SystemConfig ISystemConfigDo
+	User         IUserDo
 }
 
 func (q *Query) WithContext(ctx context.Context) *queryCtx {
 	return &queryCtx{
-		AuditLog: q.AuditLog.WithContext(ctx),
-		Claim:    q.Claim.WithContext(ctx),
-		Feedback: q.Feedback.WithContext(ctx),
-		Post:     q.Post.WithContext(ctx),
-		User:     q.User.WithContext(ctx),
+		Announcement: q.Announcement.WithContext(ctx),
+		AuditLog:     q.AuditLog.WithContext(ctx),
+		Claim:        q.Claim.WithContext(ctx),
+		Feedback:     q.Feedback.WithContext(ctx),
+		Post:         q.Post.WithContext(ctx),
+		SystemConfig: q.SystemConfig.WithContext(ctx),
+		User:         q.User.WithContext(ctx),
 	}
 }
 

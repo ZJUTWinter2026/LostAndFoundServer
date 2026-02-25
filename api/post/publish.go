@@ -1,6 +1,11 @@
 package post
 
 import (
+	"app/api/admin/system"
+	"app/comm"
+	"app/comm/enum"
+	"app/dao/model"
+	"app/dao/repo"
 	"reflect"
 	"runtime"
 	"strings"
@@ -13,17 +18,8 @@ import (
 	"github.com/zjutjh/mygo/kit"
 	"github.com/zjutjh/mygo/nlog"
 	"github.com/zjutjh/mygo/swagger"
-
-	"app/comm"
-	"app/dao/model"
-	"app/dao/repo"
 )
 
-const (
-	statusPending int8 = 0
-)
-
-// PublishHandler API router注册点
 func PublishHandler() gin.HandlerFunc {
 	api := PublishApi{}
 	swagger.CM[runtime.FuncForPC(reflect.ValueOf(hfPublish).Pointer()).Name()] = api
@@ -31,24 +27,26 @@ func PublishHandler() gin.HandlerFunc {
 }
 
 type PublishApi struct {
-	Info     struct{}           `name:"发布失物/招领" desc:"发布失物/招领"`
-	Request  PublishApiRequest  // API请求参数 (Body/Header/Body/Body)
-	Response PublishApiResponse // API响应数据 (Body中的Data部分)
+	Info     struct{} `name:"发布失物/招领" desc:"发布失物/招领"`
+	Request  PublishApiRequest
+	Response PublishApiResponse
 }
 
 type PublishApiRequest struct {
 	Body struct {
-		PublishType   int8     `json:"publish_type" binding:"required,oneof=1 2" desc:"发布类型 1失物 2招领"`
-		ItemName      string   `json:"item_name" binding:"required,max=50" desc:"物品名称"`
-		ItemType      string   `json:"item_type" binding:"required,max=20" desc:"物品类型"`
-		ItemTypeOther string   `json:"item_type_other" binding:"max=15" desc:"其它类型说明"`
-		Location      string   `json:"location" binding:"required,max=100" desc:"地点"`
-		EventTime     string   `json:"event_time" binding:"required" desc:"丢失/拾取时间"`
-		Features      string   `json:"features" binding:"required,max=255" desc:"物品特征"`
-		ContactName   string   `json:"contact_name" binding:"required,max=30" desc:"联系人"`
-		ContactPhone  string   `json:"contact_phone" binding:"required,min=5,max=20" desc:"联系电话"`
-		HasReward     *bool    `json:"has_reward" desc:"是否有悬赏"`
-		Images        []string `json:"images" binding:"omitempty,dive,max=255" desc:"图片列表"`
+		PublishType     string   `json:"publish_type" binding:"required,oneof=LOST FOUND" desc:"发布类型 LOST失物 FOUND招领"`
+		ItemName        string   `json:"item_name" binding:"required,max=50" desc:"物品名称"`
+		ItemType        string   `json:"item_type" binding:"required,max=20" desc:"物品类型"`
+		ItemTypeOther   string   `json:"item_type_other" binding:"max=15" desc:"其它类型说明"`
+		Campus          string   `json:"campus" binding:"required,oneof=ZHAO_HUI PING_FENG MO_GAN_SHAN" desc:"校区"`
+		Location        string   `json:"location" binding:"required,max=100" desc:"地点"`
+		StorageLocation string   `json:"storage_location" binding:"max=100" desc:"存放地点"`
+		EventTime       string   `json:"event_time" binding:"required" desc:"丢失/拾取时间"`
+		Features        string   `json:"features" binding:"required,max=255" desc:"物品特征"`
+		ContactName     string   `json:"contact_name" binding:"required,max=30" desc:"联系人"`
+		ContactPhone    string   `json:"contact_phone" binding:"required,min=5,max=20" desc:"联系电话"`
+		HasReward       bool     `json:"has_reward" desc:"是否有悬赏"`
+		Images          []string `json:"images" binding:"omitempty,dive,max=3" desc:"图片列表"`
 	}
 }
 
@@ -56,7 +54,6 @@ type PublishApiResponse struct {
 	Id int64 `json:"id" binding:"required" desc:"发布ID"`
 }
 
-// Run Api业务逻辑执行点
 func (p *PublishApi) Run(ctx *gin.Context) kit.Code {
 	request := p.Request.Body
 
@@ -66,7 +63,11 @@ func (p *PublishApi) Run(ctx *gin.Context) kit.Code {
 	}
 	publisherID := cast.ToInt64(id)
 
-	if strings.TrimSpace(request.ItemType) == "其它" {
+	if !system.IsValidItemType(ctx, request.ItemType) {
+		return comm.CodeParameterInvalid
+	}
+
+	if strings.TrimSpace(request.ItemType) == "其它类型" {
 		if strings.TrimSpace(request.ItemTypeOther) == "" {
 			return comm.CodeParameterInvalid
 		}
@@ -75,8 +76,10 @@ func (p *PublishApi) Run(ctx *gin.Context) kit.Code {
 		}
 	}
 
-	if request.PublishType == 2 && request.HasReward != nil && *request.HasReward {
-		return comm.CodeParameterInvalid
+	if request.PublishType == enum.PostTypeFound {
+		if len(request.Images) == 0 {
+			return comm.CodeParameterInvalid
+		}
 	}
 
 	eventTime, err := comm.ParseEventTime(request.EventTime)
@@ -89,39 +92,35 @@ func (p *PublishApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeParameterInvalid
 	}
 
-	hasReward := int8(0)
-	if request.HasReward != nil && *request.HasReward {
-		hasReward = 1
-	}
-
 	record := &model.Post{
-		PublisherID:   publisherID,
-		PublishType:   request.PublishType,
-		ItemName:      request.ItemName,
-		ItemType:      request.ItemType,
-		ItemTypeOther: request.ItemTypeOther,
-		Location:      request.Location,
-		EventTime:     eventTime,
-		Features:      request.Features,
-		ContactName:   request.ContactName,
-		ContactPhone:  request.ContactPhone,
-		HasReward:     hasReward,
-		Images:        string(imagesJSON),
-		Status:        statusPending,
+		PublisherID:     publisherID,
+		PublishType:     request.PublishType,
+		ItemName:        strings.TrimSpace(request.ItemName),
+		ItemType:        request.ItemType,
+		ItemTypeOther:   request.ItemTypeOther,
+		Campus:          request.Campus,
+		Location:        request.Location,
+		StorageLocation: request.StorageLocation,
+		EventTime:       eventTime,
+		Features:        request.Features,
+		ContactName:     request.ContactName,
+		ContactPhone:    request.ContactPhone,
+		HasReward:       request.HasReward,
+		Images:          string(imagesJSON),
+		Status:          enum.PostStatusPending,
 	}
 
 	prp := repo.NewPostRepo()
 	err = prp.Create(ctx, record)
 	if err != nil {
-		nlog.Pick().WithContext(ctx).WithError(err).Warn("发布记录写入失败")
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("发布失败")
 		return comm.CodeDatabaseError
 	}
 
-	p.Response = PublishApiResponse{Id: record.ID}
+	p.Response.Id = record.ID
 	return comm.CodeOK
 }
 
-// Init Api初始化 进行参数校验和绑定
 func (p *PublishApi) Init(ctx *gin.Context) (err error) {
 	err = ctx.ShouldBindJSON(&p.Request.Body)
 	if err != nil {
@@ -130,7 +129,6 @@ func (p *PublishApi) Init(ctx *gin.Context) (err error) {
 	return err
 }
 
-// hfPublish API执行入口
 func hfPublish(ctx *gin.Context) {
 	api := &PublishApi{}
 	err := api.Init(ctx)

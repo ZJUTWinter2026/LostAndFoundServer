@@ -1,6 +1,8 @@
 package post
 
 import (
+	"app/comm"
+	"app/dao/repo"
 	"reflect"
 	"runtime"
 	"strings"
@@ -11,9 +13,6 @@ import (
 	"github.com/zjutjh/mygo/kit"
 	"github.com/zjutjh/mygo/nlog"
 	"github.com/zjutjh/mygo/swagger"
-
-	"app/comm"
-	"app/dao/repo"
 )
 
 // QueryHandler API router注册点
@@ -34,13 +33,14 @@ type QueryApiRequest struct {
 }
 
 type QueryFilter struct {
-	ItemType  string `form:"item_type" binding:"omitempty,max=20" desc:"物品类型(含其它)"`
-	Location  string `form:"location" binding:"omitempty,max=100" desc:"地点"`
-	Status    *int8  `form:"status" binding:"omitempty,oneof=0 1 2" desc:"状态 0待审核 1已发布 2已认领"`
-	StartTime string `form:"start_time" binding:"omitempty" desc:"时间范围起"`
-	EndTime   string `form:"end_time" binding:"omitempty" desc:"时间范围止"`
-	Page      int    `form:"page" binding:"omitempty,min=1" desc:"页码"`
-	PageSize  int    `form:"page_size" binding:"omitempty,min=1,max=50" desc:"每页数量"`
+	ItemType  string  `form:"item_type" binding:"omitempty,max=20" desc:"物品类型(含其它)"`
+	Campus    string  `form:"campus" binding:"omitempty,oneof=ZHAO_HUI PING_FENG MO_GAN_SHAN" desc:"校区"`
+	Location  string  `form:"location" binding:"omitempty,max=100" desc:"地点"`
+	Status    *string `form:"status" binding:"omitempty,oneof=PENDING APPROVED MATCHED CLAIMED CANCELLED REJECTED" desc:"状态"`
+	StartTime string  `form:"start_time" binding:"omitempty" desc:"时间范围起"`
+	EndTime   string  `form:"end_time" binding:"omitempty" desc:"时间范围止"`
+	Page      int     `form:"page" binding:"omitempty,min=1" desc:"页码"`
+	PageSize  int     `form:"page_size" binding:"omitempty,min=1,max=50" desc:"每页数量"`
 }
 
 type QueryApiResponse struct {
@@ -52,14 +52,15 @@ type QueryApiResponse struct {
 
 type PostListItem struct {
 	ID            int64     `json:"id" desc:"发布ID"`
-	PublishType   int8      `json:"publish_type" desc:"发布类型 1失物 2招领"`
+	PublishType   string    `json:"publish_type" desc:"发布类型 LOST/FOUND"`
 	ItemName      string    `json:"item_name" desc:"物品名称"`
 	ItemType      string    `json:"item_type" desc:"物品类型"`
 	ItemTypeOther string    `json:"item_type_other" desc:"其它类型说明"`
+	Campus        string    `json:"campus" desc:"校区"`
 	Location      string    `json:"location" desc:"地点"`
 	EventTime     time.Time `json:"event_time" desc:"事件时间"`
 	Features      string    `json:"features" desc:"物品特征"`
-	Status        int8      `json:"status" desc:"状态"`
+	Status        string    `json:"status" desc:"状态"`
 	Images        []string  `json:"images" desc:"图片"`
 }
 
@@ -97,6 +98,7 @@ func (q *QueryApi) Run(ctx *gin.Context) kit.Code {
 
 	filter := repo.PostListFilter{
 		ItemType:  strings.TrimSpace(request.ItemType),
+		Campus:    strings.TrimSpace(request.Campus),
 		Location:  strings.TrimSpace(request.Location),
 		Status:    request.Status,
 		StartTime: startTime,
@@ -162,6 +164,9 @@ func hfQuery(ctx *gin.Context) {
 
 func hasAnyFilter(req QueryFilter) bool {
 	if strings.TrimSpace(req.ItemType) != "" {
+		return true
+	}
+	if strings.TrimSpace(req.Campus) != "" {
 		return true
 	}
 	if strings.TrimSpace(req.Location) != "" {

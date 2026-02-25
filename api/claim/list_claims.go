@@ -40,13 +40,11 @@ type ListApiResponse struct {
 
 type ClaimItem struct {
 	ID          int64     `json:"id" desc:"认领申请ID"`
-	ClaimantID  int64     `json:"claimant_id" desc:"认领者ID"`
+	PostID      int64     `json:"post_id" desc:"发布记录ID"`
 	Description string    `json:"description" desc:"补充说明"`
 	ProofImages []string  `json:"proof_images" desc:"证明图片"`
-	Status      int8      `json:"status" desc:"状态 0待确认 1已匹配 2已拒绝"`
-	ReviewedBy  int64     `json:"reviewed_by,omitempty" desc:"审核人ID"`
-	ReviewedAt  time.Time `json:"reviewed_at,omitempty" desc:"审核时间"`
-	CreatedAt   time.Time `json:"created_at" desc:"申请时间"`
+	Status      string    `json:"status" desc:"状态"`
+	CreatedAt   time.Time `json:"created_at" desc:"创建时间"`
 }
 
 // Run Api业务逻辑执行点
@@ -76,12 +74,10 @@ func (l *ListApi) Run(ctx *gin.Context) kit.Code {
 	for _, claimRecord := range claims {
 		items = append(items, ClaimItem{
 			ID:          claimRecord.ID,
-			ClaimantID:  claimRecord.ClaimantID,
+			PostID:      claimRecord.PostID,
 			Description: claimRecord.Description,
 			ProofImages: comm.UnmarshalImages(claimRecord.ProofImages),
 			Status:      claimRecord.Status,
-			ReviewedAt:  claimRecord.ReviewedAt,
-			ReviewedBy:  claimRecord.ReviewedBy,
 			CreatedAt:   claimRecord.CreatedAt,
 		})
 	}

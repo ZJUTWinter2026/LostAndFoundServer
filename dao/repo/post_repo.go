@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"app/comm/enum"
 	"app/dao/query"
 	"context"
 	"errors"
@@ -30,8 +31,9 @@ func (r *PostRepo) Create(ctx context.Context, record *model.Post) error {
 
 type PostListFilter struct {
 	ItemType  string
+	Campus    string
 	Location  string
-	Status    *int8
+	Status    *string
 	StartTime *time.Time
 	EndTime   *time.Time
 }
@@ -56,10 +58,14 @@ func (r *PostRepo) ListByFilter(ctx context.Context, filter PostListFilter, offs
 	if strings.TrimSpace(filter.ItemType) != "" {
 		db = db.Where("item_type = ?", strings.TrimSpace(filter.ItemType))
 	}
+	if strings.TrimSpace(filter.Campus) != "" {
+		db = db.Where("campus = ?", strings.TrimSpace(filter.Campus))
+	}
 	if strings.TrimSpace(filter.Location) != "" {
 		like := "%" + strings.TrimSpace(filter.Location) + "%"
 		db = db.Where("location LIKE ?", like)
 	}
+
 	if filter.Status != nil {
 		db = db.Where("status = ?", *filter.Status)
 	}
@@ -79,7 +85,7 @@ func (r *PostRepo) ListByFilter(ctx context.Context, filter PostListFilter, offs
 }
 
 // ListByPublisher 查询用户发布的记录列表
-func (r *PostRepo) ListByPublisher(ctx context.Context, publisherID int64, publishType *int8, status *int8, offset int, limit int) (records []*model.Post, total int64, err error) {
+func (r *PostRepo) ListByPublisher(ctx context.Context, publisherID int64, publishType *string, status *string, offset int, limit int) (records []*model.Post, total int64, err error) {
 	db := ndb.Pick().WithContext(ctx).Model(&model.Post{}).Where("publisher_id = ?", publisherID)
 
 	if publishType != nil {
@@ -109,7 +115,7 @@ func (r *PostRepo) CancelPost(ctx context.Context, postID int64, publisherID int
 	return ndb.Pick().WithContext(ctx).Model(&model.Post{}).
 		Where("id = ? AND publisher_id = ?", postID, publisherID).
 		Updates(map[string]interface{}{
-			"status":        4, // 已取消
+			"status":        enum.PostStatusCancelled,
 			"cancel_reason": reason,
 		}).Error
 }
@@ -117,14 +123,14 @@ func (r *PostRepo) CancelPost(ctx context.Context, postID int64, publisherID int
 // DeletePost 删除发布记录（仅待审核状态可删除）
 func (r *PostRepo) DeletePost(ctx context.Context, postID int64, publisherID int64) error {
 	return ndb.Pick().WithContext(ctx).
-		Where("id = ? AND publisher_id = ? AND status = 0", postID, publisherID).
+		Where("id = ? AND publisher_id = ? AND status = ?", postID, publisherID, enum.PostStatusPending).
 		Delete(&model.Post{}).Error
 }
 
 // ListPendingReview 查询待审核的发布列表
 func (r *PostRepo) ListPendingReview(ctx context.Context, offset int, limit int) ([]*model.Post, int64, error) {
 	var posts []*model.Post
-	db := ndb.Pick().WithContext(ctx).Model(&model.Post{}).Where("status = 0")
+	db := ndb.Pick().WithContext(ctx).Model(&model.Post{}).Where("status = ?", enum.PostStatusPending)
 
 	var total int64
 	if err := db.Count(&total).Error; err != nil {
@@ -138,9 +144,9 @@ func (r *PostRepo) ListPendingReview(ctx context.Context, offset int, limit int)
 // ApprovePost 审核通过发布
 func (r *PostRepo) ApprovePost(ctx context.Context, postID int64) error {
 	return ndb.Pick().WithContext(ctx).Model(&model.Post{}).
-		Where("id = ? AND status = 0", postID).
+		Where("id = ? AND status = ?", postID, enum.PostStatusPending).
 		Updates(map[string]interface{}{
-			"status":       1, // 已通过
+			"status":       enum.PostStatusApproved,
 			"processed_at": time.Now(),
 		}).Error
 }
@@ -148,12 +154,61 @@ func (r *PostRepo) ApprovePost(ctx context.Context, postID int64) error {
 // RejectPost 审核驳回发布
 func (r *PostRepo) RejectPost(ctx context.Context, postID int64, reason string) error {
 	return ndb.Pick().WithContext(ctx).Model(&model.Post{}).
-		Where("id = ? AND status = 0", postID).
+		Where("id = ? AND status = ?", postID, enum.PostStatusPending).
 		Updates(map[string]interface{}{
-			"status":        5, // 已驳回
+			"status":        enum.PostStatusRejected,
 			"reject_reason": reason,
 			"processed_at":  time.Now(),
 		}).Error
+}
+
+// CountByStatus 按状态统计数量
+func (r *PostRepo) CountByStatus(ctx context.Context) (map[string]int64, error) {
+	var results []struct {
+		Status string
+		Count  int64
+	}
+	err := ndb.Pick().WithContext(ctx).Model(&model.Post{}).
+		Select("status, count(*) as count").
+		Group("status").
+		Scan(&results).Error
+	if err != nil {
+		return nil, err
+	}
+
+	counts := make(map[string]int64)
+	for _, res := range results {
+		counts[res.Status] = res.Count
+	}
+	return counts, nil
+}
+
+// CountByItemType 按物品类型统计数量
+func (r *PostRepo) CountByItemType(ctx context.Context) (map[string]int64, error) {
+	var results []struct {
+		ItemType string
+		Count    int64
+	}
+	err := ndb.Pick().WithContext(ctx).Model(&model.Post{}).
+		Select("item_type, count(*) as count").
+		Group("item_type").
+		Scan(&results).Error
+	if err != nil {
+		return nil, err
+	}
+
+	counts := make(map[string]int64)
+	for _, res := range results {
+		counts[res.ItemType] = res.Count
+	}
+	return counts, nil
+}
+
+// UpdateStatus 更新发布状态
+func (r *PostRepo) UpdateStatus(ctx context.Context, postID int64, status string) error {
+	return ndb.Pick().WithContext(ctx).Model(&model.Post{}).
+		Where("id = ?", postID).
+		Update("status", status).Error
 }
 
 // MarkAsMatched 标记为已匹配
@@ -161,7 +216,7 @@ func (r *PostRepo) MarkAsMatched(ctx context.Context, postID int64) error {
 	return ndb.Pick().WithContext(ctx).Model(&model.Post{}).
 		Where("id = ?", postID).
 		Updates(map[string]interface{}{
-			"status":       2, // 已匹配
+			"status":       enum.PostStatusMatched,
 			"processed_at": time.Now(),
 		}).Error
 }

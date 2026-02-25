@@ -5,7 +5,7 @@ CREATE TABLE `feedback` (
   `type` VARCHAR(50) NOT NULL COMMENT '投诉类型',
   `type_other` VARCHAR(15) DEFAULT NULL COMMENT '其它类型说明',
   `description` VARCHAR(500) DEFAULT NULL COMMENT '详细说明',
-  `status` TINYINT NOT NULL DEFAULT 0 COMMENT '状态 0未处理 1已处理',
+  `processed` BOOLEAN NOT NULL DEFAULT FALSE COMMENT '是否已处理',
   `processed_by` BIGINT DEFAULT NULL COMMENT '处理人ID',
   `processed_at` TIMESTAMP(3) DEFAULT NULL COMMENT '处理时间',
   `created_at` TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
@@ -14,8 +14,7 @@ CREATE TABLE `feedback` (
   PRIMARY KEY (`id`),
   KEY `idx_post_id` (`post_id`),
   KEY `idx_reporter_id` (`reporter_id`),
-  KEY `idx_status` (`status`),
+  KEY `idx_processed` (`processed`),
   KEY `idx_type` (`type`),
   KEY `idx_deleted_at` (`deleted_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='投诉反馈表';
-

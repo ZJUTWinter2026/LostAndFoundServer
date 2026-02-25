@@ -15,12 +15,8 @@ import (
 	"github.com/zjutjh/mygo/swagger"
 
 	"app/comm"
+	"app/comm/enum"
 	"app/dao/repo"
-)
-
-const (
-	ActionApprove int8 = 1 // 审核通过
-	ActionReject  int8 = 2 // 审核驳回
 )
 
 // ApproveHandler API router注册点
@@ -64,7 +60,7 @@ func (a *ApproveApi) Run(ctx *gin.Context) kit.Code {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询用户失败")
 		return comm.CodeDatabaseError
 	}
-	if user == nil || user.Usertype != 1 {
+	if user == nil || user.Usertype != enum.UserTypeAdmin {
 		return comm.CodeAdminPermissionDenied
 	}
 
@@ -80,7 +76,7 @@ func (a *ApproveApi) Run(ctx *gin.Context) kit.Code {
 	}
 
 	// 必须是待审核状态
-	if post.Status != StatusPending {
+	if post.Status != enum.PostStatusPending {
 		return comm.CodePostStatusInvalid
 	}
 
@@ -93,7 +89,7 @@ func (a *ApproveApi) Run(ctx *gin.Context) kit.Code {
 
 	// 记录审计日志
 	alr := repo.NewAuditLogRepo()
-	err = alr.CreateAuditLog(ctx, adminID, ActionApprove, "", request.PostID, post.Status, StatusApproved)
+	err = alr.CreateAuditLog(ctx, adminID, enum.AuditLogTypeUpdate, "", request.PostID, post.Status, enum.PostStatusApproved)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("记录审计日志失败")
 		return comm.CodeDatabaseError
@@ -177,7 +173,7 @@ func (r *RejectApi) Run(ctx *gin.Context) kit.Code {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询用户失败")
 		return comm.CodeDatabaseError
 	}
-	if user == nil || user.Usertype != 1 {
+	if user == nil || user.Usertype != enum.UserTypeAdmin {
 		return comm.CodeAdminPermissionDenied
 	}
 
@@ -193,7 +189,7 @@ func (r *RejectApi) Run(ctx *gin.Context) kit.Code {
 	}
 
 	// 必须是待审核状态
-	if post.Status != StatusPending {
+	if post.Status != enum.PostStatusPending {
 		return comm.CodePostStatusInvalid
 	}
 
@@ -206,7 +202,7 @@ func (r *RejectApi) Run(ctx *gin.Context) kit.Code {
 
 	// 记录审计日志
 	alr := repo.NewAuditLogRepo()
-	err = alr.CreateAuditLog(ctx, adminID, ActionReject, request.Reason, request.PostID, post.Status, StatusRejected)
+	err = alr.CreateAuditLog(ctx, adminID, enum.AuditLogTypeUpdate, request.Reason, request.PostID, post.Status, enum.PostStatusRejected)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("记录审计日志失败")
 		return comm.CodeDatabaseError

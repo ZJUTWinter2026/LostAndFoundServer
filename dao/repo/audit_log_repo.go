@@ -1,10 +1,10 @@
 package repo
 
 import (
-	"context"
-	"github.com/zjutjh/mygo/ndb"
-
 	"app/dao/model"
+	"context"
+
+	"github.com/zjutjh/mygo/ndb"
 )
 
 type AuditLogRepo struct{}
@@ -14,7 +14,7 @@ func NewAuditLogRepo() *AuditLogRepo {
 }
 
 // CreateAuditLog 创建审计日志
-func (r *AuditLogRepo) CreateAuditLog(ctx context.Context, adminID int64, actionType int8, reason string, postID int64, oldStatus int8, newStatus int8) error {
+func (r *AuditLogRepo) CreateAuditLog(ctx context.Context, adminID int64, actionType string, reason string, postID int64, oldStatus string, newStatus string) error {
 	log := &model.AuditLog{
 		AdminID:    adminID,
 		ActionType: actionType,

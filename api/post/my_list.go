@@ -14,17 +14,8 @@ import (
 	"github.com/zjutjh/mygo/swagger"
 
 	"app/comm"
+	"app/comm/enum"
 	"app/dao/repo"
-)
-
-// 发布状态常量
-const (
-	StatusPending   int8 = 0 // 待审核
-	StatusApproved  int8 = 1 // 已通过
-	StatusMatched   int8 = 2 // 已匹配
-	StatusClaimed   int8 = 3 // 已认领
-	StatusCancelled int8 = 4 // 已取消
-	StatusRejected  int8 = 5 // 已驳回
 )
 
 // MyListHandler API router注册点
@@ -42,10 +33,10 @@ type MyListApi struct {
 
 type MyListApiRequest struct {
 	Query struct {
-		PublishType *int8 `form:"publish_type" binding:"omitempty,oneof=1 2" desc:"发布类型 1失物 2招领"`
-		Status      *int8 `form:"status" binding:"omitempty,oneof=0 1 2 3 4 5" desc:"状态 0待审核 1已通过 2已匹配 3已认领 4已取消 5已驳回"`
-		Page        int   `form:"page" binding:"omitempty,min=1" desc:"页码"`
-		PageSize    int   `form:"page_size" binding:"omitempty,min=1,max=50" desc:"每页数量"`
+		PublishType *string `form:"publish_type" binding:"omitempty,oneof=LOST FOUND" desc:"发布类型 LOST/FOUND"`
+		Status      *string `form:"status" binding:"omitempty,oneof=PENDING APPROVED MATCHED CLAIMED CANCELLED REJECTED" desc:"状态"`
+		Page        int     `form:"page" binding:"omitempty,min=1" desc:"页码"`
+		PageSize    int     `form:"page_size" binding:"omitempty,min=1,max=50" desc:"每页数量"`
 	}
 }
 
@@ -58,12 +49,12 @@ type MyListApiResponse struct {
 
 type MyPostListItem struct {
 	ID           int64     `json:"id" desc:"发布ID"`
-	PublishType  int8      `json:"publish_type" desc:"发布类型 1失物 2招领"`
+	PublishType  string    `json:"publish_type" desc:"发布类型 LOST/FOUND"`
 	ItemName     string    `json:"item_name" desc:"物品名称"`
 	ItemType     string    `json:"item_type" desc:"物品类型"`
 	Location     string    `json:"location" desc:"地点"`
 	EventTime    time.Time `json:"event_time" desc:"事件时间"`
-	Status       int8      `json:"status" desc:"状态"`
+	Status       string    `json:"status" desc:"状态"`
 	StatusText   string    `json:"status_text" desc:"状态文本"`
 	CancelReason string    `json:"cancel_reason,omitempty" desc:"取消原因"`
 	RejectReason string    `json:"reject_reason,omitempty" desc:"驳回原因"`
@@ -153,14 +144,14 @@ func hfMyList(ctx *gin.Context) {
 }
 
 // getStatusText 获取状态文本
-func getStatusText(status int8) string {
-	statusMap := map[int8]string{
-		0: "待审核",
-		1: "已通过",
-		2: "已匹配",
-		3: "已认领",
-		4: "已取消",
-		5: "已驳回",
+func getStatusText(status string) string {
+	statusMap := map[string]string{
+		enum.PostStatusPending:   "待审核",
+		enum.PostStatusApproved:  "已通过",
+		enum.PostStatusMatched:   "已匹配",
+		enum.PostStatusClaimed:   "已认领",
+		enum.PostStatusCancelled: "已取消",
+		enum.PostStatusRejected:  "已驳回",
 	}
 	if text, ok := statusMap[status]; ok {
 		return text

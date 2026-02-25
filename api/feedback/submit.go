@@ -1,6 +1,10 @@
 package feedback
 
 import (
+	"app/api/admin/system"
+	"app/comm"
+	"app/dao/model"
+	"app/dao/repo"
 	"reflect"
 	"runtime"
 	"strings"
@@ -13,28 +17,8 @@ import (
 	"github.com/zjutjh/mygo/kit"
 	"github.com/zjutjh/mygo/nlog"
 	"github.com/zjutjh/mygo/swagger"
-
-	"app/comm"
-	"app/dao/model"
-	"app/dao/repo"
 )
 
-const (
-	statusUnprocessed int8 = 0 // 未处理
-	statusProcessed   int8 = 1 // 已处理
-)
-
-// 投诉类型常量
-const (
-	TypeMalicious  = "恶意发布" // 恶意发布
-	TypeIncomplete = "信息不全" // 信息不全
-	TypeFakeNews   = "不实消息" // 不实消息
-	TypeGore       = "恶心血腥" // 恶心血腥
-	TypePorn       = "涉黄信息" // 涉黄信息
-	TypeOther      = "其它类型" // 其它类型
-)
-
-// SubmitHandler API router注册点
 func SubmitHandler() gin.HandlerFunc {
 	api := SubmitApi{}
 	swagger.CM[runtime.FuncForPC(reflect.ValueOf(hfSubmit).Pointer()).Name()] = api
@@ -43,8 +27,8 @@ func SubmitHandler() gin.HandlerFunc {
 
 type SubmitApi struct {
 	Info     struct{}          `name:"提交投诉反馈" desc:"提交投诉反馈"`
-	Request  SubmitApiRequest  // API请求参数
-	Response SubmitApiResponse // API响应数据
+	Request  SubmitApiRequest
+	Response SubmitApiResponse
 }
 
 type SubmitApiRequest struct {
@@ -60,24 +44,20 @@ type SubmitApiResponse struct {
 	FeedbackID int64 `json:"feedback_id" desc:"投诉反馈ID"`
 }
 
-// Run Api业务逻辑执行点
 func (s *SubmitApi) Run(ctx *gin.Context) kit.Code {
 	request := s.Request.Body
 
-	// 获取当前用户ID
 	id, err := jwt.GetIdentity[string](ctx)
 	if err != nil {
 		return comm.CodeNotLoggedIn
 	}
 	reporterID := cast.ToInt64(id)
 
-	// 验证投诉类型
-	if !isValidFeedbackType(request.Type) {
+	if !system.IsValidFeedbackType(ctx, request.Type) {
 		return comm.CodeFeedbackTypeInvalid
 	}
 
-	// 如果是"其它"类型，必须填写说明
-	if request.Type == TypeOther {
+	if request.Type == "其它类型" {
 		if strings.TrimSpace(request.TypeOther) == "" {
 			return comm.CodeFeedbackTypeOther
 		}
@@ -86,7 +66,6 @@ func (s *SubmitApi) Run(ctx *gin.Context) kit.Code {
 		}
 	}
 
-	// 检查物品是否存在
 	prp := repo.NewPostRepo()
 	post, err := prp.FindById(ctx, request.PostID)
 	if err != nil {
@@ -97,14 +76,13 @@ func (s *SubmitApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeDataNotFound
 	}
 
-	// 创建投诉反馈记录
 	feedback := &model.Feedback{
 		PostID:      request.PostID,
 		ReporterID:  reporterID,
 		Type:        request.Type,
 		TypeOther:   request.TypeOther,
 		Description: request.Description,
-		Status:      statusUnprocessed,
+		Processed:   false,
 	}
 
 	frp := repo.NewFeedbackRepo()
@@ -118,12 +96,10 @@ func (s *SubmitApi) Run(ctx *gin.Context) kit.Code {
 	return comm.CodeOK
 }
 
-// Init Api初始化
 func (s *SubmitApi) Init(ctx *gin.Context) (err error) {
 	return ctx.ShouldBindJSON(&s.Request.Body)
 }
 
-// hfSubmit API执行入口
 func hfSubmit(ctx *gin.Context) {
 	api := &SubmitApi{}
 	err := api.Init(ctx)
@@ -140,15 +116,4 @@ func hfSubmit(ctx *gin.Context) {
 			reply.Fail(ctx, code)
 		}
 	}
-}
-
-// isValidFeedbackType 验证投诉类型是否有效
-func isValidFeedbackType(feedbackType string) bool {
-	validTypes := []string{TypeMalicious, TypeIncomplete, TypeFakeNews, TypeGore, TypePorn, TypeOther}
-	for _, t := range validTypes {
-		if t == feedbackType {
-			return true
-		}
-	}
-	return false
 }

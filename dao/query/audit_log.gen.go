@@ -29,11 +29,11 @@ func newAuditLog(db *gorm.DB, opts ...gen.DOOption) auditLog {
 	_auditLog.ALL = field.NewAsterisk(tableName)
 	_auditLog.ID = field.NewInt64(tableName, "id")
 	_auditLog.AdminID = field.NewInt64(tableName, "admin_id")
-	_auditLog.ActionType = field.NewInt8(tableName, "action_type")
+	_auditLog.ActionType = field.NewString(tableName, "action_type")
 	_auditLog.Reason = field.NewString(tableName, "reason")
 	_auditLog.PostID = field.NewInt64(tableName, "post_id")
-	_auditLog.OldStatus = field.NewInt8(tableName, "old_status")
-	_auditLog.NewStatus = field.NewInt8(tableName, "new_status")
+	_auditLog.OldStatus = field.NewString(tableName, "old_status")
+	_auditLog.NewStatus = field.NewString(tableName, "new_status")
 	_auditLog.CreatedAt = field.NewTime(tableName, "created_at")
 	_auditLog.UpdatedAt = field.NewTime(tableName, "updated_at")
 	_auditLog.DeletedAt = field.NewField(tableName, "deleted_at")
@@ -50,11 +50,11 @@ type auditLog struct {
 	ALL        field.Asterisk
 	ID         field.Int64  // 自增ID
 	AdminID    field.Int64  // 管理员ID
-	ActionType field.Int8   // 操作类型 1审核通过 2审核驳回
+	ActionType field.String // 操作类型 LOGIN/CREATE/UPDATE/DELETE
 	Reason     field.String // 理由
 	PostID     field.Int64  // 发布信息ID
-	OldStatus  field.Int8   // 旧状态
-	NewStatus  field.Int8   // 新状态
+	OldStatus  field.String // 旧状态
+	NewStatus  field.String // 新状态
 	CreatedAt  field.Time   // 创建时间
 	UpdatedAt  field.Time   // 更新时间
 	DeletedAt  field.Field  // 删除时间 (软删除)
@@ -76,11 +76,11 @@ func (a *auditLog) updateTableName(table string) *auditLog {
 	a.ALL = field.NewAsterisk(table)
 	a.ID = field.NewInt64(table, "id")
 	a.AdminID = field.NewInt64(table, "admin_id")
-	a.ActionType = field.NewInt8(table, "action_type")
+	a.ActionType = field.NewString(table, "action_type")
 	a.Reason = field.NewString(table, "reason")
 	a.PostID = field.NewInt64(table, "post_id")
-	a.OldStatus = field.NewInt8(table, "old_status")
-	a.NewStatus = field.NewInt8(table, "new_status")
+	a.OldStatus = field.NewString(table, "old_status")
+	a.NewStatus = field.NewString(table, "new_status")
 	a.CreatedAt = field.NewTime(table, "created_at")
 	a.UpdatedAt = field.NewTime(table, "updated_at")
 	a.DeletedAt = field.NewField(table, "deleted_at")

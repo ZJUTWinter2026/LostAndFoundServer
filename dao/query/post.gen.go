@@ -29,18 +29,20 @@ func newPost(db *gorm.DB, opts ...gen.DOOption) post {
 	_post.ALL = field.NewAsterisk(tableName)
 	_post.ID = field.NewInt64(tableName, "id")
 	_post.PublisherID = field.NewInt64(tableName, "publisher_id")
-	_post.PublishType = field.NewInt8(tableName, "publish_type")
+	_post.PublishType = field.NewString(tableName, "publish_type")
 	_post.ItemName = field.NewString(tableName, "item_name")
 	_post.ItemType = field.NewString(tableName, "item_type")
 	_post.ItemTypeOther = field.NewString(tableName, "item_type_other")
+	_post.Campus = field.NewString(tableName, "campus")
 	_post.Location = field.NewString(tableName, "location")
+	_post.StorageLocation = field.NewString(tableName, "storage_location")
 	_post.EventTime = field.NewTime(tableName, "event_time")
 	_post.Features = field.NewString(tableName, "features")
 	_post.ContactName = field.NewString(tableName, "contact_name")
 	_post.ContactPhone = field.NewString(tableName, "contact_phone")
-	_post.HasReward = field.NewInt8(tableName, "has_reward")
+	_post.HasReward = field.NewBool(tableName, "has_reward")
 	_post.Images = field.NewString(tableName, "images")
-	_post.Status = field.NewInt8(tableName, "status")
+	_post.Status = field.NewString(tableName, "status")
 	_post.CancelReason = field.NewString(tableName, "cancel_reason")
 	_post.RejectReason = field.NewString(tableName, "reject_reason")
 	_post.ProcessedAt = field.NewTime(tableName, "processed_at")
@@ -57,27 +59,29 @@ func newPost(db *gorm.DB, opts ...gen.DOOption) post {
 type post struct {
 	postDo postDo
 
-	ALL           field.Asterisk
-	ID            field.Int64  // 自增ID
-	PublisherID   field.Int64  // 发布者ID
-	PublishType   field.Int8   // 发布类型 1失物 2招领
-	ItemName      field.String // 物品名称
-	ItemType      field.String // 物品类型
-	ItemTypeOther field.String // 其它类型说明
-	Location      field.String // 地点
-	EventTime     field.Time   // 事件时间
-	Features      field.String // 物品特征
-	ContactName   field.String // 联系人
-	ContactPhone  field.String // 联系电话
-	HasReward     field.Int8   // 是否有悬赏
-	Images        field.String // 图片列表
-	Status        field.Int8   // 状态 0待审核 1已通过 2已匹配 3已认领 4已取消 5已驳回
-	CancelReason  field.String // 取消原因
-	RejectReason  field.String // 驳回原因
-	ProcessedAt   field.Time   // 处理时间
-	CreatedAt     field.Time   // 创建时间
-	UpdatedAt     field.Time   // 更新时间
-	DeletedAt     field.Field  // 删除时间 (软删除)
+	ALL             field.Asterisk
+	ID              field.Int64  // 自增ID
+	PublisherID     field.Int64  // 发布者ID
+	PublishType     field.String // 发布类型: LOST, FOUND
+	ItemName        field.String // 物品名称
+	ItemType        field.String // 物品类型
+	ItemTypeOther   field.String // 其它类型说明
+	Campus          field.String // 校区: ZhaoHui, PingFeng, MoGanShan
+	Location        field.String // 地点
+	StorageLocation field.String // 存放地点
+	EventTime       field.Time   // 事件时间
+	Features        field.String // 物品特征
+	ContactName     field.String // 联系人
+	ContactPhone    field.String // 联系电话
+	HasReward       field.Bool   // 是否有悬赏 1是 0否
+	Images          field.String // 图片列表(JSON数组)
+	Status          field.String // 状态: PENDING, APPROVED, MATCHED, CLAIMED, CANCELLED, REJECTED
+	CancelReason    field.String // 取消原因
+	RejectReason    field.String // 驳回原因
+	ProcessedAt     field.Time   // 处理时间
+	CreatedAt       field.Time   // 创建时间
+	UpdatedAt       field.Time   // 更新时间
+	DeletedAt       field.Field  // 删除时间 (软删除)
 
 	fieldMap map[string]field.Expr
 }
@@ -96,18 +100,20 @@ func (p *post) updateTableName(table string) *post {
 	p.ALL = field.NewAsterisk(table)
 	p.ID = field.NewInt64(table, "id")
 	p.PublisherID = field.NewInt64(table, "publisher_id")
-	p.PublishType = field.NewInt8(table, "publish_type")
+	p.PublishType = field.NewString(table, "publish_type")
 	p.ItemName = field.NewString(table, "item_name")
 	p.ItemType = field.NewString(table, "item_type")
 	p.ItemTypeOther = field.NewString(table, "item_type_other")
+	p.Campus = field.NewString(table, "campus")
 	p.Location = field.NewString(table, "location")
+	p.StorageLocation = field.NewString(table, "storage_location")
 	p.EventTime = field.NewTime(table, "event_time")
 	p.Features = field.NewString(table, "features")
 	p.ContactName = field.NewString(table, "contact_name")
 	p.ContactPhone = field.NewString(table, "contact_phone")
-	p.HasReward = field.NewInt8(table, "has_reward")
+	p.HasReward = field.NewBool(table, "has_reward")
 	p.Images = field.NewString(table, "images")
-	p.Status = field.NewInt8(table, "status")
+	p.Status = field.NewString(table, "status")
 	p.CancelReason = field.NewString(table, "cancel_reason")
 	p.RejectReason = field.NewString(table, "reject_reason")
 	p.ProcessedAt = field.NewTime(table, "processed_at")
@@ -138,14 +144,16 @@ func (p *post) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (p *post) fillFieldMap() {
-	p.fieldMap = make(map[string]field.Expr, 20)
+	p.fieldMap = make(map[string]field.Expr, 22)
 	p.fieldMap["id"] = p.ID
 	p.fieldMap["publisher_id"] = p.PublisherID
 	p.fieldMap["publish_type"] = p.PublishType
 	p.fieldMap["item_name"] = p.ItemName
 	p.fieldMap["item_type"] = p.ItemType
 	p.fieldMap["item_type_other"] = p.ItemTypeOther
+	p.fieldMap["campus"] = p.Campus
 	p.fieldMap["location"] = p.Location
+	p.fieldMap["storage_location"] = p.StorageLocation
 	p.fieldMap["event_time"] = p.EventTime
 	p.fieldMap["features"] = p.Features
 	p.fieldMap["contact_name"] = p.ContactName

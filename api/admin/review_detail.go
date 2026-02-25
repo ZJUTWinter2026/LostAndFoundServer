@@ -14,6 +14,7 @@ import (
 	"github.com/zjutjh/mygo/swagger"
 
 	"app/comm"
+	"app/comm/enum"
 	"app/dao/repo"
 )
 
@@ -38,7 +39,7 @@ type ReviewDetailApiRequest struct {
 
 type ReviewDetailApiResponse struct {
 	ID            int64     `json:"id" desc:"发布ID"`
-	PublishType   int8      `json:"publish_type" desc:"发布类型 1失物 2招领"`
+	PublishType   string    `json:"publish_type" desc:"发布类型 LOST/FOUND"`
 	ItemName      string    `json:"item_name" desc:"物品名称"`
 	ItemType      string    `json:"item_type" desc:"物品类型"`
 	ItemTypeOther string    `json:"item_type_other" desc:"其它类型说明"`
@@ -47,9 +48,9 @@ type ReviewDetailApiResponse struct {
 	Features      string    `json:"features" desc:"物品特征"`
 	ContactName   string    `json:"contact_name" desc:"联系人"`
 	ContactPhone  string    `json:"contact_phone" desc:"联系电话"`
-	HasReward     int8      `json:"has_reward" desc:"是否有悬赏"`
+	HasReward     bool      `json:"has_reward" desc:"是否有悬赏"`
 	Images        []string  `json:"images" desc:"图片列表"`
-	Status        int8      `json:"status" desc:"状态"`
+	Status        string    `json:"status" desc:"状态"`
 	PublisherID   int64     `json:"publisher_id" desc:"发布者ID"`
 	CreatedAt     time.Time `json:"created_at" desc:"创建时间"`
 }
@@ -72,7 +73,7 @@ func (r *ReviewDetailApi) Run(ctx *gin.Context) kit.Code {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询用户失败")
 		return comm.CodeDatabaseError
 	}
-	if user == nil || user.Usertype != 1 {
+	if user == nil || user.Usertype != enum.UserTypeAdmin {
 		return comm.CodeAdminPermissionDenied
 	}
 
@@ -88,7 +89,7 @@ func (r *ReviewDetailApi) Run(ctx *gin.Context) kit.Code {
 	}
 
 	// 必须是待审核状态
-	if post.Status != StatusPending {
+	if post.Status != enum.PostStatusPending {
 		return comm.CodePostStatusInvalid
 	}
 

@@ -16,11 +16,11 @@ const TableNameAuditLog = "audit_log"
 type AuditLog struct {
 	ID         int64                 `gorm:"column:id;primaryKey;autoIncrement:true;comment:自增ID" json:"id"`                         // 自增ID
 	AdminID    int64                 `gorm:"column:admin_id;not null;comment:管理员ID" json:"admin_id"`                                 // 管理员ID
-	ActionType int8                  `gorm:"column:action_type;not null;comment:操作类型 1审核通过 2审核驳回" json:"action_type"`                // 操作类型 1审核通过 2审核驳回
+	ActionType string                `gorm:"column:action_type;not null;comment:操作类型 LOGIN/CREATE/UPDATE/DELETE" json:"action_type"` // 操作类型 LOGIN/CREATE/UPDATE/DELETE
 	Reason     string                `gorm:"column:reason;comment:理由" json:"reason"`                                                 // 理由
 	PostID     int64                 `gorm:"column:post_id;not null;comment:发布信息ID" json:"post_id"`                                  // 发布信息ID
-	OldStatus  int8                  `gorm:"column:old_status;not null;comment:旧状态" json:"old_status"`                               // 旧状态
-	NewStatus  int8                  `gorm:"column:new_status;not null;comment:新状态" json:"new_status"`                               // 新状态
+	OldStatus  string                `gorm:"column:old_status;not null;comment:旧状态" json:"old_status"`                               // 旧状态
+	NewStatus  string                `gorm:"column:new_status;not null;comment:新状态" json:"new_status"`                               // 新状态
 	CreatedAt  time.Time             `gorm:"column:created_at;not null;default:CURRENT_TIMESTAMP(3);comment:创建时间" json:"created_at"` // 创建时间
 	UpdatedAt  time.Time             `gorm:"column:updated_at;not null;default:CURRENT_TIMESTAMP(3);comment:更新时间" json:"updated_at"` // 更新时间
 	DeletedAt  soft_delete.DeletedAt `gorm:"column:deleted_at;not null;comment:删除时间 (软删除);softDelete:milli" json:"-"`                // 删除时间 (软删除)

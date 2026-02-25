@@ -4,7 +4,6 @@ import "github.com/zjutjh/mygo/kit"
 
 var CodeOK = kit.NewCode(0, "成功")
 
-// 系统错误码
 var (
 	CodeUnknownError           = kit.NewCode(10000, "未知错误")
 	CodeThirdServiceError      = kit.NewCode(10001, "三方服务错误")
@@ -13,7 +12,6 @@ var (
 	CodeMiddlewareServiceError = kit.NewCode(10004, "中间件服务错误")
 )
 
-// 业务通用错误码
 var (
 	CodeNotLoggedIn        = kit.NewCode(20000, "用户未登录")
 	CodeLoginExpired       = kit.NewCode(20001, "登录过期，请重新登录")
@@ -26,7 +24,6 @@ var (
 	CodeTooFrequently      = kit.NewCode(20008, "操作过于频繁/未获得锁")
 )
 
-// 业务错误码 从 30000 开始
 var (
 	CodeUserNotExist          = kit.NewCode(30000, "用户不存在")
 	CodeHashError             = kit.NewCode(30001, "加密失败")
@@ -45,4 +42,5 @@ var (
 	CodeAdminPermissionDenied = kit.NewCode(30014, "仅管理员可操作")
 	CodeReviewReasonRequired  = kit.NewCode(30015, "驳回理由必填")
 	CodeReviewReasonTooLong   = kit.NewCode(30016, "驳回理由超长")
+	CodeUserDisabled          = kit.NewCode(30017, "用户账号已被禁用")
 )

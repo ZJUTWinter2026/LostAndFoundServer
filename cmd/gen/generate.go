@@ -1,14 +1,14 @@
 package main
 
 import (
+	"app/register"
+
 	"github.com/spf13/cobra"
 	"github.com/zjutjh/mygo/foundation/command"
 	"github.com/zjutjh/mygo/ndb"
 	"gorm.io/gen"
 	"gorm.io/gen/field"
 	"gorm.io/gorm"
-
-	"app/register"
 )
 
 var tables = []string{
@@ -17,6 +17,8 @@ var tables = []string{
 	"claim",
 	"feedback",
 	"audit_log",
+	"announcement",
+	"system_config",
 }
 
 func main() {
@@ -34,7 +36,7 @@ func main() {
 
 	m := map[string]func(columnType gorm.ColumnType) (dataType string){
 		"tinyint": func(columnType gorm.ColumnType) (dataType string) {
-			return "int8"
+			return "bool"
 		},
 	}
 	g.WithDataTypeMap(m)

@@ -30,8 +30,9 @@ func newUser(db *gorm.DB, opts ...gen.DOOption) user {
 	_user.ID = field.NewInt64(tableName, "id")
 	_user.UID = field.NewInt64(tableName, "uid")
 	_user.Password = field.NewString(tableName, "password")
-	_user.Usertype = field.NewInt32(tableName, "usertype")
-	_user.FirstLogin = field.NewInt8(tableName, "first_login")
+	_user.Usertype = field.NewString(tableName, "usertype")
+	_user.FirstLogin = field.NewBool(tableName, "first_login")
+	_user.DisabledUntil = field.NewTime(tableName, "disabled_until")
 	_user.CreatedAt = field.NewTime(tableName, "created_at")
 	_user.UpdatedAt = field.NewTime(tableName, "updated_at")
 
@@ -40,18 +41,19 @@ func newUser(db *gorm.DB, opts ...gen.DOOption) user {
 	return _user
 }
 
-// user 用户
+// user 用户表
 type user struct {
 	userDo userDo
 
-	ALL        field.Asterisk
-	ID         field.Int64  // 自增ID
-	UID        field.Int64  // 学号
-	Password   field.String // 密码
-	Usertype   field.Int32  // 用户类型
-	FirstLogin field.Int8   // 首次登陆
-	CreatedAt  field.Time   // 创建时间
-	UpdatedAt  field.Time   // 更新时间
+	ALL           field.Asterisk
+	ID            field.Int64  // 自增ID
+	UID           field.Int64  // 学号/工号
+	Password      field.String // 密码
+	Usertype      field.String // 用户类型: STUDENT, ADMIN, SYSTEM_ADMIN
+	FirstLogin    field.Bool   // 首次登陆
+	DisabledUntil field.Time   // 禁用截止时间
+	CreatedAt     field.Time   // 创建时间
+	UpdatedAt     field.Time   // 更新时间
 
 	fieldMap map[string]field.Expr
 }
@@ -71,8 +73,9 @@ func (u *user) updateTableName(table string) *user {
 	u.ID = field.NewInt64(table, "id")
 	u.UID = field.NewInt64(table, "uid")
 	u.Password = field.NewString(table, "password")
-	u.Usertype = field.NewInt32(table, "usertype")
-	u.FirstLogin = field.NewInt8(table, "first_login")
+	u.Usertype = field.NewString(table, "usertype")
+	u.FirstLogin = field.NewBool(table, "first_login")
+	u.DisabledUntil = field.NewTime(table, "disabled_until")
 	u.CreatedAt = field.NewTime(table, "created_at")
 	u.UpdatedAt = field.NewTime(table, "updated_at")
 
@@ -99,12 +102,13 @@ func (u *user) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (u *user) fillFieldMap() {
-	u.fieldMap = make(map[string]field.Expr, 7)
+	u.fieldMap = make(map[string]field.Expr, 8)
 	u.fieldMap["id"] = u.ID
 	u.fieldMap["uid"] = u.UID
 	u.fieldMap["password"] = u.Password
 	u.fieldMap["usertype"] = u.Usertype
 	u.fieldMap["first_login"] = u.FirstLogin
+	u.fieldMap["disabled_until"] = u.DisabledUntil
 	u.fieldMap["created_at"] = u.CreatedAt
 	u.fieldMap["updated_at"] = u.UpdatedAt
 }

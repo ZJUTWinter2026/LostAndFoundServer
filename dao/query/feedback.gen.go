@@ -33,7 +33,7 @@ func newFeedback(db *gorm.DB, opts ...gen.DOOption) feedback {
 	_feedback.Type = field.NewString(tableName, "type")
 	_feedback.TypeOther = field.NewString(tableName, "type_other")
 	_feedback.Description = field.NewString(tableName, "description")
-	_feedback.Status = field.NewInt8(tableName, "status")
+	_feedback.Processed = field.NewBool(tableName, "processed")
 	_feedback.ProcessedBy = field.NewInt64(tableName, "processed_by")
 	_feedback.ProcessedAt = field.NewTime(tableName, "processed_at")
 	_feedback.CreatedAt = field.NewTime(tableName, "created_at")
@@ -56,7 +56,7 @@ type feedback struct {
 	Type        field.String // 投诉类型
 	TypeOther   field.String // 其它类型说明
 	Description field.String // 详细说明
-	Status      field.Int8   // 状态 0未处理 1已处理
+	Processed   field.Bool   // 是否已处理
 	ProcessedBy field.Int64  // 处理人ID
 	ProcessedAt field.Time   // 处理时间
 	CreatedAt   field.Time   // 创建时间
@@ -84,7 +84,7 @@ func (f *feedback) updateTableName(table string) *feedback {
 	f.Type = field.NewString(table, "type")
 	f.TypeOther = field.NewString(table, "type_other")
 	f.Description = field.NewString(table, "description")
-	f.Status = field.NewInt8(table, "status")
+	f.Processed = field.NewBool(table, "processed")
 	f.ProcessedBy = field.NewInt64(table, "processed_by")
 	f.ProcessedAt = field.NewTime(table, "processed_at")
 	f.CreatedAt = field.NewTime(table, "created_at")
@@ -121,7 +121,7 @@ func (f *feedback) fillFieldMap() {
 	f.fieldMap["type"] = f.Type
 	f.fieldMap["type_other"] = f.TypeOther
 	f.fieldMap["description"] = f.Description
-	f.fieldMap["status"] = f.Status
+	f.fieldMap["processed"] = f.Processed
 	f.fieldMap["processed_by"] = f.ProcessedBy
 	f.fieldMap["processed_at"] = f.ProcessedAt
 	f.fieldMap["created_at"] = f.CreatedAt

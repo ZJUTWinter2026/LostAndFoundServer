@@ -2,6 +2,9 @@ package register
 
 import (
 	"app/api/admin"
+	"app/api/admin/account"
+	"app/api/admin/system"
+	"app/api/announcement"
 	"app/api/claim"
 	"app/api/feedback"
 	"app/api/post"
@@ -18,7 +21,6 @@ import (
 func Route(router *gin.Engine) {
 	router.Use(cors.Pick())
 
-	// 静态资源挂载 (上传文件)
 	uploadDir := "uploads"
 	if comm.BizConf != nil && comm.BizConf.Upload.Dir != "" {
 		uploadDir = comm.BizConf.Upload.Dir
@@ -29,7 +31,6 @@ func Route(router *gin.Engine) {
 	{
 		routeBase(r, router)
 
-		// 注册业务逻辑接口
 		userGroup := r.Group("/user")
 		{
 			userGroup.POST("/login", user.LoginHandler())
@@ -51,16 +52,16 @@ func Route(router *gin.Engine) {
 		adminGroup := r.Group("/admin")
 		{
 			adminGroup.GET("/list", admin.ReviewListHandler())
-			adminGroup.GET("/detail", admin.ReviewDetailHandler())
+			adminGroup.GET("/detail/:post_id", admin.ReviewDetailHandler())
 			adminGroup.POST("/approve", admin.ApproveHandler())
 			adminGroup.POST("/reject", admin.RejectHandler())
-
+			adminGroup.GET("/statistics", admin.StatisticsHandler())
 		}
 
 		claimGroup := r.Group("/claim")
 		{
 			claimGroup.POST("/apply", claim.ApplyHandler())
-			claimGroup.GET("/list", claim.ListClaimsHandler())
+			claimGroup.GET("/list/:post_id", claim.ListClaimsHandler())
 			claimGroup.POST("/review", claim.ReviewHandler())
 		}
 
@@ -71,6 +72,30 @@ func Route(router *gin.Engine) {
 			feedbackGroup.GET("/list", feedback.ListHandler())
 			feedbackGroup.POST("/process", feedback.ProcessHandler())
 		}
+
+		announcementGroup := r.Group("/announcement")
+		{
+			announcementGroup.GET("/list", announcement.ListHandler())
+			announcementGroup.POST("/publish", announcement.PublishHandler())
+			announcementGroup.GET("/review-list", announcement.ReviewListHandler())
+			announcementGroup.POST("/approve", announcement.ApproveHandler())
+		}
+
+		systemGroup := r.Group("/system")
+		{
+			systemGroup.GET("/config", system.ConfigListHandler())
+			systemGroup.POST("/config", system.ConfigUpdateHandler())
+		}
+
+		accountGroup := r.Group("/account")
+		{
+			accountGroup.GET("/list", account.ListHandler())
+			accountGroup.POST("/update", account.UpdateHandler())
+			accountGroup.POST("/disable", account.DisableHandler())
+			accountGroup.POST("/enable", account.EnableHandler())
+		}
+
+		r.GET("/public/config", system.PublicConfigHandler())
 	}
 }
 
@@ -79,7 +104,6 @@ func routePrefix() string {
 }
 
 func routeBase(r *gin.RouterGroup, router *gin.Engine) {
-	// OpenAPI/Swagger 文档生成
 	if slices.Contains([]string{config.AppEnvDev, config.AppEnvTest}, config.AppEnv()) {
 		r.GET("/swagger.json", swagger.DocumentHandler(router))
 	}

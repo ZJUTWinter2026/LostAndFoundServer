@@ -14,13 +14,8 @@ import (
 	"github.com/zjutjh/mygo/swagger"
 
 	"app/comm"
+	"app/comm/enum"
 	"app/dao/repo"
-)
-
-const (
-	StatusPending  int8 = 0 // 待审核
-	StatusApproved int8 = 1 // 已通过
-	StatusRejected int8 = 5 // 已驳回
 )
 
 // ReviewListHandler API router注册点
@@ -52,7 +47,7 @@ type ReviewListApiResponse struct {
 
 type ReviewListItem struct {
 	ID          int64     `json:"id" desc:"发布ID"`
-	PublishType int8      `json:"publish_type" desc:"发布类型 1失物 2招领"`
+	PublishType string    `json:"publish_type" desc:"发布类型 LOST/FOUND"`
 	ItemName    string    `json:"item_name" desc:"物品名称"`
 	ItemType    string    `json:"item_type" desc:"物品类型"`
 	Location    string    `json:"location" desc:"地点"`
@@ -79,7 +74,7 @@ func (r *ReviewListApi) Run(ctx *gin.Context) kit.Code {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询用户失败")
 		return comm.CodeDatabaseError
 	}
-	if user == nil || user.Usertype != 1 {
+	if user == nil || user.Usertype != enum.UserTypeAdmin {
 		return comm.CodeAdminPermissionDenied
 	}
 
