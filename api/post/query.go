@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
 	"github.com/zjutjh/mygo/foundation/reply"
 	"github.com/zjutjh/mygo/kit"
@@ -33,15 +34,15 @@ type QueryApiRequest struct {
 }
 
 type QueryFilter struct {
-	PublishType string  `form:"publish_type" binding:"oneof=LOST FOUND" desc:"发布类型 LOST/FOUND"`
-	ItemType    string  `form:"item_type" binding:"max=20" desc:"物品类型(含其它)"`
-	Campus      string  `form:"campus" binding:"oneof=ZHAO_HUI PING_FENG MO_GAN_SHAN" desc:"校区"`
-	Location    string  `form:"location" binding:"max=100" desc:"地点"`
-	Status      *string `form:"status" binding:"oneof=PENDING APPROVED MATCHED CLAIMED CANCELLED REJECTED ARCHIVED" desc:"状态"`
-	StartTime   string  `form:"start_time" binding:"" desc:"时间范围起"`
-	EndTime     string  `form:"end_time" binding:"" desc:"时间范围止"`
-	Page        int     `form:"page" binding:"required,min=1" desc:"页码"`
-	PageSize    int     `form:"page_size" binding:"required,min=1,max=50" desc:"每页数量"`
+	PublishType string    `form:"publish_type" binding:"omitempty,oneof=LOST FOUND" desc:"发布类型 LOST/FOUND"`
+	ItemType    string    `form:"item_type" binding:"omitempty,max=20" desc:"物品类型(含其它)"`
+	Campus      string    `form:"campus" binding:"omitempty,oneof=ZHAO_HUI PING_FENG MO_GAN_SHAN" desc:"校区"`
+	Location    string    `form:"location" binding:"omitempty,max=100" desc:"地点"`
+	Status      string    `form:"status" binding:"omitempty,oneof=PENDING APPROVED MATCHED CLAIMED CANCELLED REJECTED ARCHIVED" desc:"状态"`
+	StartTime   time.Time `form:"start_time"  desc:"时间范围起"`
+	EndTime     time.Time `form:"end_time" desc:"时间范围止"`
+	Page        int       `form:"page" binding:"required,min=1" desc:"页码"`
+	PageSize    int       `form:"page_size" binding:"required,min=1,max=50" desc:"每页数量"`
 }
 
 type QueryApiResponse struct {
@@ -85,26 +86,14 @@ func (q *QueryApi) Run(ctx *gin.Context) kit.Code {
 		pageSize = 50
 	}
 
-	startTime, err := comm.ParseOptionalTime(request.StartTime, "")
-	if err != nil {
-		return comm.CodeParameterInvalid
-	}
-	endTime, err := comm.ParseOptionalTime(request.EndTime, "")
-	if err != nil {
-		return comm.CodeParameterInvalid
-	}
-	if startTime != nil && endTime != nil && startTime.After(*endTime) {
-		return comm.CodeParameterInvalid
-	}
-
 	filter := repo.PostListFilter{
 		PublishType: strings.TrimSpace(request.PublishType),
 		ItemType:    strings.TrimSpace(request.ItemType),
 		Campus:      strings.TrimSpace(request.Campus),
 		Location:    strings.TrimSpace(request.Location),
 		Status:      request.Status,
-		StartTime:   startTime,
-		EndTime:     endTime,
+		StartTime:   request.StartTime,
+		EndTime:     request.EndTime,
 	}
 	offset := (page - 1) * pageSize
 
@@ -117,6 +106,14 @@ func (q *QueryApi) Run(ctx *gin.Context) kit.Code {
 
 	items := make([]PostListItem, 0, len(records))
 	for _, record := range records {
+		var images []string
+		if record.Images != "" {
+			err = sonic.UnmarshalString(record.Images, &images)
+			if err != nil {
+				nlog.Pick().WithContext(ctx).WithError(err).Warn("解析图片列表失败")
+				return comm.CodeServerError
+			}
+		}
 		items = append(items, PostListItem{
 			ID:            record.ID,
 			PublishType:   record.PublishType,
@@ -127,7 +124,7 @@ func (q *QueryApi) Run(ctx *gin.Context) kit.Code {
 			EventTime:     record.EventTime,
 			Features:      record.Features,
 			Status:        record.Status,
-			Images:        comm.UnmarshalImages(record.Images),
+			Images:        images,
 		})
 	}
 
@@ -177,10 +174,10 @@ func hasAnyFilter(req QueryFilter) bool {
 	if strings.TrimSpace(req.Location) != "" {
 		return true
 	}
-	if req.Status != nil {
+	if strings.TrimSpace(req.Status) != "" {
 		return true
 	}
-	if strings.TrimSpace(req.StartTime) != "" || strings.TrimSpace(req.EndTime) != "" {
+	if !req.StartTime.IsZero() || !req.EndTime.IsZero() {
 		return true
 	}
 	return false

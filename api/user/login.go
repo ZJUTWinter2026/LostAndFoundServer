@@ -8,13 +8,13 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/zjutjh/mygo/jwt"
-
 	"github.com/gin-gonic/gin"
 	"github.com/zjutjh/mygo/foundation/reply"
+	"github.com/zjutjh/mygo/jwt"
 	"github.com/zjutjh/mygo/kit"
 	"github.com/zjutjh/mygo/nlog"
 	"github.com/zjutjh/mygo/swagger"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func LoginHandler() gin.HandlerFunc {
@@ -60,7 +60,7 @@ func (l *LoginApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeUserDisabled
 	}
 
-	if !comm.CheckPassword(user.Password, request.Password) {
+	if bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(request.Password)) != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("密码错误")
 		return comm.CodePasswordError
 	}

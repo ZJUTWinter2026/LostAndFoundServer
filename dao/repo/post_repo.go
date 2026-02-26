@@ -2,6 +2,7 @@ package repo
 
 import (
 	"app/comm/enum"
+	"app/dao/model"
 	"app/dao/query"
 	"context"
 	"errors"
@@ -10,8 +11,6 @@ import (
 
 	"github.com/zjutjh/mygo/ndb"
 	"gorm.io/gorm"
-
-	"app/dao/model"
 )
 
 type PostRepo struct {
@@ -29,14 +28,18 @@ func (r *PostRepo) Create(ctx context.Context, record *model.Post) error {
 	return ndb.Pick().WithContext(ctx).Create(record).Error
 }
 
+func (r *PostRepo) Save(ctx context.Context, record *model.Post) error {
+	return ndb.Pick().WithContext(ctx).Save(record).Error
+}
+
 type PostListFilter struct {
 	PublishType string
 	ItemType    string
 	Campus      string
 	Location    string
-	Status      *string
-	StartTime   *time.Time
-	EndTime     *time.Time
+	Status      string
+	StartTime   time.Time
+	EndTime     time.Time
 }
 
 // FindById 根据ID查询发布记录
@@ -70,14 +73,14 @@ func (r *PostRepo) ListByFilter(ctx context.Context, filter PostListFilter, offs
 		db = db.Where("location LIKE ?", like)
 	}
 
-	if filter.Status != nil {
-		db = db.Where("status = ?", *filter.Status)
+	if filter.Status != "" {
+		db = db.Where("status = ?", filter.Status)
 	}
-	if filter.StartTime != nil {
-		db = db.Where("event_time >= ?", *filter.StartTime)
+	if !filter.StartTime.IsZero() {
+		db = db.Where("event_time >= ?", filter.StartTime)
 	}
-	if filter.EndTime != nil {
-		db = db.Where("event_time <= ?", *filter.EndTime)
+	if !filter.EndTime.IsZero() {
+		db = db.Where("event_time <= ?", filter.EndTime)
 	}
 
 	if err = db.Count(&total).Error; err != nil {
@@ -89,14 +92,14 @@ func (r *PostRepo) ListByFilter(ctx context.Context, filter PostListFilter, offs
 }
 
 // ListByPublisher 查询用户发布的记录列表
-func (r *PostRepo) ListByPublisher(ctx context.Context, publisherID int64, publishType *string, status *string, offset int, limit int) (records []*model.Post, total int64, err error) {
+func (r *PostRepo) ListByPublisher(ctx context.Context, publisherID int64, publishType string, status string, offset int, limit int) (records []*model.Post, total int64, err error) {
 	db := ndb.Pick().WithContext(ctx).Model(&model.Post{}).Where("publisher_id = ?", publisherID)
 
-	if publishType != nil {
-		db = db.Where("publish_type = ?", *publishType)
+	if publishType != "" {
+		db = db.Where("publish_type = ?", publishType)
 	}
-	if status != nil {
-		db = db.Where("status = ?", *status)
+	if status != "" {
+		db = db.Where("status = ?", status)
 	}
 
 	if err = db.Count(&total).Error; err != nil {

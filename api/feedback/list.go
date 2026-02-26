@@ -1,6 +1,10 @@
 package feedback
 
 import (
+	"app/comm"
+	"app/comm/enum"
+	"app/dao/model"
+	"app/dao/repo"
 	"reflect"
 	"runtime"
 	"time"
@@ -12,11 +16,6 @@ import (
 	"github.com/zjutjh/mygo/kit"
 	"github.com/zjutjh/mygo/nlog"
 	"github.com/zjutjh/mygo/swagger"
-
-	"app/comm"
-	"app/comm/enum"
-	"app/dao/model"
-	"app/dao/repo"
 )
 
 func ListHandler() gin.HandlerFunc {
@@ -26,14 +25,14 @@ func ListHandler() gin.HandlerFunc {
 }
 
 type ListApi struct {
-	Info     struct{}        `name:"投诉反馈列表" desc:"投诉反馈列表"`
+	Info     struct{} `name:"投诉反馈列表" desc:"投诉反馈列表"`
 	Request  ListApiRequest
 	Response ListApiResponse
 }
 
 type ListApiRequest struct {
 	Query struct {
-		Processed *bool `form:"processed" binding:"" desc:"是否已处理"`
+		Processed *bool `form:"processed" desc:"是否已处理"`
 		Page      int   `form:"page" binding:"required,min=1" desc:"页码"`
 		PageSize  int   `form:"page_size" binding:"required,min=1,max=50" desc:"每页数量"`
 	}

@@ -32,8 +32,8 @@ type ListApi struct {
 
 type ListApiRequest struct {
 	Query struct {
-		UID      int64  `form:"uid" binding:"" desc:"学号/工号"`
-		UserType string `form:"user_type" binding:"" desc:"用户类型"`
+		UID      int64  `form:"uid" desc:"学号/工号"`
+		UserType string `form:"user_type" desc:"用户类型"`
 		Page     int    `form:"page" binding:"required,min=1" desc:"页码"`
 		PageSize int    `form:"page_size" binding:"required,min=1,max=50" desc:"每页数量"`
 	}

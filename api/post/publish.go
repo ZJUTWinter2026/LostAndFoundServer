@@ -9,8 +9,10 @@ import (
 	"reflect"
 	"runtime"
 	"strings"
+	"time"
 	"unicode/utf8"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cast"
 	"github.com/zjutjh/mygo/foundation/reply"
@@ -34,19 +36,19 @@ type PublishApi struct {
 
 type PublishApiRequest struct {
 	Body struct {
-		PublishType     string   `json:"publish_type" binding:"required,oneof=LOST FOUND" desc:"发布类型 LOST失物 FOUND招领"`
-		ItemName        string   `json:"item_name" binding:"required,max=50" desc:"物品名称"`
-		ItemType        string   `json:"item_type" binding:"required,max=20" desc:"物品类型"`
-		ItemTypeOther   string   `json:"item_type_other" binding:"max=15" desc:"其它类型说明"`
-		Campus          string   `json:"campus" binding:"required,oneof=ZHAO_HUI PING_FENG MO_GAN_SHAN" desc:"校区"`
-		Location        string   `json:"location" binding:"required,max=100" desc:"地点"`
-		StorageLocation string   `json:"storage_location" binding:"max=100" desc:"存放地点"`
-		EventTime       string   `json:"event_time" binding:"required" desc:"丢失/拾取时间"`
-		Features        string   `json:"features" binding:"required,max=255" desc:"物品特征"`
-		ContactName     string   `json:"contact_name" binding:"required,max=30" desc:"联系人"`
-		ContactPhone    string   `json:"contact_phone" binding:"required,min=5,max=20" desc:"联系电话"`
-		HasReward       bool     `json:"has_reward" binding:"required" desc:"是否有悬赏"`
-		Images          []string `json:"images" binding:"max=3" desc:"图片列表"`
+		PublishType     string    `json:"publish_type" binding:"required,oneof=LOST FOUND" desc:"发布类型 LOST失物 FOUND招领"`
+		ItemName        string    `json:"item_name" binding:"required,max=50" desc:"物品名称"`
+		ItemType        string    `json:"item_type" binding:"required,max=20" desc:"物品类型"`
+		ItemTypeOther   string    `json:"item_type_other" binding:"max=15" desc:"其它类型说明"`
+		Campus          string    `json:"campus" binding:"required,oneof=ZHAO_HUI PING_FENG MO_GAN_SHAN" desc:"校区"`
+		Location        string    `json:"location" binding:"required,max=100" desc:"地点"`
+		StorageLocation string    `json:"storage_location" binding:"max=100" desc:"存放地点"`
+		EventTime       time.Time `json:"event_time" binding:"required" desc:"丢失/拾取时间"`
+		Features        string    `json:"features" binding:"required,max=255" desc:"物品特征"`
+		ContactName     string    `json:"contact_name" binding:"required,max=30" desc:"联系人"`
+		ContactPhone    string    `json:"contact_phone" binding:"required,min=5,max=20" desc:"联系电话"`
+		HasReward       bool      `json:"has_reward" binding:"required" desc:"是否有悬赏"`
+		Images          []string  `json:"images" binding:"max=3" desc:"图片列表"`
 	}
 }
 
@@ -100,12 +102,7 @@ func (p *PublishApi) Run(ctx *gin.Context) kit.Code {
 		}
 	}
 
-	eventTime, err := comm.ParseEventTime(request.EventTime)
-	if err != nil {
-		return comm.CodeParameterInvalid
-	}
-
-	imagesJSON, err := comm.MarshalImages(request.Images)
+	imagesJSON, err := sonic.MarshalString(request.Images)
 	if err != nil {
 		return comm.CodeParameterInvalid
 	}
@@ -119,7 +116,7 @@ func (p *PublishApi) Run(ctx *gin.Context) kit.Code {
 		Campus:          request.Campus,
 		Location:        request.Location,
 		StorageLocation: request.StorageLocation,
-		EventTime:       eventTime,
+		EventTime:       request.EventTime,
 		Features:        request.Features,
 		ContactName:     request.ContactName,
 		ContactPhone:    request.ContactPhone,

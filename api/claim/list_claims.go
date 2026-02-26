@@ -1,18 +1,18 @@
 package claim
 
 import (
+	"app/comm"
+	"app/dao/repo"
 	"reflect"
 	"runtime"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
 	"github.com/zjutjh/mygo/foundation/reply"
 	"github.com/zjutjh/mygo/kit"
 	"github.com/zjutjh/mygo/nlog"
 	"github.com/zjutjh/mygo/swagger"
-
-	"app/comm"
-	"app/dao/repo"
 )
 
 // ListClaimsHandler API router注册点
@@ -29,8 +29,8 @@ type ListApi struct {
 }
 
 type ListApiRequest struct {
-	Body struct {
-		PostID int64 `json:"post_id" binding:"required" desc:"发布记录ID"`
+	Query struct {
+		PostID int64 `form:"post_id" binding:"required" desc:"发布记录ID"`
 	}
 }
 
@@ -49,7 +49,7 @@ type ClaimItem struct {
 
 // Run Api业务逻辑执行点
 func (l *ListApi) Run(ctx *gin.Context) kit.Code {
-	request := l.Request.Body
+	request := l.Request.Query
 
 	// 检查发布记录是否存在
 	prp := repo.NewPostRepo()
@@ -72,11 +72,19 @@ func (l *ListApi) Run(ctx *gin.Context) kit.Code {
 
 	items := make([]ClaimItem, 0, len(claims))
 	for _, claimRecord := range claims {
+		var proofImages []string
+		if claimRecord.ProofImages != "" {
+			err = sonic.UnmarshalString(claimRecord.ProofImages, &proofImages)
+			if err != nil {
+				nlog.Pick().WithContext(ctx).WithError(err).Warn("解析证明图片列表失败")
+				return comm.CodeServerError
+			}
+		}
 		items = append(items, ClaimItem{
 			ID:          claimRecord.ID,
 			PostID:      claimRecord.PostID,
 			Description: claimRecord.Description,
-			ProofImages: comm.UnmarshalImages(claimRecord.ProofImages),
+			ProofImages: proofImages,
 			Status:      claimRecord.Status,
 			CreatedAt:   claimRecord.CreatedAt,
 		})
@@ -88,7 +96,7 @@ func (l *ListApi) Run(ctx *gin.Context) kit.Code {
 
 // Init Api初始化 进行参数校验和绑定
 func (l *ListApi) Init(ctx *gin.Context) (err error) {
-	return ctx.ShouldBindUri(&l.Request.Body)
+	return ctx.ShouldBindQuery(&l.Request.Query)
 }
 
 // hfList API执行入口

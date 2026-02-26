@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"runtime"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cast"
 	"github.com/zjutjh/mygo/foundation/reply"
@@ -84,7 +85,7 @@ func (a *ApplyApi) Run(ctx *gin.Context) kit.Code {
 	// 序列化图片列表
 	var proofImagesJSON string
 	if len(request.ProofImages) > 0 {
-		b, err := comm.MarshalImages(request.ProofImages)
+		b, err := sonic.MarshalString(request.ProofImages)
 		if err != nil {
 			return comm.CodeParameterInvalid
 		}

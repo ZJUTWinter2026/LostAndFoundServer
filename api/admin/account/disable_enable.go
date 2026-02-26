@@ -17,7 +17,7 @@ import (
 
 type DisableApi struct {
 	Info     struct{}          `name:"禁用用户" desc:"禁用用户账号"`
-	Request  DisableApiRequest `name:"禁用用户" desc:"禁用用户账号"`
+	Request  DisableApiRequest
 	Response struct{}
 }
 
@@ -41,21 +41,18 @@ func (a *DisableApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeDataNotFound
 	}
 
-	var disabledUntil time.Time
 	switch req.Duration {
 	case "7days":
-		disabledUntil = time.Now().AddDate(0, 0, 7)
+		user.DisabledUntil = time.Now().AddDate(0, 0, 7)
 	case "1month":
-		disabledUntil = time.Now().AddDate(0, 1, 0)
+		user.DisabledUntil = time.Now().AddDate(0, 1, 0)
 	case "6months":
-		disabledUntil = time.Now().AddDate(0, 6, 0)
+		user.DisabledUntil = time.Now().AddDate(0, 6, 0)
 	case "1year":
-		disabledUntil = time.Now().AddDate(1, 0, 0)
+		user.DisabledUntil = time.Now().AddDate(1, 0, 0)
 	}
 
-	if err := db.Model(&user).Updates(map[string]interface{}{
-		"disabled_until": disabledUntil,
-	}).Error; err != nil {
+	if err := db.Save(&user).Error; err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("禁用用户失败")
 		return comm.CodeServerError
 	}
@@ -69,15 +66,19 @@ func (a *DisableApi) Init(ctx *gin.Context) error {
 
 func hfDisable(ctx *gin.Context) {
 	api := &DisableApi{}
-	if err := api.Init(ctx); err != nil {
+	err := api.Init(ctx)
+	if err != nil {
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("参数绑定校验错误")
 		reply.Fail(ctx, comm.CodeParameterInvalid)
 		return
 	}
 	code := api.Run(ctx)
-	if code == comm.CodeOK {
-		reply.Success(ctx, struct{}{})
-	} else {
-		reply.Fail(ctx, code)
+	if !ctx.IsAborted() {
+		if code == comm.CodeOK {
+			reply.Success(ctx, struct{}{})
+		} else {
+			reply.Fail(ctx, code)
+		}
 	}
 }
 
@@ -89,7 +90,7 @@ func DisableHandler() gin.HandlerFunc {
 
 type EnableApi struct {
 	Info     struct{}         `name:"恢复用户" desc:"恢复用户账号"`
-	Request  EnableApiRequest `name:"恢复用户" desc:"恢复用户账号"`
+	Request  EnableApiRequest
 	Response struct{}
 }
 
@@ -112,9 +113,9 @@ func (a *EnableApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeDataNotFound
 	}
 
-	if err := db.Model(&user).Updates(map[string]interface{}{
-		"disabled_until": nil,
-	}).Error; err != nil {
+	user.DisabledUntil = time.Time{}
+
+	if err := db.Save(&user).Error; err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("恢复用户失败")
 		return comm.CodeServerError
 	}
@@ -128,15 +129,19 @@ func (a *EnableApi) Init(ctx *gin.Context) error {
 
 func hfEnable(ctx *gin.Context) {
 	api := &EnableApi{}
-	if err := api.Init(ctx); err != nil {
+	err := api.Init(ctx)
+	if err != nil {
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("参数绑定校验错误")
 		reply.Fail(ctx, comm.CodeParameterInvalid)
 		return
 	}
 	code := api.Run(ctx)
-	if code == comm.CodeOK {
-		reply.Success(ctx, struct{}{})
-	} else {
-		reply.Fail(ctx, code)
+	if !ctx.IsAborted() {
+		if code == comm.CodeOK {
+			reply.Success(ctx, struct{}{})
+		} else {
+			reply.Fail(ctx, code)
+		}
 	}
 }
 

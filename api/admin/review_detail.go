@@ -1,10 +1,14 @@
 package admin
 
 import (
+	"app/comm"
+	"app/comm/enum"
+	"app/dao/repo"
 	"reflect"
 	"runtime"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cast"
 	"github.com/zjutjh/mygo/foundation/reply"
@@ -12,10 +16,6 @@ import (
 	"github.com/zjutjh/mygo/kit"
 	"github.com/zjutjh/mygo/nlog"
 	"github.com/zjutjh/mygo/swagger"
-
-	"app/comm"
-	"app/comm/enum"
-	"app/dao/repo"
 )
 
 // ReviewDetailHandler API router注册点
@@ -32,8 +32,8 @@ type ReviewDetailApi struct {
 }
 
 type ReviewDetailApiRequest struct {
-	Body struct {
-		PostID int64 `uri:"post_id" binding:"required" desc:"发布ID"`
+	Query struct {
+		PostID int64 `form:"post_id" binding:"required" desc:"发布ID"`
 	}
 }
 
@@ -57,7 +57,7 @@ type ReviewDetailApiResponse struct {
 
 // Run Api业务逻辑执行点
 func (r *ReviewDetailApi) Run(ctx *gin.Context) kit.Code {
-	request := r.Request.Body
+	request := r.Request.Query
 
 	// 获取当前用户并验证是管理员
 	id, err := jwt.GetIdentity[string](ctx)
@@ -93,6 +93,14 @@ func (r *ReviewDetailApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodePostStatusInvalid
 	}
 
+	var images []string
+	if post.Images != "" {
+		err = sonic.UnmarshalString(post.Images, &images)
+		if err != nil {
+			nlog.Pick().WithContext(ctx).WithError(err).Warn("解析图片列表失败")
+			return comm.CodeServerError
+		}
+	}
 	r.Response = ReviewDetailApiResponse{
 		ID:            post.ID,
 		PublishType:   post.PublishType,
@@ -105,7 +113,7 @@ func (r *ReviewDetailApi) Run(ctx *gin.Context) kit.Code {
 		ContactName:   post.ContactName,
 		ContactPhone:  post.ContactPhone,
 		HasReward:     post.HasReward,
-		Images:        comm.UnmarshalImages(post.Images),
+		Images:        images,
 		Status:        post.Status,
 		PublisherID:   post.PublisherID,
 		CreatedAt:     post.CreatedAt,
@@ -115,7 +123,7 @@ func (r *ReviewDetailApi) Run(ctx *gin.Context) kit.Code {
 
 // Init Api初始化
 func (r *ReviewDetailApi) Init(ctx *gin.Context) (err error) {
-	return ctx.ShouldBindUri(&r.Request.Body)
+	return ctx.ShouldBindQuery(&r.Request.Query)
 }
 
 // hfReviewDetail API执行入口

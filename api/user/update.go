@@ -1,24 +1,22 @@
 package user
 
 import (
+	"app/comm"
 	"app/dao/repo"
 	"reflect"
 	"runtime"
 	"strconv"
 
-	"github.com/spf13/cast"
-	"github.com/zjutjh/mygo/jwt"
-
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/cast"
 	"github.com/zjutjh/mygo/foundation/reply"
+	"github.com/zjutjh/mygo/jwt"
 	"github.com/zjutjh/mygo/kit"
 	"github.com/zjutjh/mygo/nlog"
 	"github.com/zjutjh/mygo/swagger"
-
-	"app/comm"
+	"golang.org/x/crypto/bcrypt"
 )
 
-// UpdateHandler API router注册点
 func UpdateHandler() gin.HandlerFunc {
 	api := UpdateApi{}
 	swagger.CM[runtime.FuncForPC(reflect.ValueOf(hfUpdate).Pointer()).Name()] = api
@@ -26,9 +24,9 @@ func UpdateHandler() gin.HandlerFunc {
 }
 
 type UpdateApi struct {
-	Info     struct{}          `name:"修改密码" desc:"修改密码"`
-	Request  UpdateApiRequest  // API请求参数 (Body/Header/Body/Body)
-	Response UpdateApiResponse // API响应数据 (Body中的Data部分)
+	Info     struct{} `name:"修改密码" desc:"修改密码"`
+	Request  UpdateApiRequest
+	Response UpdateApiResponse
 }
 
 type UpdateApiRequest struct {
@@ -42,7 +40,6 @@ type UpdateApiResponse struct {
 	Token string `json:"token" desc:"token"`
 }
 
-// Run Api业务逻辑执行点
 func (u *UpdateApi) Run(ctx *gin.Context) kit.Code {
 	urp := repo.NewUserRepo()
 	request := u.Request.Body
@@ -62,25 +59,21 @@ func (u *UpdateApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeUserNotExist
 	}
 
-	if !comm.CheckPassword(user.Password, request.OldPassword) {
+	if bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(request.OldPassword)) != nil {
 		return comm.CodePasswordError
 	}
 
-	newHash, err := comm.HashPassword(request.NewPassword)
+	newHash, err := bcrypt.GenerateFromPassword([]byte(request.NewPassword), bcrypt.DefaultCost)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("新密码加密失败")
 		return comm.CodeHashError
 	}
 
-	err = urp.UpdatePassword(ctx, uid, newHash)
-	if err != nil {
-		nlog.Pick().WithContext(ctx).WithError(err).Warn("更新密码失败")
-		return comm.CodeServerError
-	}
+	user.Password = string(newHash)
+	user.FirstLogin = false
 
-	err = urp.UpdateFirstLogin(ctx, uid)
-	if err != nil {
-		nlog.Pick().WithContext(ctx).WithError(err).Warn("更新首次登录状态失败")
+	if err := urp.Save(ctx, user); err != nil {
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("更新密码失败")
 		return comm.CodeServerError
 	}
 
@@ -93,16 +86,10 @@ func (u *UpdateApi) Run(ctx *gin.Context) kit.Code {
 	return comm.CodeOK
 }
 
-// Init Api初始化 进行参数校验和绑定
 func (u *UpdateApi) Init(ctx *gin.Context) (err error) {
-	err = ctx.ShouldBindJSON(&u.Request.Body)
-	if err != nil {
-		return err
-	}
-	return err
+	return ctx.ShouldBindJSON(&u.Request.Body)
 }
 
-// hfUpdate API执行入口
 func hfUpdate(ctx *gin.Context) {
 	api := &UpdateApi{}
 	err := api.Init(ctx)

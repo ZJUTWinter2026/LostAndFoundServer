@@ -1,10 +1,14 @@
 package post
 
 import (
+	"app/comm"
+	"app/comm/enum"
+	"app/dao/repo"
 	"reflect"
 	"runtime"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/spf13/cast"
 	"github.com/zjutjh/mygo/jwt"
 
@@ -13,10 +17,6 @@ import (
 	"github.com/zjutjh/mygo/kit"
 	"github.com/zjutjh/mygo/nlog"
 	"github.com/zjutjh/mygo/swagger"
-
-	"app/comm"
-	"app/comm/enum"
-	"app/dao/repo"
 )
 
 // DetailHandler API router注册点
@@ -33,8 +33,8 @@ type DetailApi struct {
 }
 
 type DetailApiRequest struct {
-	Body struct {
-		ID int64 `json:"id" binding:"required" desc:"发布ID"`
+	Query struct {
+		ID int64 `form:"id" binding:"required" desc:"发布ID"`
 	}
 }
 
@@ -64,7 +64,7 @@ type DetailApiResponse struct {
 
 // Run Api业务逻辑执行点
 func (d *DetailApi) Run(ctx *gin.Context) kit.Code {
-	request := d.Request.Body
+	request := d.Request.Query
 
 	prp := repo.NewPostRepo()
 	record, err := prp.FindById(ctx, request.ID)
@@ -76,6 +76,14 @@ func (d *DetailApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeDataNotFound
 	}
 
+	var images []string
+	if record.Images != "" {
+		err = sonic.UnmarshalString(record.Images, &images)
+		if err != nil {
+			nlog.Pick().WithContext(ctx).WithError(err).Warn("解析图片列表失败")
+			return comm.CodeServerError
+		}
+	}
 	resp := DetailApiResponse{
 		ID:              record.ID,
 		PublishType:     record.PublishType,
@@ -90,7 +98,7 @@ func (d *DetailApi) Run(ctx *gin.Context) kit.Code {
 		ContactName:     record.ContactName,
 		ContactPhone:    record.ContactPhone,
 		HasReward:       record.HasReward,
-		Images:          comm.UnmarshalImages(record.Images),
+		Images:          images,
 		Status:          record.Status,
 		CancelReason:    record.CancelReason,
 		RejectReason:    record.RejectReason,
@@ -124,7 +132,7 @@ func (d *DetailApi) Run(ctx *gin.Context) kit.Code {
 
 // Init Api初始化 进行参数校验和绑定
 func (d *DetailApi) Init(ctx *gin.Context) (err error) {
-	return ctx.ShouldBindUri(&d.Request.Body)
+	return ctx.ShouldBindQuery(&d.Request.Query)
 }
 
 // hfDetail API执行入口

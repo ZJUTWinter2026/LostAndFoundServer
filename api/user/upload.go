@@ -1,9 +1,10 @@
 package user
 
 import (
-	"app/dao/repo"
+	"app/comm"
 	"mime/multipart"
 	"net/http"
+	"os"
 	"path/filepath"
 	"reflect"
 	"runtime"
@@ -16,8 +17,6 @@ import (
 	"github.com/zjutjh/mygo/kit"
 	"github.com/zjutjh/mygo/nlog"
 	"github.com/zjutjh/mygo/swagger"
-
-	"app/comm"
 )
 
 const (
@@ -38,8 +37,7 @@ type UploadApi struct {
 	Response UploadApiResponse // API响应数据 (Body中的Data部分)
 }
 
-type UploadApiRequest struct {
-}
+type UploadApiRequest struct{}
 
 type UploadApiResponse struct {
 	Urls []string `json:"urls" desc:"图片访问地址"`
@@ -47,8 +45,6 @@ type UploadApiResponse struct {
 
 // Run Api业务逻辑执行点
 func (u *UploadApi) Run(ctx *gin.Context) kit.Code {
-	urp := repo.NewUserRepo()
-
 	uploadDir, baseURL, maxSize := uploadConfig()
 
 	// 限制上传大小: 默认10MB，不可关闭
@@ -65,7 +61,7 @@ func (u *UploadApi) Run(ctx *gin.Context) kit.Code {
 
 	dateDir := time.Now().Format("20060102")
 	saveDir := filepath.Join(uploadDir, dateDir)
-	err = urp.EnsureDir(saveDir)
+	err = os.MkdirAll(saveDir, 0o755)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("创建上传目录失败")
 		return comm.CodeServerError

@@ -75,3 +75,7 @@ func (r *UserRepo) UpdateFirstLogin(ctx context.Context, id int64) error {
 	_, err := u.WithContext(ctx).Where(u.ID.Eq(id)).Update(u.FirstLogin, false)
 	return err
 }
+
+func (r *UserRepo) Save(ctx context.Context, user *model.User) error {
+	return ndb.Pick().WithContext(ctx).Save(user).Error
+}

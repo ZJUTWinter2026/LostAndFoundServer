@@ -13,6 +13,7 @@ import (
 	"github.com/zjutjh/mygo/ndb"
 	"github.com/zjutjh/mygo/nlog"
 	"github.com/zjutjh/mygo/swagger"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func CreateHandler() gin.HandlerFunc {
@@ -22,7 +23,7 @@ func CreateHandler() gin.HandlerFunc {
 }
 
 type CreateApi struct {
-	Info     struct{}         `name:"新增账号" desc:"系统管理员新增账号"`
+	Info     struct{} `name:"新增账号" desc:"系统管理员新增账号"`
 	Request  CreateApiRequest
 	Response CreateApiResponse
 }
@@ -63,7 +64,7 @@ func (a *CreateApi) Run(ctx *gin.Context) kit.Code {
 		}
 	}
 
-	hashedPwd, err := comm.HashPassword(password)
+	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("密码加密失败")
 		return comm.CodeHashError
@@ -73,7 +74,7 @@ func (a *CreateApi) Run(ctx *gin.Context) kit.Code {
 		UID:        req.UID,
 		Name:       strings.TrimSpace(req.Name),
 		IDCard:     req.IDCard,
-		Password:   hashedPwd,
+		Password:   string(hashedPwd),
 		Usertype:   req.UserType,
 		FirstLogin: true,
 	}

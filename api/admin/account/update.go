@@ -12,9 +12,9 @@ import (
 	"github.com/zjutjh/mygo/ndb"
 	"github.com/zjutjh/mygo/nlog"
 	"github.com/zjutjh/mygo/swagger"
+	"golang.org/x/crypto/bcrypt"
 )
 
-// UpdateHandler 更新账号信息
 func UpdateHandler() gin.HandlerFunc {
 	api := UpdateApi{}
 	swagger.CM[runtime.FuncForPC(reflect.ValueOf(hfUpdate).Pointer()).Name()] = api
@@ -22,8 +22,8 @@ func UpdateHandler() gin.HandlerFunc {
 }
 
 type UpdateApi struct {
-	Info     struct{}         `name:"更新账号信息" desc:"更新账号信息(权限/重置密码)"`
-	Request  UpdateApiRequest // API请求参数
+	Info     struct{} `name:"更新账号信息" desc:"更新账号信息(权限/重置密码)"`
+	Request  UpdateApiRequest
 	Response struct{}
 }
 
@@ -48,25 +48,22 @@ func (a *UpdateApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeDataNotFound
 	}
 
-	updates := make(map[string]interface{})
 	if req.UserType != "" {
-		updates["usertype"] = req.UserType
+		user.Usertype = req.UserType
 	}
 	if req.ResetPassword {
-		hashedPwd, err := comm.HashPassword("123456")
+		hashedPwd, err := bcrypt.GenerateFromPassword([]byte("123456"), bcrypt.DefaultCost)
 		if err != nil {
 			nlog.Pick().WithContext(ctx).WithError(err).Warn("密码加密失败")
 			return comm.CodeHashError
 		}
-		updates["password"] = hashedPwd
-		updates["first_login"] = 1
+		user.Password = string(hashedPwd)
+		user.FirstLogin = true
 	}
 
-	if len(updates) > 0 {
-		if err := db.Model(&user).Updates(updates).Error; err != nil {
-			nlog.Pick().WithContext(ctx).WithError(err).Warn("更新用户信息失败")
-			return comm.CodeServerError
-		}
+	if err := db.Save(&user).Error; err != nil {
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("更新用户信息失败")
+		return comm.CodeServerError
 	}
 
 	return comm.CodeOK
@@ -78,14 +75,18 @@ func (a *UpdateApi) Init(ctx *gin.Context) error {
 
 func hfUpdate(ctx *gin.Context) {
 	api := &UpdateApi{}
-	if err := api.Init(ctx); err != nil {
+	err := api.Init(ctx)
+	if err != nil {
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("参数绑定校验错误")
 		reply.Fail(ctx, comm.CodeParameterInvalid)
 		return
 	}
 	code := api.Run(ctx)
-	if code == comm.CodeOK {
-		reply.Success(ctx, struct{}{})
-	} else {
-		reply.Fail(ctx, code)
+	if !ctx.IsAborted() {
+		if code == comm.CodeOK {
+			reply.Success(ctx, struct{}{})
+		} else {
+			reply.Fail(ctx, code)
+		}
 	}
 }
