@@ -53,17 +53,19 @@ type QueryApiResponse struct {
 }
 
 type PostListItem struct {
-	ID            int64     `json:"id" desc:"发布ID"`
-	PublishType   string    `json:"publish_type" desc:"发布类型 LOST/FOUND"`
-	ItemName      string    `json:"item_name" desc:"物品名称"`
-	ItemType      string    `json:"item_type" desc:"物品类型"`
-	ItemTypeOther string    `json:"item_type_other" desc:"其它类型说明"`
-	Campus        string    `json:"campus" desc:"校区"`
-	Location      string    `json:"location" desc:"地点"`
-	EventTime     time.Time `json:"event_time" desc:"事件时间"`
-	Features      string    `json:"features" desc:"物品特征"`
-	Status        string    `json:"status" desc:"状态"`
-	Images        []string  `json:"images" desc:"图片"`
+	ID                int64     `json:"id" desc:"发布ID"`
+	PublishType       string    `json:"publish_type" desc:"发布类型 LOST/FOUND"`
+	ItemName          string    `json:"item_name" desc:"物品名称"`
+	ItemType          string    `json:"item_type" desc:"物品类型"`
+	ItemTypeOther     string    `json:"item_type_other" desc:"其它类型说明"`
+	Campus            string    `json:"campus" desc:"校区"`
+	Location          string    `json:"location" desc:"地点"`
+	EventTime         time.Time `json:"event_time" desc:"事件时间"`
+	Features          string    `json:"features" desc:"物品特征"`
+	HasReward         bool      `json:"has_reward" desc:"是否有悬赏"`
+	RewardDescription string    `json:"reward_description" desc:"悬赏说明"`
+	Status            string    `json:"status" desc:"状态"`
+	Images            []string  `json:"images" desc:"图片"`
 }
 
 // Run Api业务逻辑执行点
@@ -115,16 +117,18 @@ func (q *QueryApi) Run(ctx *gin.Context) kit.Code {
 			}
 		}
 		items = append(items, PostListItem{
-			ID:            record.ID,
-			PublishType:   record.PublishType,
-			ItemName:      record.ItemName,
-			ItemType:      record.ItemType,
-			ItemTypeOther: record.ItemTypeOther,
-			Location:      record.Location,
-			EventTime:     record.EventTime,
-			Features:      record.Features,
-			Status:        record.Status,
-			Images:        images,
+			ID:                record.ID,
+			PublishType:       record.PublishType,
+			ItemName:          record.ItemName,
+			ItemType:          record.ItemType,
+			ItemTypeOther:     record.ItemTypeOther,
+			Location:          record.Location,
+			EventTime:         record.EventTime,
+			Features:          record.Features,
+			HasReward:         record.HasReward,
+			RewardDescription: record.RewardDescription,
+			Status:            record.Status,
+			Images:            images,
 		})
 	}
 

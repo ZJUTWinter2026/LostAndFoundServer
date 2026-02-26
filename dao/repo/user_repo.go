@@ -1,6 +1,8 @@
 package repo
 
 import (
+	"app/dao/model"
+	"app/dao/query"
 	"context"
 	"errors"
 	"os"
@@ -8,9 +10,6 @@ import (
 
 	"github.com/zjutjh/mygo/ndb"
 	"gorm.io/gorm"
-
-	"app/dao/model"
-	"app/dao/query"
 )
 
 type UserRepo struct {
@@ -36,10 +35,10 @@ func (r *UserRepo) FindById(ctx context.Context, id int64) (*model.User, error) 
 	return record, nil
 }
 
-// FindByUid 根据Uid查找用户
-func (r *UserRepo) FindByUid(ctx context.Context, uid int64) (*model.User, error) {
+// FindByUsername 根据用户名查找用户
+func (r *UserRepo) FindByUsername(ctx context.Context, username string) (*model.User, error) {
 	u := r.query.User
-	record, err := u.WithContext(ctx).Where(u.UID.Eq(uid)).First()
+	record, err := u.WithContext(ctx).Where(u.Username.Eq(username)).First()
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
@@ -49,9 +48,9 @@ func (r *UserRepo) FindByUid(ctx context.Context, uid int64) (*model.User, error
 	return record, nil
 }
 
-func (r *UserRepo) UpdatePassword(ctx context.Context, uid int64, password string) error {
+func (r *UserRepo) UpdatePassword(ctx context.Context, id int64, password string) error {
 	u := r.query.User
-	_, err := u.WithContext(ctx).Where(u.UID.Eq(uid)).Update(u.Password, password)
+	_, err := u.WithContext(ctx).Where(u.ID.Eq(id)).Update(u.Password, password)
 	return err
 }
 

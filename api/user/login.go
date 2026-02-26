@@ -2,6 +2,7 @@ package user
 
 import (
 	"app/comm"
+	"app/comm/enum"
 	"app/dao/repo"
 	"reflect"
 	"runtime"
@@ -31,7 +32,7 @@ type LoginApi struct {
 
 type LoginApiRequest struct {
 	Body struct {
-		Uid      int64  `json:"uid" binding:"required" desc:"学号"`
+		Username string `json:"username" binding:"required" desc:"用户名"`
 		Password string `json:"password" binding:"required,min=6,max=18" desc:"密码"`
 	}
 }
@@ -47,12 +48,12 @@ func (l *LoginApi) Run(ctx *gin.Context) kit.Code {
 	urp := repo.NewUserRepo()
 	request := l.Request.Body
 
-	user, err := urp.FindByUid(ctx, request.Uid)
+	user, err := urp.FindByUsername(ctx, request.Username)
 	if err != nil {
 		return comm.CodeServerError
 	}
 	if user == nil {
-		nlog.Pick().WithContext(ctx).WithError(err).Warn("用户不存在")
+		nlog.Pick().WithContext(ctx).Warn("用户不存在")
 		return comm.CodeUserNotExist
 	}
 
@@ -61,7 +62,7 @@ func (l *LoginApi) Run(ctx *gin.Context) kit.Code {
 	}
 
 	if bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(request.Password)) != nil {
-		nlog.Pick().WithContext(ctx).WithError(err).Warn("密码错误")
+		nlog.Pick().WithContext(ctx).Warn("密码错误")
 		return comm.CodePasswordError
 	}
 	token, err := jwt.Pick[string]().GenerateToken(strconv.FormatInt(user.ID, 10))
@@ -69,8 +70,11 @@ func (l *LoginApi) Run(ctx *gin.Context) kit.Code {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("token生成失败")
 		return comm.CodeTokenError
 	}
+
+	needUpdate := user.FirstLogin && user.Usertype == enum.UserTypeStudent
+
 	l.Response = LoginApiResponse{
-		NeedUpdate: user.FirstLogin,
+		NeedUpdate: needUpdate,
 		Id:         user.ID,
 		UserType:   user.Usertype,
 		Token:      token,

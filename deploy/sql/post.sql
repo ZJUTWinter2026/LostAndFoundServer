@@ -13,6 +13,7 @@ CREATE TABLE `post` (
   `contact_name` varchar(64) NOT NULL COMMENT '联系人',
   `contact_phone` varchar(32) NOT NULL COMMENT '联系电话',
   `has_reward` boolean NOT NULL DEFAULT FALSE COMMENT '是否有悬赏',
+  `reward_description` varchar(255) DEFAULT '' COMMENT '悬赏说明(仅has_reward为true时有效)',
   `images` text COMMENT '图片列表(JSON数组)',
   `status` varchar(32) NOT NULL DEFAULT 'PENDING' COMMENT '状态: PENDING, APPROVED, MATCHED, CLAIMED, CANCELLED, REJECTED, ARCHIVED',
   `cancel_reason` varchar(255) DEFAULT '' COMMENT '取消原因',

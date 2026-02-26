@@ -32,7 +32,7 @@ type ListApi struct {
 
 type ListApiRequest struct {
 	Query struct {
-		UID      int64  `form:"uid" desc:"学号/工号"`
+		Username string `form:"username" desc:"用户名"`
 		UserType string `form:"user_type" desc:"用户类型"`
 		Page     int    `form:"page" binding:"required,min=1" desc:"页码"`
 		PageSize int    `form:"page_size" binding:"required,min=1,max=50" desc:"每页数量"`
@@ -48,7 +48,7 @@ type ListApiResponse struct {
 
 type AccountItem struct {
 	ID            int64      `json:"id"`
-	UID           int64      `json:"uid"`
+	Username      string     `json:"username"`
 	Name          string     `json:"name"`
 	UserType      string     `json:"user_type"`
 	FirstLogin    bool       `json:"first_login"`
@@ -72,8 +72,8 @@ func (a *ListApi) Run(ctx *gin.Context) kit.Code {
 	}
 
 	db := ndb.Pick().WithContext(ctx).Model(&model.User{})
-	if req.UID > 0 {
-		db = db.Where("uid = ?", req.UID)
+	if req.Username != "" {
+		db = db.Where("username = ?", req.Username)
 	}
 	if req.UserType != "" {
 		db = db.Where("usertype = ?", req.UserType)
@@ -94,7 +94,7 @@ func (a *ListApi) Run(ctx *gin.Context) kit.Code {
 	for _, u := range users {
 		item := AccountItem{
 			ID:         u.ID,
-			UID:        u.UID,
+			Username:   u.Username,
 			Name:       u.Name,
 			UserType:   u.Usertype,
 			FirstLogin: u.FirstLogin,

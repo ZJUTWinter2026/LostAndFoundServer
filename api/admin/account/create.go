@@ -2,10 +2,12 @@ package account
 
 import (
 	"app/comm"
+	"app/comm/enum"
 	"app/dao/model"
 	"reflect"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/zjutjh/mygo/foundation/reply"
@@ -30,8 +32,8 @@ type CreateApi struct {
 
 type CreateApiRequest struct {
 	Body struct {
+		Username string `json:"username" binding:"required,max=50" desc:"用户名(学号/工号)"`
 		Name     string `json:"name" binding:"required,max=10" desc:"姓名"`
-		UID      int64  `json:"uid" binding:"required" desc:"学号/工号"`
 		IDCard   string `json:"id_card" binding:"required,len=18" desc:"身份证号"`
 		Password string `json:"password" binding:"min=6,max=18" desc:"密码(可选,学生默认身份证后六位)"`
 		UserType string `json:"user_type" binding:"required,oneof=STUDENT ADMIN SYSTEM_ADMIN" desc:"用户类型"`
@@ -51,7 +53,7 @@ func (a *CreateApi) Run(ctx *gin.Context) kit.Code {
 	db := ndb.Pick().WithContext(ctx)
 
 	var existingUser model.User
-	if err := db.Where("uid = ?", req.UID).First(&existingUser).Error; err == nil {
+	if err := db.Where("username = ?", req.Username).First(&existingUser).Error; err == nil {
 		return comm.CodeDataConflict
 	}
 
@@ -71,12 +73,13 @@ func (a *CreateApi) Run(ctx *gin.Context) kit.Code {
 	}
 
 	user := &model.User{
-		UID:        req.UID,
-		Name:       strings.TrimSpace(req.Name),
-		IDCard:     req.IDCard,
-		Password:   string(hashedPwd),
-		Usertype:   req.UserType,
-		FirstLogin: true,
+		Username:      strings.TrimSpace(req.Username),
+		Name:          strings.TrimSpace(req.Name),
+		IDCard:        req.IDCard,
+		Password:      string(hashedPwd),
+		Usertype:      req.UserType,
+		FirstLogin:    req.UserType == enum.UserTypeStudent,
+		DisabledUntil: time.Now(),
 	}
 
 	if err := db.Create(user).Error; err != nil {

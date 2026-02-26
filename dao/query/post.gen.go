@@ -41,6 +41,7 @@ func newPost(db *gorm.DB, opts ...gen.DOOption) post {
 	_post.ContactName = field.NewString(tableName, "contact_name")
 	_post.ContactPhone = field.NewString(tableName, "contact_phone")
 	_post.HasReward = field.NewBool(tableName, "has_reward")
+	_post.RewardDescription = field.NewString(tableName, "reward_description")
 	_post.Images = field.NewString(tableName, "images")
 	_post.Status = field.NewString(tableName, "status")
 	_post.CancelReason = field.NewString(tableName, "cancel_reason")
@@ -61,31 +62,32 @@ func newPost(db *gorm.DB, opts ...gen.DOOption) post {
 type post struct {
 	postDo postDo
 
-	ALL             field.Asterisk
-	ID              field.Int64  // 自增ID
-	PublisherID     field.Int64  // 发布者ID
-	PublishType     field.String // 发布类型: LOST, FOUND
-	ItemName        field.String // 物品名称
-	ItemType        field.String // 物品类型
-	ItemTypeOther   field.String // 其它类型说明
-	Campus          field.String // 校区: ZhaoHui, PingFeng, MoGanShan
-	Location        field.String // 地点
-	StorageLocation field.String // 存放地点
-	EventTime       field.Time   // 事件时间
-	Features        field.String // 物品特征
-	ContactName     field.String // 联系人
-	ContactPhone    field.String // 联系电话
-	HasReward       field.Bool   // 是否有悬赏
-	Images          field.String // 图片列表(JSON数组)
-	Status          field.String // 状态: PENDING, APPROVED, MATCHED, CLAIMED, CANCELLED, REJECTED, ARCHIVED
-	CancelReason    field.String // 取消原因
-	RejectReason    field.String // 驳回原因
-	ClaimCount      field.Int32  // 认领人数
-	ArchiveMethod   field.String // 物品处理方式(归档时填写)
-	ProcessedAt     field.Time   // 处理时间
-	CreatedAt       field.Time   // 创建时间
-	UpdatedAt       field.Time   // 更新时间
-	DeletedAt       field.Field  // 删除时间 (软删除)
+	ALL               field.Asterisk
+	ID                field.Int64  // 自增ID
+	PublisherID       field.Int64  // 发布者ID
+	PublishType       field.String // 发布类型: LOST, FOUND
+	ItemName          field.String // 物品名称
+	ItemType          field.String // 物品类型
+	ItemTypeOther     field.String // 其它类型说明
+	Campus            field.String // 校区: ZhaoHui, PingFeng, MoGanShan
+	Location          field.String // 地点
+	StorageLocation   field.String // 存放地点
+	EventTime         field.Time   // 事件时间
+	Features          field.String // 物品特征
+	ContactName       field.String // 联系人
+	ContactPhone      field.String // 联系电话
+	HasReward         field.Bool   // 是否有悬赏
+	RewardDescription field.String // 悬赏说明(仅has_reward为true时有效)
+	Images            field.String // 图片列表(JSON数组)
+	Status            field.String // 状态: PENDING, APPROVED, MATCHED, CLAIMED, CANCELLED, REJECTED, ARCHIVED
+	CancelReason      field.String // 取消原因
+	RejectReason      field.String // 驳回原因
+	ClaimCount        field.Int32  // 认领人数
+	ArchiveMethod     field.String // 物品处理方式(归档时填写)
+	ProcessedAt       field.Time   // 处理时间
+	CreatedAt         field.Time   // 创建时间
+	UpdatedAt         field.Time   // 更新时间
+	DeletedAt         field.Field  // 删除时间 (软删除)
 
 	fieldMap map[string]field.Expr
 }
@@ -116,6 +118,7 @@ func (p *post) updateTableName(table string) *post {
 	p.ContactName = field.NewString(table, "contact_name")
 	p.ContactPhone = field.NewString(table, "contact_phone")
 	p.HasReward = field.NewBool(table, "has_reward")
+	p.RewardDescription = field.NewString(table, "reward_description")
 	p.Images = field.NewString(table, "images")
 	p.Status = field.NewString(table, "status")
 	p.CancelReason = field.NewString(table, "cancel_reason")
@@ -150,7 +153,7 @@ func (p *post) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (p *post) fillFieldMap() {
-	p.fieldMap = make(map[string]field.Expr, 24)
+	p.fieldMap = make(map[string]field.Expr, 25)
 	p.fieldMap["id"] = p.ID
 	p.fieldMap["publisher_id"] = p.PublisherID
 	p.fieldMap["publish_type"] = p.PublishType
@@ -165,6 +168,7 @@ func (p *post) fillFieldMap() {
 	p.fieldMap["contact_name"] = p.ContactName
 	p.fieldMap["contact_phone"] = p.ContactPhone
 	p.fieldMap["has_reward"] = p.HasReward
+	p.fieldMap["reward_description"] = p.RewardDescription
 	p.fieldMap["images"] = p.Images
 	p.fieldMap["status"] = p.Status
 	p.fieldMap["cancel_reason"] = p.CancelReason

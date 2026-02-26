@@ -38,21 +38,22 @@ type ReviewDetailApiRequest struct {
 }
 
 type ReviewDetailApiResponse struct {
-	ID            int64     `json:"id" desc:"发布ID"`
-	PublishType   string    `json:"publish_type" desc:"发布类型 LOST/FOUND"`
-	ItemName      string    `json:"item_name" desc:"物品名称"`
-	ItemType      string    `json:"item_type" desc:"物品类型"`
-	ItemTypeOther string    `json:"item_type_other" desc:"其它类型说明"`
-	Location      string    `json:"location" desc:"地点"`
-	EventTime     time.Time `json:"event_time" desc:"事件时间"`
-	Features      string    `json:"features" desc:"物品特征"`
-	ContactName   string    `json:"contact_name" desc:"联系人"`
-	ContactPhone  string    `json:"contact_phone" desc:"联系电话"`
-	HasReward     bool      `json:"has_reward" desc:"是否有悬赏"`
-	Images        []string  `json:"images" desc:"图片列表"`
-	Status        string    `json:"status" desc:"状态"`
-	PublisherID   int64     `json:"publisher_id" desc:"发布者ID"`
-	CreatedAt     time.Time `json:"created_at" desc:"创建时间"`
+	ID                int64     `json:"id" desc:"发布ID"`
+	PublishType       string    `json:"publish_type" desc:"发布类型 LOST/FOUND"`
+	ItemName          string    `json:"item_name" desc:"物品名称"`
+	ItemType          string    `json:"item_type" desc:"物品类型"`
+	ItemTypeOther     string    `json:"item_type_other" desc:"其它类型说明"`
+	Location          string    `json:"location" desc:"地点"`
+	EventTime         time.Time `json:"event_time" desc:"事件时间"`
+	Features          string    `json:"features" desc:"物品特征"`
+	ContactName       string    `json:"contact_name" desc:"联系人"`
+	ContactPhone      string    `json:"contact_phone" desc:"联系电话"`
+	HasReward         bool      `json:"has_reward" desc:"是否有悬赏"`
+	RewardDescription string    `json:"reward_description" desc:"悬赏说明"`
+	Images            []string  `json:"images" desc:"图片列表"`
+	Status            string    `json:"status" desc:"状态"`
+	PublisherID       int64     `json:"publisher_id" desc:"发布者ID"`
+	CreatedAt         time.Time `json:"created_at" desc:"创建时间"`
 }
 
 // Run Api业务逻辑执行点
@@ -102,21 +103,22 @@ func (r *ReviewDetailApi) Run(ctx *gin.Context) kit.Code {
 		}
 	}
 	r.Response = ReviewDetailApiResponse{
-		ID:            post.ID,
-		PublishType:   post.PublishType,
-		ItemName:      post.ItemName,
-		ItemType:      post.ItemType,
-		ItemTypeOther: post.ItemTypeOther,
-		Location:      post.Location,
-		EventTime:     post.EventTime,
-		Features:      post.Features,
-		ContactName:   post.ContactName,
-		ContactPhone:  post.ContactPhone,
-		HasReward:     post.HasReward,
-		Images:        images,
-		Status:        post.Status,
-		PublisherID:   post.PublisherID,
-		CreatedAt:     post.CreatedAt,
+		ID:                post.ID,
+		PublishType:       post.PublishType,
+		ItemName:          post.ItemName,
+		ItemType:          post.ItemType,
+		ItemTypeOther:     post.ItemTypeOther,
+		Location:          post.Location,
+		EventTime:         post.EventTime,
+		Features:          post.Features,
+		ContactName:       post.ContactName,
+		ContactPhone:      post.ContactPhone,
+		HasReward:         post.HasReward,
+		RewardDescription: post.RewardDescription,
+		Images:            images,
+		Status:            post.Status,
+		PublisherID:       post.PublisherID,
+		CreatedAt:         post.CreatedAt,
 	}
 	return comm.CodeOK
 }

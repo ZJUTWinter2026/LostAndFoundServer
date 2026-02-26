@@ -33,19 +33,20 @@ type UpdateApi struct {
 
 type UpdateApiRequest struct {
 	Body struct {
-		PostID          int64     `json:"post_id" binding:"required" desc:"发布ID"`
-		ItemName        string    `json:"item_name" binding:"required,max=50" desc:"物品名称"`
-		ItemType        string    `json:"item_type" binding:"required,max=20" desc:"物品类型"`
-		ItemTypeOther   string    `json:"item_type_other" binding:"max=15" desc:"其它类型说明"`
-		Campus          string    `json:"campus" binding:"required,oneof=ZHAO_HUI PING_FENG MO_GAN_SHAN" desc:"校区"`
-		Location        string    `json:"location" binding:"required,max=100" desc:"地点"`
-		StorageLocation string    `json:"storage_location" binding:"max=100" desc:"存放地点"`
-		EventTime       time.Time `json:"event_time" binding:"required" desc:"事件时间"`
-		Features        string    `json:"features" binding:"required,max=200" desc:"物品特征"`
-		ContactName     string    `json:"contact_name" binding:"required,max=30" desc:"联系人"`
-		ContactPhone    string    `json:"contact_phone" binding:"required,max=20" desc:"联系电话"`
-		HasReward       bool      `json:"has_reward" desc:"是否有悬赏"`
-		Images          []string  `json:"images" binding:"max=3" desc:"图片列表"`
+		PostID            int64     `json:"post_id" binding:"required" desc:"发布ID"`
+		ItemName          string    `json:"item_name" binding:"required,max=50" desc:"物品名称"`
+		ItemType          string    `json:"item_type" binding:"required,max=20" desc:"物品类型"`
+		ItemTypeOther     string    `json:"item_type_other" binding:"max=15" desc:"其它类型说明"`
+		Campus            string    `json:"campus" binding:"required,oneof=ZHAO_HUI PING_FENG MO_GAN_SHAN" desc:"校区"`
+		Location          string    `json:"location" binding:"required,max=100" desc:"地点"`
+		StorageLocation   string    `json:"storage_location" binding:"required,max=100" desc:"存放地点"`
+		EventTime         time.Time `json:"event_time" binding:"required" desc:"事件时间"`
+		Features          string    `json:"features" binding:"required,max=200" desc:"物品特征"`
+		ContactName       string    `json:"contact_name" binding:"required,max=30" desc:"联系人"`
+		ContactPhone      string    `json:"contact_phone" binding:"required,max=20" desc:"联系电话"`
+		HasReward         bool      `json:"has_reward" desc:"是否有悬赏"`
+		RewardDescription string    `json:"reward_description" binding:"max=255" desc:"悬赏说明(仅has_reward为true时有效)"`
+		Images            []string  `json:"images" binding:"required,max=3" desc:"图片列表"`
 	}
 }
 
@@ -100,6 +101,7 @@ func (u *UpdateApi) Run(ctx *gin.Context) kit.Code {
 	post.ContactName = request.ContactName
 	post.ContactPhone = request.ContactPhone
 	post.HasReward = request.HasReward
+	post.RewardDescription = request.RewardDescription
 	post.Images = imagesJSON
 
 	if err := prp.Save(ctx, post); err != nil {

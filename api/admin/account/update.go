@@ -2,6 +2,7 @@ package account
 
 import (
 	"app/comm"
+	"app/comm/enum"
 	"app/dao/model"
 	"reflect"
 	"runtime"
@@ -31,7 +32,7 @@ type UpdateApiRequest struct {
 	Body struct {
 		ID            int64  `json:"id" binding:"required" desc:"用户ID"`
 		UserType      string `json:"user_type" binding:"oneof=STUDENT ADMIN SYSTEM_ADMIN" desc:"用户类型"`
-		ResetPassword bool   `json:"reset_password" desc:"是否重置密码(重置为身份证后六位/默认密码)"`
+		ResetPassword bool   `json:"reset_password" desc:"是否重置密码(重置为身份证后六位)"`
 	}
 }
 
@@ -52,13 +53,17 @@ func (a *UpdateApi) Run(ctx *gin.Context) kit.Code {
 		user.Usertype = req.UserType
 	}
 	if req.ResetPassword {
-		hashedPwd, err := bcrypt.GenerateFromPassword([]byte("123456"), bcrypt.DefaultCost)
+		password := "123456"
+		if len(user.IDCard) >= 6 {
+			password = user.IDCard[len(user.IDCard)-6:]
+		}
+		hashedPwd, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 		if err != nil {
 			nlog.Pick().WithContext(ctx).WithError(err).Warn("密码加密失败")
 			return comm.CodeHashError
 		}
 		user.Password = string(hashedPwd)
-		user.FirstLogin = true
+		user.FirstLogin = user.Usertype == enum.UserTypeStudent
 	}
 
 	if err := db.Save(&user).Error; err != nil {

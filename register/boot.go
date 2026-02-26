@@ -2,8 +2,10 @@ package register
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/zjutjh/mygo/jwt"
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/zjutjh/mygo/config"
 	"github.com/zjutjh/mygo/feishu"
@@ -14,6 +16,8 @@ import (
 	"github.com/zjutjh/mygo/nlog"
 
 	"app/comm"
+	"app/comm/enum"
+	"app/dao/model"
 	"app/register/generate"
 )
 
@@ -50,8 +54,40 @@ func BizConfBoot() func() error {
 
 // AppBoot 应用定制引导器
 func AppBoot() func() error {
-	return func() error {
-		// 可以在这里编写业务初始引导逻辑
+	return initDefaultAdmin
+}
+
+// initDefaultAdmin 初始化默认系统管理员
+func initDefaultAdmin() error {
+	db := ndb.Pick()
+	var count int64
+	if err := db.Model(&model.User{}).Count(&count).Error; err != nil {
+		return fmt.Errorf("查询用户数量失败: %w", err)
+	}
+
+	if count > 0 {
 		return nil
 	}
+
+	hashedPwd, err := bcrypt.GenerateFromPassword([]byte("123456"), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("密码加密失败: %w", err)
+	}
+
+	admin := &model.User{
+		Username:      "root",
+		Name:          "系统管理员",
+		IDCard:        "",
+		Password:      string(hashedPwd),
+		Usertype:      enum.UserTypeSystemAdmin,
+		FirstLogin:    false,
+		DisabledUntil: time.Now(),
+	}
+
+	if err := db.Create(admin).Error; err != nil {
+		return fmt.Errorf("创建默认管理员失败: %w", err)
+	}
+
+	nlog.Pick().Info("默认系统管理员已创建")
+	return nil
 }

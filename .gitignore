@@ -42,3 +42,5 @@ go.work.sum
 /register/generate/status_codes_generated.go
 
 uploads/
+
+app
