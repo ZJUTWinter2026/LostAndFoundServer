@@ -275,3 +275,12 @@ func (r *PostRepo) MarkAsClaimed(ctx context.Context, postID int64) error {
 			"processed_at": time.Now(),
 		}).Error
 }
+
+// MigrateItemTypeToOther 将指定物品类型的所有数据迁移到其他类型
+func (r *PostRepo) MigrateItemTypeToOther(ctx context.Context, oldType, newType string) error {
+	return ndb.Pick().WithContext(ctx).Model(&model.Post{}).
+		Where("item_type = ?", oldType).
+		Updates(map[string]interface{}{
+			"item_type": newType,
+		}).Error
+}

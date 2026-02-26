@@ -96,3 +96,12 @@ func (r *FeedbackRepo) ListByReporterAndProcessed(ctx context.Context, reporterI
 	err := db.Order("created_at DESC").Offset(offset).Limit(limit).Find(&feedbacks).Error
 	return feedbacks, total, err
 }
+
+// MigrateTypeToOther 将指定投诉类型的所有数据迁移到其他类型
+func (r *FeedbackRepo) MigrateTypeToOther(ctx context.Context, oldType, newType string) error {
+	return ndb.Pick().WithContext(ctx).Model(&model.Feedback{}).
+		Where("type = ?", oldType).
+		Updates(map[string]interface{}{
+			"type": newType,
+		}).Error
+}

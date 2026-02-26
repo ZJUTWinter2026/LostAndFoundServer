@@ -87,7 +87,10 @@ func Route(router *gin.Engine) {
 		systemGroup := r.Group("/system")
 		{
 			systemGroup.GET("/config", system.ConfigListHandler())
-			systemGroup.POST("/config", system.ConfigUpdateHandler())
+			systemGroup.PUT("/feedback-types", system.UpdateFeedbackTypesHandler())
+			systemGroup.PUT("/item-types", system.UpdateItemTypesHandler())
+			systemGroup.PUT("/claim-validity-days", system.UpdateClaimValidityDaysHandler())
+			systemGroup.PUT("/publish-limit", system.UpdatePublishLimitHandler())
 		}
 
 		accountGroup := r.Group("/account")
@@ -104,8 +107,6 @@ func Route(router *gin.Engine) {
 		{
 			adminPostGroup.DELETE("/delete", admin.DeletePostHandler())
 		}
-
-		r.GET("/public/config", system.PublicConfigHandler())
 	}
 }
 

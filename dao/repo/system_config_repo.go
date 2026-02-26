@@ -117,11 +117,11 @@ func (r *SystemConfigRepo) UpdateClaimValidityDays(ctx context.Context, days int
 }
 
 func (r *SystemConfigRepo) getDefaultFeedbackTypes() []string {
-	return []string{"恶意发布", "信息不全", "不实消息", "恶心血腥", "涉黄信息", "其它类型"}
+	return []string{"恶意发布", "信息不全", "不实消息", "恶心血腥", "涉黄信息"}
 }
 
 func (r *SystemConfigRepo) getDefaultItemTypes() []string {
-	return []string{"电子", "饭卡", "文体", "证件", "衣包", "饰品", "其它类型"}
+	return []string{"电子", "饭卡", "文体", "证件", "衣包", "饰品"}
 }
 
 func (r *SystemConfigRepo) GetPublishLimit(ctx context.Context) (int, error) {
