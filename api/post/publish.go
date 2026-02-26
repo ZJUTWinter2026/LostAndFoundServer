@@ -45,7 +45,7 @@ type PublishApiRequest struct {
 		Features        string   `json:"features" binding:"required,max=255" desc:"物品特征"`
 		ContactName     string   `json:"contact_name" binding:"required,max=30" desc:"联系人"`
 		ContactPhone    string   `json:"contact_phone" binding:"required,min=5,max=20" desc:"联系电话"`
-		HasReward       bool     `json:"has_reward" desc:"是否有悬赏"`
+		HasReward       bool     `json:"has_reward" binding:"required" desc:"是否有悬赏"`
 		Images          []string `json:"images" binding:"max=3" desc:"图片列表"`
 	}
 }

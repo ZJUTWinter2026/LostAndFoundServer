@@ -28,8 +28,8 @@ type ListApi struct {
 
 type ListApiRequest struct {
 	Query struct {
-		Page     int `form:"page" binding:"min=1" desc:"页码"`
-		PageSize int `form:"page_size" binding:"min=1,max=50" desc:"每页数量"`
+		Page     int `form:"page" binding:"required,min=1" desc:"页码"`
+		PageSize int `form:"page_size" binding:"required,min=1,max=50" desc:"每页数量"`
 	}
 }
 

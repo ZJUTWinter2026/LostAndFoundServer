@@ -35,14 +35,13 @@ type QueryApiRequest struct {
 type QueryFilter struct {
 	PublishType string  `form:"publish_type" binding:"oneof=LOST FOUND" desc:"发布类型 LOST/FOUND"`
 	ItemType    string  `form:"item_type" binding:"max=20" desc:"物品类型(含其它)"`
-	Campus      string  `form:"campus" binding:"
-	oneof=ZHAO_HUI PING_FENG MO_GAN_SHAN" desc:"校区"`
+	Campus      string  `form:"campus" binding:"oneof=ZHAO_HUI PING_FENG MO_GAN_SHAN" desc:"校区"`
 	Location    string  `form:"location" binding:"max=100" desc:"地点"`
 	Status      *string `form:"status" binding:"oneof=PENDING APPROVED MATCHED CLAIMED CANCELLED REJECTED ARCHIVED" desc:"状态"`
 	StartTime   string  `form:"start_time" binding:"" desc:"时间范围起"`
 	EndTime     string  `form:"end_time" binding:"" desc:"时间范围止"`
-	Page        int     `form:"page" binding:"min=1" desc:"页码"`
-	PageSize    int     `form:"page_size" binding:"min=1,max=50" desc:"每页数量"`
+	Page        int     `form:"page" binding:"required,min=1" desc:"页码"`
+	PageSize    int     `form:"page_size" binding:"required,min=1,max=50" desc:"每页数量"`
 }
 
 type QueryApiResponse struct {
