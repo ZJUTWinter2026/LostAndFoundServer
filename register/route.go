@@ -21,10 +21,7 @@ import (
 func Route(router *gin.Engine) {
 	router.Use(cors.Pick())
 
-	uploadDir := "uploads"
-	if comm.BizConf != nil && comm.BizConf.Upload.Dir != "" {
-		uploadDir = comm.BizConf.Upload.Dir
-	}
+	uploadDir := comm.BizConf.Upload.Dir
 	router.Static("/"+uploadDir, "./"+uploadDir)
 
 	r := router.Group(routePrefix())

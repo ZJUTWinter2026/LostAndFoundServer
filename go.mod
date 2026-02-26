@@ -4,6 +4,7 @@ go 1.24.7
 
 require (
 	github.com/bytedance/sonic v1.15.0
+	github.com/dustin/go-humanize v1.0.1
 	github.com/gin-gonic/gin v1.11.0
 	github.com/google/uuid v1.6.0
 	github.com/robfig/cron/v3 v3.0.1

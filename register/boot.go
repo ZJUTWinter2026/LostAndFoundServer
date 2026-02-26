@@ -1,6 +1,10 @@
 package register
 
 import (
+	"app/comm"
+	"app/comm/enum"
+	"app/dao/model"
+	"app/register/generate"
 	"fmt"
 	"time"
 
@@ -14,11 +18,6 @@ import (
 	"github.com/zjutjh/mygo/ndb"
 	"github.com/zjutjh/mygo/nesty"
 	"github.com/zjutjh/mygo/nlog"
-
-	"app/comm"
-	"app/comm/enum"
-	"app/dao/model"
-	"app/register/generate"
 )
 
 func Boot() kernel.BootList {
@@ -30,7 +29,7 @@ func Boot() kernel.BootList {
 
 		// Client引导器
 		ndb.Boot(), // DB
-		//nedis.Boot(), // Redis
+		// nedis.Boot(), // Redis
 		nesty.Boot(), // HTTP Client
 		jwt.Boot[string](),
 
@@ -43,8 +42,7 @@ func Boot() kernel.BootList {
 // BizConfBoot 初始化应用业务配置引导器
 func BizConfBoot() func() error {
 	return func() error {
-		comm.BizConf = &comm.BizConfig{}
-		err := config.Pick().UnmarshalKey("biz", comm.BizConf)
+		err := config.Pick().UnmarshalKey("biz", &comm.BizConf)
 		if err != nil {
 			return fmt.Errorf("%w: 解析应用业务配置错误: %w", kit.ErrDataUnmarshal, err)
 		}

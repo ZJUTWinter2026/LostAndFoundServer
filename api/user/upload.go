@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dustin/go-humanize"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/zjutjh/mygo/foundation/reply"
@@ -126,23 +127,5 @@ func collectFiles(ctx *gin.Context) ([]*multipart.FileHeader, error) {
 }
 
 func uploadConfig() (string, string, int64) {
-	uploadDir := defaultUploadDir
-	baseURL := defaultUploadBaseURL
-	maxSize := int64(10 * 1024 * 1024) // 默认 10MB
-	if comm.BizConf != nil {
-		if strings.TrimSpace(comm.BizConf.Upload.Dir) != "" {
-			uploadDir = comm.BizConf.Upload.Dir
-		}
-		if strings.TrimSpace(comm.BizConf.Upload.BaseURL) != "" {
-			baseURL = comm.BizConf.Upload.BaseURL
-		}
-		if comm.BizConf.Upload.MaxSizeMB > 0 {
-			maxSize = comm.BizConf.Upload.MaxSizeMB * 1024 * 1024
-		}
-	}
-	// 如果baseURL为空，且是默认配置，则使用相对路径/uploadDir
-	if baseURL == "" {
-		baseURL = "/"
-	}
-	return uploadDir, baseURL, maxSize
+	return comm.BizConf.Upload.Dir, comm.BizConf.Upload.BaseURL, comm.BizConf.Upload.MaxSizeMB * humanize.MiByte
 }
