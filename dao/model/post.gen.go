@@ -27,7 +27,7 @@ type Post struct {
 	Features        string                `gorm:"column:features;not null;comment:物品特征" json:"features"`                                                                               // 物品特征
 	ContactName     string                `gorm:"column:contact_name;not null;comment:联系人" json:"contact_name"`                                                                        // 联系人
 	ContactPhone    string                `gorm:"column:contact_phone;not null;comment:联系电话" json:"contact_phone"`                                                                     // 联系电话
-	HasReward       bool                  `gorm:"column:has_reward;not null;comment:是否有悬赏 1是 0否" json:"has_reward"`                                                                    // 是否有悬赏 1是 0否
+	HasReward       bool                  `gorm:"column:has_reward;not null;comment:是否有悬赏" json:"has_reward"`                                                                          // 是否有悬赏
 	Images          string                `gorm:"column:images;comment:图片列表(JSON数组)" json:"images"`                                                                                    // 图片列表(JSON数组)
 	Status          string                `gorm:"column:status;not null;default:PENDING;comment:状态: PENDING, APPROVED, MATCHED, CLAIMED, CANCELLED, REJECTED, ARCHIVED" json:"status"` // 状态: PENDING, APPROVED, MATCHED, CLAIMED, CANCELLED, REJECTED, ARCHIVED
 	CancelReason    string                `gorm:"column:cancel_reason;comment:取消原因" json:"cancel_reason"`                                                                              // 取消原因

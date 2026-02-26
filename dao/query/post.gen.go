@@ -75,7 +75,7 @@ type post struct {
 	Features        field.String // 物品特征
 	ContactName     field.String // 联系人
 	ContactPhone    field.String // 联系电话
-	HasReward       field.Bool   // 是否有悬赏 1是 0否
+	HasReward       field.Bool   // 是否有悬赏
 	Images          field.String // 图片列表(JSON数组)
 	Status          field.String // 状态: PENDING, APPROVED, MATCHED, CLAIMED, CANCELLED, REJECTED, ARCHIVED
 	CancelReason    field.String // 取消原因

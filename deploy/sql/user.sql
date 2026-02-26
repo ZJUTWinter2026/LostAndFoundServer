@@ -1,6 +1,6 @@
 CREATE TABLE `user` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '自增ID',
-  `uid` bigint(20) NOT NULL COMMENT '学号/工号',
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '自增ID',
+  `uid` bigint NOT NULL COMMENT '学号/工号',
   `name` varchar(50) DEFAULT '' COMMENT '姓名',
   `id_card` varchar(18) DEFAULT '' COMMENT '身份证号',
   `password` varchar(255) NOT NULL COMMENT '密码',

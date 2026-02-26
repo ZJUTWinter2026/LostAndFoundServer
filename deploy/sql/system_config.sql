@@ -1,5 +1,5 @@
 CREATE TABLE `system_config` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '自增ID',
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '自增ID',
   `config_key` varchar(64) NOT NULL COMMENT '配置键名',
   `config_value` text NOT NULL COMMENT '配置值(JSON格式)',
   `description` varchar(255) DEFAULT '' COMMENT '描述',
