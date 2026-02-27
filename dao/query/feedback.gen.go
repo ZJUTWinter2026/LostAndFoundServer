@@ -31,7 +31,6 @@ func newFeedback(db *gorm.DB, opts ...gen.DOOption) feedback {
 	_feedback.PostID = field.NewInt64(tableName, "post_id")
 	_feedback.ReporterID = field.NewInt64(tableName, "reporter_id")
 	_feedback.Type = field.NewString(tableName, "type")
-	_feedback.TypeOther = field.NewString(tableName, "type_other")
 	_feedback.Description = field.NewString(tableName, "description")
 	_feedback.Processed = field.NewBool(tableName, "processed")
 	_feedback.ProcessedBy = field.NewInt64(tableName, "processed_by")
@@ -54,7 +53,6 @@ type feedback struct {
 	PostID      field.Int64  // 物品ID
 	ReporterID  field.Int64  // 投诉者ID
 	Type        field.String // 投诉类型
-	TypeOther   field.String // 其它类型说明
 	Description field.String // 详细说明
 	Processed   field.Bool   // 是否已处理
 	ProcessedBy field.Int64  // 处理人ID
@@ -82,7 +80,6 @@ func (f *feedback) updateTableName(table string) *feedback {
 	f.PostID = field.NewInt64(table, "post_id")
 	f.ReporterID = field.NewInt64(table, "reporter_id")
 	f.Type = field.NewString(table, "type")
-	f.TypeOther = field.NewString(table, "type_other")
 	f.Description = field.NewString(table, "description")
 	f.Processed = field.NewBool(table, "processed")
 	f.ProcessedBy = field.NewInt64(table, "processed_by")
@@ -114,12 +111,11 @@ func (f *feedback) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (f *feedback) fillFieldMap() {
-	f.fieldMap = make(map[string]field.Expr, 12)
+	f.fieldMap = make(map[string]field.Expr, 11)
 	f.fieldMap["id"] = f.ID
 	f.fieldMap["post_id"] = f.PostID
 	f.fieldMap["reporter_id"] = f.ReporterID
 	f.fieldMap["type"] = f.Type
-	f.fieldMap["type_other"] = f.TypeOther
 	f.fieldMap["description"] = f.Description
 	f.fieldMap["processed"] = f.Processed
 	f.fieldMap["processed_by"] = f.ProcessedBy

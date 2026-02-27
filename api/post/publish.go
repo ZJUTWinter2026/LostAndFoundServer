@@ -10,7 +10,6 @@ import (
 	"runtime"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
@@ -38,17 +37,16 @@ type PublishApiRequest struct {
 		PublishType       string    `json:"publish_type" binding:"required,oneof=LOST FOUND" desc:"发布类型 LOST失物 FOUND招领"`
 		ItemName          string    `json:"item_name" binding:"required,max=50" desc:"物品名称"`
 		ItemType          string    `json:"item_type" binding:"required,max=20" desc:"物品类型"`
-		ItemTypeOther     string    `json:"item_type_other" binding:"max=15" desc:"其它类型说明"`
 		Campus            string    `json:"campus" binding:"required,oneof=ZHAO_HUI PING_FENG MO_GAN_SHAN" desc:"校区"`
 		Location          string    `json:"location" binding:"required,max=100" desc:"地点"`
-		StorageLocation   string    `json:"storage_location" binding:"max=100" desc:"存放地点"`
+		StorageLocation   string    `json:"storage_location" binding:"required,max=100" desc:"存放地点"`
 		EventTime         time.Time `json:"event_time" binding:"required" desc:"丢失/拾取时间"`
 		Features          string    `json:"features" binding:"required,max=255" desc:"物品特征"`
 		ContactName       string    `json:"contact_name" binding:"required,max=30" desc:"联系人"`
-		ContactPhone      string    `json:"contact_phone" binding:"required,min=5,max=20" desc:"联系电话"`
-		HasReward         bool      `json:"has_reward" binding:"required" desc:"是否有悬赏"`
-		RewardDescription string    `json:"reward_description" binding:"max=255" desc:"悬赏说明(仅has_reward为true时有效)"`
-		Images            []string  `json:"images" binding:"max=3" desc:"图片列表"`
+		ContactPhone      string    `json:"contact_phone" binding:"required" desc:"联系电话"`
+		HasReward         bool      `json:"has_reward" desc:"是否有悬赏"`
+		RewardDescription string    `json:"reward_description" binding:"omitempty,max=255" desc:"悬赏说明(仅has_reward为true时有效)"`
+		Images            []string  `json:"images" binding:"omitempty,max=3" desc:"图片列表"`
 	}
 }
 
@@ -86,15 +84,6 @@ func (p *PublishApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeParameterInvalid
 	}
 
-	if strings.TrimSpace(request.ItemType) == "其它类型" {
-		if strings.TrimSpace(request.ItemTypeOther) == "" {
-			return comm.CodeParameterInvalid
-		}
-		if utf8.RuneCountInString(request.ItemTypeOther) > 15 {
-			return comm.CodeParameterInvalid
-		}
-	}
-
 	if request.PublishType == enum.PostTypeFound {
 		if len(request.Images) == 0 {
 			return comm.CodeParameterInvalid
@@ -111,7 +100,6 @@ func (p *PublishApi) Run(ctx *gin.Context) kit.Code {
 		PublishType:       request.PublishType,
 		ItemName:          strings.TrimSpace(request.ItemName),
 		ItemType:          request.ItemType,
-		ItemTypeOther:     request.ItemTypeOther,
 		Campus:            request.Campus,
 		Location:          request.Location,
 		StorageLocation:   request.StorageLocation,
@@ -123,6 +111,7 @@ func (p *PublishApi) Run(ctx *gin.Context) kit.Code {
 		RewardDescription: request.RewardDescription,
 		Images:            imagesJSON,
 		Status:            enum.PostStatusPending,
+		ProcessedAt:       time.Now(),
 	}
 
 	err = prp.Create(ctx, record)

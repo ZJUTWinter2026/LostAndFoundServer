@@ -32,7 +32,6 @@ func newPost(db *gorm.DB, opts ...gen.DOOption) post {
 	_post.PublishType = field.NewString(tableName, "publish_type")
 	_post.ItemName = field.NewString(tableName, "item_name")
 	_post.ItemType = field.NewString(tableName, "item_type")
-	_post.ItemTypeOther = field.NewString(tableName, "item_type_other")
 	_post.Campus = field.NewString(tableName, "campus")
 	_post.Location = field.NewString(tableName, "location")
 	_post.StorageLocation = field.NewString(tableName, "storage_location")
@@ -68,8 +67,7 @@ type post struct {
 	PublishType       field.String // 发布类型: LOST, FOUND
 	ItemName          field.String // 物品名称
 	ItemType          field.String // 物品类型
-	ItemTypeOther     field.String // 其它类型说明
-	Campus            field.String // 校区: ZhaoHui, PingFeng, MoGanShan
+	Campus            field.String // 校区
 	Location          field.String // 地点
 	StorageLocation   field.String // 存放地点
 	EventTime         field.Time   // 事件时间
@@ -109,7 +107,6 @@ func (p *post) updateTableName(table string) *post {
 	p.PublishType = field.NewString(table, "publish_type")
 	p.ItemName = field.NewString(table, "item_name")
 	p.ItemType = field.NewString(table, "item_type")
-	p.ItemTypeOther = field.NewString(table, "item_type_other")
 	p.Campus = field.NewString(table, "campus")
 	p.Location = field.NewString(table, "location")
 	p.StorageLocation = field.NewString(table, "storage_location")
@@ -153,13 +150,12 @@ func (p *post) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (p *post) fillFieldMap() {
-	p.fieldMap = make(map[string]field.Expr, 25)
+	p.fieldMap = make(map[string]field.Expr, 24)
 	p.fieldMap["id"] = p.ID
 	p.fieldMap["publisher_id"] = p.PublisherID
 	p.fieldMap["publish_type"] = p.PublishType
 	p.fieldMap["item_name"] = p.ItemName
 	p.fieldMap["item_type"] = p.ItemType
-	p.fieldMap["item_type_other"] = p.ItemTypeOther
 	p.fieldMap["campus"] = p.Campus
 	p.fieldMap["location"] = p.Location
 	p.fieldMap["storage_location"] = p.StorageLocation

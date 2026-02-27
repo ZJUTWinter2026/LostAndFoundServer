@@ -41,7 +41,6 @@ type ReviewDetailApiResponse struct {
 	PublishType       string    `json:"publish_type" desc:"发布类型 LOST/FOUND"`
 	ItemName          string    `json:"item_name" desc:"物品名称"`
 	ItemType          string    `json:"item_type" desc:"物品类型"`
-	ItemTypeOther     string    `json:"item_type_other" desc:"其它类型说明"`
 	Location          string    `json:"location" desc:"地点"`
 	EventTime         time.Time `json:"event_time" desc:"事件时间"`
 	Features          string    `json:"features" desc:"物品特征"`
@@ -105,7 +104,6 @@ func (r *ReviewDetailApi) Run(ctx *gin.Context) kit.Code {
 		PublishType:       post.PublishType,
 		ItemName:          post.ItemName,
 		ItemType:          post.ItemType,
-		ItemTypeOther:     post.ItemTypeOther,
 		Location:          post.Location,
 		EventTime:         post.EventTime,
 		Features:          post.Features,

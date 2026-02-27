@@ -31,7 +31,7 @@ type ReviewApi struct {
 type ReviewApiRequest struct {
 	Body struct {
 		ClaimID int64 `json:"claim_id" binding:"required" desc:"认领申请ID"`
-		Action  int8  `json:"action" binding:"required,oneof=1 2" desc:"操作 1同意 2拒绝"`
+		Approve bool  `json:"approve" desc:"操作 true同意 false拒绝"`
 	}
 }
 
@@ -91,7 +91,7 @@ func (r *ReviewApi) Run(ctx *gin.Context) kit.Code {
 	}
 
 	// 如果是同意操作，检查是否已有已匹配的认领
-	if request.Action == 1 {
+	if request.Approve {
 		hasMatched, err := crp.HasMatchedClaim(ctx, claimRecord.PostID)
 		if err != nil {
 			nlog.Pick().WithContext(ctx).WithError(err).Warn("检查已匹配认领失败")
@@ -104,7 +104,7 @@ func (r *ReviewApi) Run(ctx *gin.Context) kit.Code {
 
 	// 更新状态
 	var targetStatus string
-	if request.Action == 1 {
+	if request.Approve {
 		targetStatus = enum.ClaimStatusMatched
 	} else {
 		targetStatus = enum.ClaimStatusRejected

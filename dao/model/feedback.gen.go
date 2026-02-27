@@ -18,7 +18,6 @@ type Feedback struct {
 	PostID      int64                 `gorm:"column:post_id;not null;comment:物品ID" json:"post_id"`                                    // 物品ID
 	ReporterID  int64                 `gorm:"column:reporter_id;not null;comment:投诉者ID" json:"reporter_id"`                           // 投诉者ID
 	Type        string                `gorm:"column:type;not null;comment:投诉类型" json:"type"`                                          // 投诉类型
-	TypeOther   string                `gorm:"column:type_other;comment:其它类型说明" json:"type_other"`                                     // 其它类型说明
 	Description string                `gorm:"column:description;comment:详细说明" json:"description"`                                     // 详细说明
 	Processed   bool                  `gorm:"column:processed;not null;comment:是否已处理" json:"processed"`                               // 是否已处理
 	ProcessedBy int64                 `gorm:"column:processed_by;comment:处理人ID" json:"processed_by"`                                  // 处理人ID

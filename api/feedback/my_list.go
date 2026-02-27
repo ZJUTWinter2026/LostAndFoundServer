@@ -30,9 +30,9 @@ type MyListApi struct {
 
 type MyListApiRequest struct {
 	Query struct {
-		Processed *bool `form:"processed" desc:"是否已处理"`
-		Page      int   `form:"page" binding:"required,min=1" desc:"页码"`
-		PageSize  int   `form:"page_size" binding:"required,min=1,max=50" desc:"每页数量"`
+		Processed string `form:"processed" binding:"required,oneof=ALL YES NO" desc:"是否已处理"`
+		Page      int    `form:"page" binding:"required,min=1" desc:"页码"`
+		PageSize  int    `form:"page_size" binding:"required,min=1,max=50" desc:"每页数量"`
 	}
 }
 
@@ -47,7 +47,6 @@ type MyFeedbackItem struct {
 	ID          int64      `json:"id" desc:"投诉ID"`
 	PostID      int64      `json:"post_id" desc:"物品ID"`
 	Type        string     `json:"type" desc:"投诉类型"`
-	TypeOther   string     `json:"type_other" desc:"其它类型说明"`
 	Description string     `json:"description" desc:"详细说明"`
 	Processed   bool       `json:"processed" desc:"是否已处理"`
 	ProcessedAt *time.Time `json:"processed_at,omitempty" desc:"处理时间"`
@@ -80,8 +79,8 @@ func (m *MyListApi) Run(ctx *gin.Context) kit.Code {
 	var feedbacks []*model.Feedback
 	var total int64
 
-	if request.Processed != nil {
-		feedbacks, total, err = frp.ListByReporterAndProcessed(ctx, reporterID, *request.Processed, offset, pageSize)
+	if request.Processed != "ALL" {
+		feedbacks, total, err = frp.ListByReporterAndProcessed(ctx, reporterID, request.Processed, offset, pageSize)
 	} else {
 		feedbacks, total, err = frp.ListByReporter(ctx, reporterID, offset, pageSize)
 	}
@@ -97,7 +96,6 @@ func (m *MyListApi) Run(ctx *gin.Context) kit.Code {
 			ID:          fb.ID,
 			PostID:      fb.PostID,
 			Type:        fb.Type,
-			TypeOther:   fb.TypeOther,
 			Description: fb.Description,
 			Processed:   fb.Processed,
 			CreatedAt:   fb.CreatedAt,

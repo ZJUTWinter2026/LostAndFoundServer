@@ -42,7 +42,6 @@ type DetailApiResponse struct {
 	PublishType       string    `json:"publish_type" desc:"发布类型 LOST/FOUND"`
 	ItemName          string    `json:"item_name" desc:"物品名称"`
 	ItemType          string    `json:"item_type" desc:"物品类型"`
-	ItemTypeOther     string    `json:"item_type_other" desc:"其它类型说明"`
 	Campus            string    `json:"campus" desc:"校区"`
 	Location          string    `json:"location" desc:"地点"`
 	StorageLocation   string    `json:"storage_location" desc:"存放地点"`
@@ -111,7 +110,6 @@ func (d *DetailApi) Run(ctx *gin.Context) kit.Code {
 		PublishType:       record.PublishType,
 		ItemName:          record.ItemName,
 		ItemType:          record.ItemType,
-		ItemTypeOther:     record.ItemTypeOther,
 		Campus:            record.Campus,
 		Location:          record.Location,
 		StorageLocation:   record.StorageLocation,

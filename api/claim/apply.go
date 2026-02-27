@@ -34,7 +34,7 @@ type ApplyApiRequest struct {
 	Body struct {
 		PostID      int64    `json:"post_id" binding:"required" desc:"发布记录ID"`
 		Description string   `json:"description" binding:"required,max=500" desc:"补充说明"`
-		ProofImages []string `json:"proof_images" binding:"max=255" desc:"证明图片"`
+		ProofImages []string `json:"proof_images" binding:"omitempty,max=3" desc:"证明图片"`
 	}
 }
 

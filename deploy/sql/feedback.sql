@@ -3,7 +3,6 @@ CREATE TABLE `feedback` (
   `post_id` BIGINT NOT NULL COMMENT '物品ID',
   `reporter_id` BIGINT NOT NULL COMMENT '投诉者ID',
   `type` VARCHAR(50) NOT NULL COMMENT '投诉类型',
-  `type_other` VARCHAR(15) DEFAULT NULL COMMENT '其它类型说明',
   `description` VARCHAR(500) DEFAULT NULL COMMENT '详细说明',
   `processed` BOOLEAN NOT NULL DEFAULT FALSE COMMENT '是否已处理',
   `processed_by` BIGINT DEFAULT NULL COMMENT '处理人ID',

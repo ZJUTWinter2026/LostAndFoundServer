@@ -46,9 +46,9 @@ func (r *FeedbackRepo) ListAll(ctx context.Context, offset int, limit int) ([]*m
 	return feedbacks, total, err
 }
 
-func (r *FeedbackRepo) ListByProcessed(ctx context.Context, processed bool, offset int, limit int) ([]*model.Feedback, int64, error) {
+func (r *FeedbackRepo) ListByProcessed(ctx context.Context, processed string, offset int, limit int) ([]*model.Feedback, int64, error) {
 	var feedbacks []*model.Feedback
-	db := ndb.Pick().WithContext(ctx).Model(&model.Feedback{}).Where("processed = ?", processed)
+	db := ndb.Pick().WithContext(ctx).Model(&model.Feedback{}).Where("processed = ?", processed == "YES")
 
 	var total int64
 	if err := db.Count(&total).Error; err != nil {
@@ -83,10 +83,10 @@ func (r *FeedbackRepo) ListByReporter(ctx context.Context, reporterID int64, off
 	return feedbacks, total, err
 }
 
-func (r *FeedbackRepo) ListByReporterAndProcessed(ctx context.Context, reporterID int64, processed bool, offset int, limit int) ([]*model.Feedback, int64, error) {
+func (r *FeedbackRepo) ListByReporterAndProcessed(ctx context.Context, reporterID int64, processed string, offset int, limit int) ([]*model.Feedback, int64, error) {
 	var feedbacks []*model.Feedback
 	db := ndb.Pick().WithContext(ctx).Model(&model.Feedback{}).
-		Where("reporter_id = ? AND processed = ?", reporterID, processed)
+		Where("reporter_id = ? AND processed = ?", reporterID, processed == "YES")
 
 	var total int64
 	if err := db.Count(&total).Error; err != nil {

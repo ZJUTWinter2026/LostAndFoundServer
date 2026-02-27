@@ -7,8 +7,6 @@ import (
 	"app/dao/repo"
 	"reflect"
 	"runtime"
-	"strings"
-	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
 	"github.com/zjutjh/mygo/foundation/reply"
@@ -25,7 +23,7 @@ func SubmitHandler() gin.HandlerFunc {
 }
 
 type SubmitApi struct {
-	Info     struct{}          `name:"提交投诉反馈" desc:"提交投诉反馈"`
+	Info     struct{} `name:"提交投诉反馈" desc:"提交投诉反馈"`
 	Request  SubmitApiRequest
 	Response SubmitApiResponse
 }
@@ -34,8 +32,7 @@ type SubmitApiRequest struct {
 	Body struct {
 		PostID      int64  `json:"post_id" binding:"required" desc:"物品ID"`
 		Type        string `json:"type" binding:"required,max=50" desc:"投诉类型"`
-		TypeOther   string `json:"type_other" binding:"max=15" desc:"其它类型说明"`
-		Description string `json:"description" binding:"max=500" desc:"详细说明"`
+		Description string `json:"description" binding:"omitempty,max=500" desc:"详细说明"`
 	}
 }
 
@@ -55,15 +52,6 @@ func (s *SubmitApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeFeedbackTypeInvalid
 	}
 
-	if request.Type == "其它类型" {
-		if strings.TrimSpace(request.TypeOther) == "" {
-			return comm.CodeFeedbackTypeOther
-		}
-		if utf8.RuneCountInString(request.TypeOther) > 15 {
-			return comm.CodeParameterInvalid
-		}
-	}
-
 	prp := repo.NewPostRepo()
 	post, err := prp.FindById(ctx, request.PostID)
 	if err != nil {
@@ -78,7 +66,6 @@ func (s *SubmitApi) Run(ctx *gin.Context) kit.Code {
 		PostID:      request.PostID,
 		ReporterID:  reporterID,
 		Type:        request.Type,
-		TypeOther:   request.TypeOther,
 		Description: request.Description,
 		Processed:   false,
 	}

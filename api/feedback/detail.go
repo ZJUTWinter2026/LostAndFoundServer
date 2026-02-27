@@ -24,7 +24,7 @@ func DetailHandler() gin.HandlerFunc {
 }
 
 type DetailApi struct {
-	Info     struct{}         `name:"投诉反馈详情" desc:"系统管理员查看投诉反馈详情"`
+	Info     struct{} `name:"投诉反馈详情" desc:"系统管理员查看投诉反馈详情"`
 	Request  DetailApiRequest
 	Response DetailApiResponse
 }
@@ -36,28 +36,27 @@ type DetailApiRequest struct {
 }
 
 type DetailApiResponse struct {
-	ID          int64              `json:"id" desc:"投诉ID"`
-	PostID      int64              `json:"post_id" desc:"物品ID"`
-	ReporterID  int64              `json:"reporter_id" desc:"投诉者ID"`
-	Type        string             `json:"type" desc:"投诉类型"`
-	TypeOther   string             `json:"type_other" desc:"其它类型说明"`
-	Description string             `json:"description" desc:"详细说明"`
-	Processed   bool               `json:"processed" desc:"是否已处理"`
-	ProcessedBy int64              `json:"processed_by,omitempty" desc:"处理人ID"`
-	ProcessedAt *time.Time         `json:"processed_at,omitempty" desc:"处理时间"`
-	CreatedAt   time.Time          `json:"created_at" desc:"创建时间"`
+	ID          int64                 `json:"id" desc:"投诉ID"`
+	PostID      int64                 `json:"post_id" desc:"物品ID"`
+	ReporterID  int64                 `json:"reporter_id" desc:"投诉者ID"`
+	Type        string                `json:"type" desc:"投诉类型"`
+	Description string                `json:"description" desc:"详细说明"`
+	Processed   bool                  `json:"processed" desc:"是否已处理"`
+	ProcessedBy int64                 `json:"processed_by,omitempty" desc:"处理人ID"`
+	ProcessedAt *time.Time            `json:"processed_at,omitempty" desc:"处理时间"`
+	CreatedAt   time.Time             `json:"created_at" desc:"创建时间"`
 	Post        *PostDetailInFeedback `json:"post,omitempty" desc:"关联物品信息"`
 }
 
 type PostDetailInFeedback struct {
-	ID           int64     `json:"id"`
-	ItemName     string    `json:"item_name"`
-	ItemType     string    `json:"item_type"`
-	Campus       string    `json:"campus"`
-	Location     string    `json:"location"`
-	Status       string    `json:"status"`
-	PublisherID  int64     `json:"publisher_id"`
-	CreatedAt    time.Time `json:"created_at"`
+	ID          int64     `json:"id"`
+	ItemName    string    `json:"item_name"`
+	ItemType    string    `json:"item_type"`
+	Campus      string    `json:"campus"`
+	Location    string    `json:"location"`
+	Status      string    `json:"status"`
+	PublisherID int64     `json:"publisher_id"`
+	CreatedAt   time.Time `json:"created_at"`
 }
 
 func (d *DetailApi) Run(ctx *gin.Context) kit.Code {
@@ -91,7 +90,6 @@ func (d *DetailApi) Run(ctx *gin.Context) kit.Code {
 		PostID:      feedback.PostID,
 		ReporterID:  feedback.ReporterID,
 		Type:        feedback.Type,
-		TypeOther:   feedback.TypeOther,
 		Description: feedback.Description,
 		Processed:   feedback.Processed,
 		ProcessedBy: feedback.ProcessedBy,
