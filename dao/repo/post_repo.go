@@ -6,7 +6,6 @@ import (
 	"app/dao/query"
 	"context"
 	"errors"
-	"strings"
 	"time"
 
 	"github.com/zjutjh/mygo/ndb"
@@ -59,17 +58,17 @@ func (r *PostRepo) FindById(ctx context.Context, id int64) (*model.Post, error) 
 func (r *PostRepo) ListByFilter(ctx context.Context, filter PostListFilter, offset int, limit int) (records []*model.Post, total int64, err error) {
 	db := ndb.Pick().WithContext(ctx).Model(&model.Post{})
 
-	if strings.TrimSpace(filter.PublishType) != "" {
-		db = db.Where("publish_type = ?", strings.TrimSpace(filter.PublishType))
+	if filter.PublishType != "" {
+		db = db.Where("publish_type = ?", filter.PublishType)
 	}
-	if strings.TrimSpace(filter.ItemType) != "" {
-		db = db.Where("item_type = ?", strings.TrimSpace(filter.ItemType))
+	if filter.ItemType != "" {
+		db = db.Where("item_type = ?", filter.ItemType)
 	}
-	if strings.TrimSpace(filter.Campus) != "" {
-		db = db.Where("campus = ?", strings.TrimSpace(filter.Campus))
+	if filter.Campus != "" {
+		db = db.Where("campus = ?", filter.Campus)
 	}
-	if strings.TrimSpace(filter.Location) != "" {
-		like := "%" + strings.TrimSpace(filter.Location) + "%"
+	if filter.Location != "" {
+		like := "%" + filter.Location + "%"
 		db = db.Where("location LIKE ?", like)
 	}
 
