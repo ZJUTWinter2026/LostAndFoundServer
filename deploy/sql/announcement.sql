@@ -2,10 +2,11 @@ CREATE TABLE `announcement` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '自增ID',
   `title` varchar(255) NOT NULL COMMENT '标题',
   `content` text NOT NULL COMMENT '内容',
-  `type` varchar(32) NOT NULL DEFAULT 'SYSTEM' COMMENT '类型: SYSTEM系统公告, REGION区域公告',
+  `type` varchar(32) NOT NULL DEFAULT 'SYSTEM' COMMENT '类型: SYSTEM系统公告/针对用户通知, REGION区域公告',
+  `campus` varchar(32) NOT NULL DEFAULT '' COMMENT '所属校区: ZHAO_HUI, PING_FENG, MO_GAN_SHAN, 仅REGION类型有效',
   `status` varchar(32) NOT NULL DEFAULT 'PENDING' COMMENT '状态: PENDING待审核, APPROVED已通过',
   `publisher_id` bigint NOT NULL COMMENT '发布者ID',
-  `target_user_id` bigint DEFAULT NULL COMMENT '目标用户ID, NULL或0表示全局公告',
+  `target_user_id` bigint NOT NULL DEFAULT 0 COMMENT '目标用户ID, 0表示全局公告/系统公告, 非0表示针对特定用户',
   `reviewed_by` bigint DEFAULT NULL COMMENT '审核人ID',
   `reviewed_at` datetime DEFAULT NULL COMMENT '审核时间',
   `created_at` timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
@@ -13,6 +14,7 @@ CREATE TABLE `announcement` (
   `deleted_at` bigint unsigned DEFAULT '0' COMMENT '删除时间 (软删除)',
   PRIMARY KEY (`id`),
   KEY `idx_type` (`type`),
+  KEY `idx_campus` (`campus`),
   KEY `idx_status` (`status`),
   KEY `idx_target_user_id` (`target_user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='公告通知表';

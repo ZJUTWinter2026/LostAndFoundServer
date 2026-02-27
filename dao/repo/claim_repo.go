@@ -81,3 +81,24 @@ func (r *ClaimRepo) UpdateStatus(ctx context.Context, id int64, status string, r
 			"reviewed_at": now,
 		}).Error
 }
+
+// ListByClaimant 根据认领者ID查询认领申请列表
+func (r *ClaimRepo) ListByClaimant(ctx context.Context, claimantID int64, offset int, limit int) ([]*model.Claim, int64, error) {
+	var claims []*model.Claim
+	db := ndb.Pick().WithContext(ctx).Model(&model.Claim{}).Where("claimant_id = ?", claimantID)
+
+	var total int64
+	if err := db.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	err := db.Order("created_at DESC").Offset(offset).Limit(limit).Find(&claims).Error
+	return claims, total, err
+}
+
+// Delete 删除认领申请（仅待确认状态可删除）
+func (r *ClaimRepo) Delete(ctx context.Context, id int64, claimantID int64) error {
+	return ndb.Pick().WithContext(ctx).
+		Where("id = ? AND claimant_id = ? AND status = ?", id, claimantID, enum.ClaimStatusPending).
+		Delete(&model.Claim{}).Error
+}

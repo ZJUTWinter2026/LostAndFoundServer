@@ -5,8 +5,6 @@ import (
 	"app/dao/query"
 	"context"
 	"errors"
-	"os"
-	"strings"
 
 	"github.com/zjutjh/mygo/ndb"
 	"gorm.io/gorm"
@@ -52,21 +50,6 @@ func (r *UserRepo) UpdatePassword(ctx context.Context, id int64, password string
 	u := r.query.User
 	_, err := u.WithContext(ctx).Where(u.ID.Eq(id)).Update(u.Password, password)
 	return err
-}
-
-func (r *UserRepo) EnsureDir(path string) error {
-	return os.MkdirAll(path, 0o755)
-}
-
-func (r *UserRepo) JoinURL(parts ...string) string {
-	cleaned := make([]string, 0, len(parts))
-	for _, part := range parts {
-		trim := strings.Trim(part, "/")
-		if trim != "" {
-			cleaned = append(cleaned, trim)
-		}
-	}
-	return "/" + strings.Join(cleaned, "/")
 }
 
 func (r *UserRepo) UpdateFirstLogin(ctx context.Context, id int64) error {

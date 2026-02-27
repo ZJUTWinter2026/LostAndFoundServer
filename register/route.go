@@ -51,7 +51,7 @@ func Route(router *gin.Engine) {
 		adminGroup := r.Group("/admin")
 		{
 			adminGroup.GET("/list", admin.ReviewListHandler())
-			adminGroup.GET("/detail/:post_id", admin.ReviewDetailHandler())
+			adminGroup.GET("/detail", admin.ReviewDetailHandler())
 			adminGroup.POST("/approve", admin.ApproveHandler())
 			adminGroup.POST("/reject", admin.RejectHandler())
 			adminGroup.GET("/statistics", admin.StatisticsHandler())
@@ -64,6 +64,8 @@ func Route(router *gin.Engine) {
 			claimGroup.POST("/apply", claim.ApplyHandler())
 			claimGroup.GET("/list", claim.ListClaimsHandler())
 			claimGroup.POST("/review", claim.ReviewHandler())
+			claimGroup.GET("/my-list", claim.MyListHandler())
+			claimGroup.POST("/cancel", claim.CancelHandler())
 		}
 
 		feedbackGroup := r.Group("/feedback")
@@ -81,6 +83,8 @@ func Route(router *gin.Engine) {
 			announcementGroup.POST("/publish", announcement.PublishHandler())
 			announcementGroup.GET("/review-list", announcement.ReviewListHandler())
 			announcementGroup.POST("/approve", announcement.ApproveHandler())
+			announcementGroup.DELETE("/delete", announcement.DeleteHandler())
+			announcementGroup.GET("/all-list", announcement.AllListHandler())
 		}
 
 		systemGroup := r.Group("/system")
@@ -99,7 +103,6 @@ func Route(router *gin.Engine) {
 			accountGroup.POST("/update", account.UpdateHandler())
 			accountGroup.POST("/disable", account.DisableHandler())
 			accountGroup.POST("/enable", account.EnableHandler())
-			accountGroup.POST("/notification", account.SendNotificationHandler())
 		}
 
 		adminPostGroup := r.Group("/admin/post")

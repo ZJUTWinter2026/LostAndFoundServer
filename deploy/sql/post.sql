@@ -15,7 +15,7 @@ CREATE TABLE `post` (
   `has_reward` boolean NOT NULL DEFAULT FALSE COMMENT '是否有悬赏',
   `reward_description` varchar(255) DEFAULT '' COMMENT '悬赏说明(仅has_reward为true时有效)',
   `images` text COMMENT '图片列表(JSON数组)',
-  `status` varchar(32) NOT NULL DEFAULT 'PENDING' COMMENT '状态: PENDING, APPROVED, MATCHED, CLAIMED, CANCELLED, REJECTED, ARCHIVED',
+  `status` varchar(32) NOT NULL DEFAULT 'PENDING' COMMENT '状态: PENDING, APPROVED, SOLVED, CANCELLED, REJECTED, ARCHIVED',
   `cancel_reason` varchar(255) DEFAULT '' COMMENT '取消原因',
   `reject_reason` varchar(255) DEFAULT '' COMMENT '驳回原因',
   `claim_count` int NOT NULL DEFAULT 0 COMMENT '认领人数',

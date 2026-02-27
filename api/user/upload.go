@@ -17,6 +17,7 @@ import (
 	"github.com/zjutjh/mygo/foundation/reply"
 	"github.com/zjutjh/mygo/kit"
 	"github.com/zjutjh/mygo/nlog"
+	"github.com/zjutjh/mygo/session"
 	"github.com/zjutjh/mygo/swagger"
 )
 
@@ -41,6 +42,11 @@ type UploadApiResponse struct {
 
 // Run Api业务逻辑执行点
 func (u *UploadApi) Run(ctx *gin.Context) kit.Code {
+	_, err := session.GetIdentity[int64](ctx)
+	if err != nil {
+		return comm.CodeNotLoggedIn
+	}
+
 	uploadDir, baseURL, maxSize := uploadConfig()
 
 	// 限制上传大小: 默认10MB，不可关闭

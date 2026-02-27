@@ -66,6 +66,11 @@ type DetailApiResponse struct {
 func (d *DetailApi) Run(ctx *gin.Context) kit.Code {
 	request := d.Request.Query
 
+	userID, err := session.GetIdentity[int64](ctx)
+	if err != nil {
+		return comm.CodeNotLoggedIn
+	}
+
 	prp := repo.NewPostRepo()
 	record, err := prp.FindById(ctx, request.ID)
 	if err != nil {
@@ -73,6 +78,23 @@ func (d *DetailApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeServerError
 	}
 	if record == nil {
+		return comm.CodeDataNotFound
+	}
+
+	urp := repo.NewUserRepo()
+	user, err := urp.FindById(ctx, userID)
+	if err != nil {
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询用户失败")
+		return comm.CodeServerError
+	}
+	if user == nil {
+		return comm.CodeNotLoggedIn
+	}
+
+	isAdmin := user.Usertype == enum.UserTypeAdmin || user.Usertype == enum.UserTypeSystemAdmin
+	isOwner := userID == record.PublisherID
+
+	if !isAdmin && !isOwner && record.Status != enum.PostStatusApproved {
 		return comm.CodeDataNotFound
 	}
 
@@ -109,21 +131,12 @@ func (d *DetailApi) Run(ctx *gin.Context) kit.Code {
 		CreatedAt:         record.CreatedAt,
 	}
 
-	// 权限判断：发布者本人或管理员可查看联系方式
-	userID, err := session.GetIdentity[int64](ctx)
-	if err == nil {
-		if userID == record.PublisherID {
-			resp.ContactName = record.ContactName
-			resp.ContactPhone = record.ContactPhone
-		} else {
-			// 判断是否为管理员
-			urp := repo.NewUserRepo()
-			user, err := urp.FindById(ctx, userID)
-			if err == nil && user != nil && (user.Usertype == enum.UserTypeAdmin || user.Usertype == enum.UserTypeSystemAdmin) {
-				resp.ContactName = record.ContactName
-				resp.ContactPhone = record.ContactPhone
-			}
-		}
+	if isOwner || isAdmin {
+		resp.ContactName = record.ContactName
+		resp.ContactPhone = record.ContactPhone
+	} else {
+		resp.ContactName = ""
+		resp.ContactPhone = ""
 	}
 
 	d.Response = resp

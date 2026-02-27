@@ -61,18 +61,36 @@ func (s *StatisticsApi) Run(ctx *gin.Context) kit.Code {
 
 	prp := repo.NewPostRepo()
 
-	// 获取状态统计
-	statusCounts, err := prp.CountByStatus(ctx)
-	if err != nil {
-		nlog.Pick().WithContext(ctx).WithError(err).Warn("获取状态统计失败")
-		return comm.CodeServerError
+	var campus string
+	if user.Usertype == enum.UserTypeAdmin {
+		campus = user.Campus
 	}
 
-	// 获取类型统计
-	typeCounts, err := prp.CountByItemType(ctx)
-	if err != nil {
-		nlog.Pick().WithContext(ctx).WithError(err).Warn("获取类型统计失败")
-		return comm.CodeServerError
+	var statusCounts, typeCounts map[string]int64
+	if campus != "" {
+		statusCounts, err = prp.CountByStatusAndCampus(ctx, campus)
+		if err != nil {
+			nlog.Pick().WithContext(ctx).WithError(err).Warn("获取状态统计失败")
+			return comm.CodeServerError
+		}
+
+		typeCounts, err = prp.CountByItemTypeAndCampus(ctx, campus)
+		if err != nil {
+			nlog.Pick().WithContext(ctx).WithError(err).Warn("获取类型统计失败")
+			return comm.CodeServerError
+		}
+	} else {
+		statusCounts, err = prp.CountByStatus(ctx)
+		if err != nil {
+			nlog.Pick().WithContext(ctx).WithError(err).Warn("获取状态统计失败")
+			return comm.CodeServerError
+		}
+
+		typeCounts, err = prp.CountByItemType(ctx)
+		if err != nil {
+			nlog.Pick().WithContext(ctx).WithError(err).Warn("获取类型统计失败")
+			return comm.CodeServerError
+		}
 	}
 
 	// 计算总数和占比

@@ -78,6 +78,11 @@ func (a *ApproveApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodePostStatusInvalid
 	}
 
+	// 管理员只能审核自己校区的发布
+	if user.Usertype == enum.UserTypeAdmin && post.Campus != user.Campus {
+		return comm.CodeAdminPermissionDenied
+	}
+
 	// 审核通过
 	err = prp.ApprovePost(ctx, request.PostID)
 	if err != nil {
@@ -188,6 +193,11 @@ func (r *RejectApi) Run(ctx *gin.Context) kit.Code {
 	// 必须是待审核状态
 	if post.Status != enum.PostStatusPending {
 		return comm.CodePostStatusInvalid
+	}
+
+	// 管理员只能审核自己校区的发布
+	if user.Usertype == enum.UserTypeAdmin && post.Campus != user.Campus {
+		return comm.CodeAdminPermissionDenied
 	}
 
 	// 审核驳回

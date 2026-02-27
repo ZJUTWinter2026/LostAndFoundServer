@@ -63,6 +63,11 @@ func (a *ApplyApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeDataNotFound
 	}
 
+	// 只有已审核通过的发布才能认领
+	if post.Status != enum.PostStatusApproved {
+		return comm.CodePostStatusInvalid
+	}
+
 	// 不能认领自己发布的物品
 	if post.PublisherID == claimantID {
 		return comm.CodeClaimOwnItem

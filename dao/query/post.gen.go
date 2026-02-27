@@ -79,7 +79,7 @@ type post struct {
 	HasReward         field.Bool   // 是否有悬赏
 	RewardDescription field.String // 悬赏说明(仅has_reward为true时有效)
 	Images            field.String // 图片列表(JSON数组)
-	Status            field.String // 状态: PENDING, APPROVED, MATCHED, CLAIMED, CANCELLED, REJECTED, ARCHIVED
+	Status            field.String // 状态: PENDING, APPROVED, SOLVED, CANCELLED, REJECTED, ARCHIVED
 	CancelReason      field.String // 取消原因
 	RejectReason      field.String // 驳回原因
 	ClaimCount        field.Int32  // 认领人数

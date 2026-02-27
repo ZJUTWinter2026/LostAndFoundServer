@@ -14,8 +14,7 @@ const (
 const (
 	PostStatusPending   = "PENDING"
 	PostStatusApproved  = "APPROVED"
-	PostStatusMatched   = "MATCHED"
-	PostStatusClaimed   = "CLAIMED"
+	PostStatusSolved    = "SOLVED"
 	PostStatusCancelled = "CANCELLED"
 	PostStatusRejected  = "REJECTED"
 	PostStatusArchived  = "ARCHIVED"
@@ -48,4 +47,5 @@ const (
 const (
 	AnnouncementStatusPending  = "PENDING"
 	AnnouncementStatusApproved = "APPROVED"
+	AnnouncementStatusRejected = "REJECTED"
 )

@@ -37,6 +37,7 @@ type CreateApiRequest struct {
 		IDCard   string `json:"id_card" binding:"required,len=18" desc:"身份证号"`
 		Password string `json:"password" binding:"min=6,max=18" desc:"密码(可选,学生默认身份证后六位)"`
 		UserType string `json:"user_type" binding:"required,oneof=STUDENT ADMIN SYSTEM_ADMIN" desc:"用户类型"`
+		Campus   string `json:"campus" binding:"omitempty,oneof=ZHAO_HUI PING_FENG MO_GAN_SHAN" desc:"所属校区: ZHAO_HUI, PING_FENG, MO_GAN_SHAN, 仅管理员有效"`
 	}
 }
 
@@ -78,6 +79,7 @@ func (a *CreateApi) Run(ctx *gin.Context) kit.Code {
 		IDCard:        req.IDCard,
 		Password:      string(hashedPwd),
 		Usertype:      req.UserType,
+		Campus:        req.Campus,
 		FirstLogin:    req.UserType == enum.UserTypeStudent,
 		DisabledUntil: time.Now(),
 	}

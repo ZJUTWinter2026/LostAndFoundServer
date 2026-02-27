@@ -72,7 +72,7 @@ func (r *ReviewDetailApi) Run(ctx *gin.Context) kit.Code {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询用户失败")
 		return comm.CodeServerError
 	}
-	if user == nil || user.Usertype != enum.UserTypeAdmin {
+	if user == nil || (user.Usertype != enum.UserTypeAdmin && user.Usertype != enum.UserTypeSystemAdmin) {
 		return comm.CodeAdminPermissionDenied
 	}
 
@@ -87,9 +87,9 @@ func (r *ReviewDetailApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeDataNotFound
 	}
 
-	// 必须是待审核状态
-	if post.Status != enum.PostStatusPending {
-		return comm.CodePostStatusInvalid
+	// 管理员只能查看自己校区的发布详情
+	if user.Usertype == enum.UserTypeAdmin && post.Campus != user.Campus {
+		return comm.CodeAdminPermissionDenied
 	}
 
 	var images []string

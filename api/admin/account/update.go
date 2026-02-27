@@ -32,6 +32,7 @@ type UpdateApiRequest struct {
 	Body struct {
 		ID            int64  `json:"id" binding:"required" desc:"用户ID"`
 		UserType      string `json:"user_type" binding:"oneof=STUDENT ADMIN SYSTEM_ADMIN" desc:"用户类型"`
+		Campus        string `json:"campus" binding:"omitempty,oneof=ZHAO_HUI PING_FENG MO_GAN_SHAN" desc:"所属校区: ZHAO_HUI, PING_FENG, MO_GAN_SHAN, 仅管理员有效"`
 		ResetPassword bool   `json:"reset_password" desc:"是否重置密码(重置为身份证后六位)"`
 	}
 }
@@ -51,6 +52,9 @@ func (a *UpdateApi) Run(ctx *gin.Context) kit.Code {
 
 	if req.UserType != "" {
 		user.Usertype = req.UserType
+	}
+	if req.Campus != "" {
+		user.Campus = req.Campus
 	}
 	if req.ResetPassword {
 		password := "123456"

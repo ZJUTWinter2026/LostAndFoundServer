@@ -33,6 +33,7 @@ func newUser(db *gorm.DB, opts ...gen.DOOption) user {
 	_user.IDCard = field.NewString(tableName, "id_card")
 	_user.Password = field.NewString(tableName, "password")
 	_user.Usertype = field.NewString(tableName, "usertype")
+	_user.Campus = field.NewString(tableName, "campus")
 	_user.FirstLogin = field.NewBool(tableName, "first_login")
 	_user.DisabledUntil = field.NewTime(tableName, "disabled_until")
 	_user.CreatedAt = field.NewTime(tableName, "created_at")
@@ -54,6 +55,7 @@ type user struct {
 	IDCard        field.String // 身份证号
 	Password      field.String // 密码
 	Usertype      field.String // 用户类型: STUDENT, ADMIN, SYSTEM_ADMIN
+	Campus        field.String // 所属校区: ZHAO_HUI, PING_FENG, MO_GAN_SHAN, 仅管理员有效
 	FirstLogin    field.Bool   // 首次登陆
 	DisabledUntil field.Time   // 禁用截止时间
 	CreatedAt     field.Time   // 创建时间
@@ -80,6 +82,7 @@ func (u *user) updateTableName(table string) *user {
 	u.IDCard = field.NewString(table, "id_card")
 	u.Password = field.NewString(table, "password")
 	u.Usertype = field.NewString(table, "usertype")
+	u.Campus = field.NewString(table, "campus")
 	u.FirstLogin = field.NewBool(table, "first_login")
 	u.DisabledUntil = field.NewTime(table, "disabled_until")
 	u.CreatedAt = field.NewTime(table, "created_at")
@@ -108,13 +111,14 @@ func (u *user) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (u *user) fillFieldMap() {
-	u.fieldMap = make(map[string]field.Expr, 10)
+	u.fieldMap = make(map[string]field.Expr, 11)
 	u.fieldMap["id"] = u.ID
 	u.fieldMap["username"] = u.Username
 	u.fieldMap["name"] = u.Name
 	u.fieldMap["id_card"] = u.IDCard
 	u.fieldMap["password"] = u.Password
 	u.fieldMap["usertype"] = u.Usertype
+	u.fieldMap["campus"] = u.Campus
 	u.fieldMap["first_login"] = u.FirstLogin
 	u.fieldMap["disabled_until"] = u.DisabledUntil
 	u.fieldMap["created_at"] = u.CreatedAt

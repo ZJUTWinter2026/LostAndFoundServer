@@ -40,6 +40,8 @@ type LoginApiResponse struct {
 	NeedUpdate bool   `json:"need_update" desc:"需要修改密码"`
 	Id         int64  `json:"id" desc:"用户id"`
 	UserType   string `json:"user_type" desc:"用户类型"`
+	Name       string `json:"name" desc:"姓名"`
+	Campus     string `json:"campus" desc:"校区"`
 }
 
 func (l *LoginApi) Run(ctx *gin.Context) kit.Code {
@@ -76,6 +78,8 @@ func (l *LoginApi) Run(ctx *gin.Context) kit.Code {
 		NeedUpdate: needUpdate,
 		Id:         user.ID,
 		UserType:   user.Usertype,
+		Name:       user.Name,
+		Campus:     user.Campus,
 	}
 	return comm.CodeOK
 }

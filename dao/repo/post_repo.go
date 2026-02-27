@@ -135,9 +135,12 @@ func (r *PostRepo) DeletePost(ctx context.Context, postID int64, publisherID int
 }
 
 // ListPendingReview 查询待审核的发布列表
-func (r *PostRepo) ListPendingReview(ctx context.Context, offset int, limit int) ([]*model.Post, int64, error) {
+func (r *PostRepo) ListPendingReview(ctx context.Context, campus string, offset int, limit int) ([]*model.Post, int64, error) {
 	var posts []*model.Post
 	db := ndb.Pick().WithContext(ctx).Model(&model.Post{}).Where("status = ?", enum.PostStatusPending)
+	if campus != "" {
+		db = db.Where("campus = ?", campus)
+	}
 
 	var total int64
 	if err := db.Count(&total).Error; err != nil {
@@ -190,6 +193,30 @@ func (r *PostRepo) CountByStatus(ctx context.Context) (map[string]int64, error) 
 	return counts, nil
 }
 
+// CountByStatusAndCampus 按状态和校区统计数量
+func (r *PostRepo) CountByStatusAndCampus(ctx context.Context, campus string) (map[string]int64, error) {
+	var results []struct {
+		Status string
+		Count  int64
+	}
+	db := ndb.Pick().WithContext(ctx).Model(&model.Post{})
+	if campus != "" {
+		db = db.Where("campus = ?", campus)
+	}
+	err := db.Select("status, count(*) as count").
+		Group("status").
+		Scan(&results).Error
+	if err != nil {
+		return nil, err
+	}
+
+	counts := make(map[string]int64)
+	for _, res := range results {
+		counts[res.Status] = res.Count
+	}
+	return counts, nil
+}
+
 // CountByItemType 按物品类型统计数量
 func (r *PostRepo) CountByItemType(ctx context.Context) (map[string]int64, error) {
 	var results []struct {
@@ -211,6 +238,30 @@ func (r *PostRepo) CountByItemType(ctx context.Context) (map[string]int64, error
 	return counts, nil
 }
 
+// CountByItemTypeAndCampus 按物品类型和校区统计数量
+func (r *PostRepo) CountByItemTypeAndCampus(ctx context.Context, campus string) (map[string]int64, error) {
+	var results []struct {
+		ItemType string
+		Count    int64
+	}
+	db := ndb.Pick().WithContext(ctx).Model(&model.Post{})
+	if campus != "" {
+		db = db.Where("campus = ?", campus)
+	}
+	err := db.Select("item_type, count(*) as count").
+		Group("item_type").
+		Scan(&results).Error
+	if err != nil {
+		return nil, err
+	}
+
+	counts := make(map[string]int64)
+	for _, res := range results {
+		counts[res.ItemType] = res.Count
+	}
+	return counts, nil
+}
+
 // UpdateStatus 更新发布状态
 func (r *PostRepo) UpdateStatus(ctx context.Context, postID int64, status string) error {
 	return ndb.Pick().WithContext(ctx).Model(&model.Post{}).
@@ -218,12 +269,12 @@ func (r *PostRepo) UpdateStatus(ctx context.Context, postID int64, status string
 		Update("status", status).Error
 }
 
-// MarkAsMatched 标记为已匹配
-func (r *PostRepo) MarkAsMatched(ctx context.Context, postID int64) error {
+// MarkAsSolved 标记为已解决
+func (r *PostRepo) MarkAsSolved(ctx context.Context, postID int64) error {
 	return ndb.Pick().WithContext(ctx).Model(&model.Post{}).
 		Where("id = ?", postID).
 		Updates(map[string]interface{}{
-			"status":       enum.PostStatusMatched,
+			"status":       enum.PostStatusSolved,
 			"processed_at": time.Now(),
 		}).Error
 }
@@ -263,16 +314,6 @@ func (r *PostRepo) ArchivePost(ctx context.Context, postID int64, archiveMethod 
 			"status":         enum.PostStatusArchived,
 			"archive_method": archiveMethod,
 			"processed_at":   time.Now(),
-		}).Error
-}
-
-// MarkAsClaimed 标记为已认领
-func (r *PostRepo) MarkAsClaimed(ctx context.Context, postID int64) error {
-	return ndb.Pick().WithContext(ctx).Model(&model.Post{}).
-		Where("id = ?", postID).
-		Updates(map[string]interface{}{
-			"status":       enum.PostStatusClaimed,
-			"processed_at": time.Now(),
 		}).Error
 }
 

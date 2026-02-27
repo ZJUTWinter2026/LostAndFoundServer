@@ -31,6 +31,7 @@ func newAnnouncement(db *gorm.DB, opts ...gen.DOOption) announcement {
 	_announcement.Title = field.NewString(tableName, "title")
 	_announcement.Content = field.NewString(tableName, "content")
 	_announcement.Type = field.NewString(tableName, "type")
+	_announcement.Campus = field.NewString(tableName, "campus")
 	_announcement.Status = field.NewString(tableName, "status")
 	_announcement.PublisherID = field.NewInt64(tableName, "publisher_id")
 	_announcement.TargetUserID = field.NewInt64(tableName, "target_user_id")
@@ -49,19 +50,20 @@ func newAnnouncement(db *gorm.DB, opts ...gen.DOOption) announcement {
 type announcement struct {
 	announcementDo announcementDo
 
-	ALL         field.Asterisk
-	ID          field.Int64  // 自增ID
-	Title       field.String // 标题
-	Content     field.String // 内容
-	Type        field.String // 类型: SYSTEM系统公告, REGION区域公告
-	Status      field.String // 状态: PENDING待审核, APPROVED已通过
-	PublisherID field.Int64  // 发布者ID
-	TargetUserID field.Int64 // 目标用户ID, NULL或0表示全局公告
-	ReviewedBy  field.Int64  // 审核人ID
-	ReviewedAt  field.Time   // 审核时间
-	CreatedAt   field.Time   // 创建时间
-	UpdatedAt   field.Time   // 更新时间
-	DeletedAt   field.Field  // 删除时间 (软删除)
+	ALL          field.Asterisk
+	ID           field.Int64  // 自增ID
+	Title        field.String // 标题
+	Content      field.String // 内容
+	Type         field.String // 类型: SYSTEM系统公告/针对用户通知, REGION区域公告
+	Campus       field.String // 所属校区: ZHAO_HUI, PING_FENG, MO_GAN_SHAN, 仅REGION类型有效
+	Status       field.String // 状态: PENDING待审核, APPROVED已通过
+	PublisherID  field.Int64  // 发布者ID
+	TargetUserID field.Int64  // 目标用户ID, 0表示全局公告/系统公告, 非0表示针对特定用户
+	ReviewedBy   field.Int64  // 审核人ID
+	ReviewedAt   field.Time   // 审核时间
+	CreatedAt    field.Time   // 创建时间
+	UpdatedAt    field.Time   // 更新时间
+	DeletedAt    field.Field  // 删除时间 (软删除)
 
 	fieldMap map[string]field.Expr
 }
@@ -82,8 +84,10 @@ func (a *announcement) updateTableName(table string) *announcement {
 	a.Title = field.NewString(table, "title")
 	a.Content = field.NewString(table, "content")
 	a.Type = field.NewString(table, "type")
+	a.Campus = field.NewString(table, "campus")
 	a.Status = field.NewString(table, "status")
 	a.PublisherID = field.NewInt64(table, "publisher_id")
+	a.TargetUserID = field.NewInt64(table, "target_user_id")
 	a.ReviewedBy = field.NewInt64(table, "reviewed_by")
 	a.ReviewedAt = field.NewTime(table, "reviewed_at")
 	a.CreatedAt = field.NewTime(table, "created_at")
@@ -117,13 +121,15 @@ func (a *announcement) GetFieldByName(fieldName string) (field.OrderExpr, bool) 
 }
 
 func (a *announcement) fillFieldMap() {
-	a.fieldMap = make(map[string]field.Expr, 11)
+	a.fieldMap = make(map[string]field.Expr, 13)
 	a.fieldMap["id"] = a.ID
 	a.fieldMap["title"] = a.Title
 	a.fieldMap["content"] = a.Content
 	a.fieldMap["type"] = a.Type
+	a.fieldMap["campus"] = a.Campus
 	a.fieldMap["status"] = a.Status
 	a.fieldMap["publisher_id"] = a.PublisherID
+	a.fieldMap["target_user_id"] = a.TargetUserID
 	a.fieldMap["reviewed_by"] = a.ReviewedBy
 	a.fieldMap["reviewed_at"] = a.ReviewedAt
 	a.fieldMap["created_at"] = a.CreatedAt

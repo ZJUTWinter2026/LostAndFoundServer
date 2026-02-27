@@ -45,7 +45,8 @@ type AnnouncementItem struct {
 	ID        int64     `json:"id" desc:"公告ID"`
 	Title     string    `json:"title" desc:"标题"`
 	Content   string    `json:"content" desc:"内容"`
-	Type      string    `json:"type" desc:"类型"`
+	Type      string    `json:"type" desc:"类型 SYSTEM/REGION"`
+	Campus    string    `json:"campus" desc:"校区 ZHAO_HUI/PING_FENG/MO_GAN_SHAN, 仅REGION类型有值"`
 	CreatedAt time.Time `json:"created_at" desc:"创建时间"`
 }
 
@@ -82,6 +83,7 @@ func (a *ListApi) Run(ctx *gin.Context) kit.Code {
 			Title:     ann.Title,
 			Content:   ann.Content,
 			Type:      ann.Type,
+			Campus:    ann.Campus,
 			CreatedAt: ann.CreatedAt,
 		})
 	}

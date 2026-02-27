@@ -37,7 +37,7 @@ func (r *AnnouncementRepo) ListApprovedForUser(ctx context.Context, userID int64
 	var announcements []*model.Announcement
 	db := ndb.Pick().WithContext(ctx).Model(&model.Announcement{}).
 		Where("status = ?", enum.AnnouncementStatusApproved).
-		Where("(target_user_id IS NULL OR target_user_id = 0 OR target_user_id = ?)", userID)
+		Where("(target_user_id = 0 OR target_user_id = ?)", userID)
 
 	var total int64
 	if err := db.Count(&total).Error; err != nil {
@@ -48,22 +48,14 @@ func (r *AnnouncementRepo) ListApprovedForUser(ctx context.Context, userID int64
 	return announcements, total, err
 }
 
-func (r *AnnouncementRepo) ListByStatus(ctx context.Context, status string, offset int, limit int) ([]*model.Announcement, int64, error) {
+func (r *AnnouncementRepo) ListPending(ctx context.Context, campus string, offset int, limit int) ([]*model.Announcement, int64, error) {
 	var announcements []*model.Announcement
-	db := ndb.Pick().WithContext(ctx).Model(&model.Announcement{}).Where("status = ?", status)
+	db := ndb.Pick().WithContext(ctx).Model(&model.Announcement{}).
+		Where("status = ?", enum.AnnouncementStatusPending)
 
-	var total int64
-	if err := db.Count(&total).Error; err != nil {
-		return nil, 0, err
+	if campus != "" {
+		db = db.Where("campus = ?", campus)
 	}
-
-	err := db.Order("created_at DESC").Offset(offset).Limit(limit).Find(&announcements).Error
-	return announcements, total, err
-}
-
-func (r *AnnouncementRepo) ListAll(ctx context.Context, offset int, limit int) ([]*model.Announcement, int64, error) {
-	var announcements []*model.Announcement
-	db := ndb.Pick().WithContext(ctx).Model(&model.Announcement{})
 
 	var total int64
 	if err := db.Count(&total).Error; err != nil {
@@ -84,6 +76,29 @@ func (r *AnnouncementRepo) Approve(ctx context.Context, id int64, reviewerID int
 		}).Error
 }
 
+func (r *AnnouncementRepo) Reject(ctx context.Context, id int64, reviewerID int64) error {
+	return ndb.Pick().WithContext(ctx).Model(&model.Announcement{}).
+		Where("id = ? AND status = ?", id, enum.AnnouncementStatusPending).
+		Updates(map[string]interface{}{
+			"status":      enum.AnnouncementStatusRejected,
+			"reviewed_by": reviewerID,
+			"reviewed_at": time.Now(),
+		}).Error
+}
+
 func (r *AnnouncementRepo) Delete(ctx context.Context, id int64) error {
 	return ndb.Pick().WithContext(ctx).Where("id = ?", id).Delete(&model.Announcement{}).Error
+}
+
+func (r *AnnouncementRepo) ListAll(ctx context.Context, offset int, limit int) ([]*model.Announcement, int64, error) {
+	var announcements []*model.Announcement
+	db := ndb.Pick().WithContext(ctx).Model(&model.Announcement{})
+
+	var total int64
+	if err := db.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	err := db.Order("created_at DESC").Offset(offset).Limit(limit).Find(&announcements).Error
+	return announcements, total, err
 }

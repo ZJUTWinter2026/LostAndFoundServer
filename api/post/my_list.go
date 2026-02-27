@@ -32,7 +32,7 @@ type MyListApi struct {
 type MyListApiRequest struct {
 	Query struct {
 		PublishType string `form:"publish_type" binding:"omitempty,oneof=LOST FOUND" desc:"发布类型 LOST/FOUND"`
-		Status      string `form:"status" binding:"omitempty,oneof=PENDING APPROVED MATCHED CLAIMED CANCELLED REJECTED" desc:"状态"`
+		Status      string `form:"status" binding:"omitempty,oneof=PENDING APPROVED SOLVED CANCELLED REJECTED" desc:"状态"`
 		Page        int    `form:"page" binding:"required,min=1" desc:"页码"`
 		PageSize    int    `form:"page_size" binding:"required,min=1,max=50" desc:"每页数量"`
 	}
@@ -145,8 +145,7 @@ func getStatusText(status string) string {
 	statusMap := map[string]string{
 		enum.PostStatusPending:   "待审核",
 		enum.PostStatusApproved:  "已通过",
-		enum.PostStatusMatched:   "已匹配",
-		enum.PostStatusClaimed:   "已认领",
+		enum.PostStatusSolved:    "已解决",
 		enum.PostStatusCancelled: "已取消",
 		enum.PostStatusRejected:  "已驳回",
 	}

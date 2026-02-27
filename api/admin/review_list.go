@@ -1,6 +1,10 @@
 package admin
 
 import (
+	"app/comm"
+	"app/comm/enum"
+	"app/dao/model"
+	"app/dao/repo"
 	"reflect"
 	"runtime"
 	"time"
@@ -11,10 +15,6 @@ import (
 	"github.com/zjutjh/mygo/nlog"
 	"github.com/zjutjh/mygo/session"
 	"github.com/zjutjh/mygo/swagger"
-
-	"app/comm"
-	"app/comm/enum"
-	"app/dao/repo"
 )
 
 // ReviewListHandler API router注册点
@@ -91,7 +91,16 @@ func (r *ReviewListApi) Run(ctx *gin.Context) kit.Code {
 	offset := (page - 1) * pageSize
 	prp := repo.NewPostRepo()
 
-	posts, total, err := prp.ListPendingReview(ctx, offset, pageSize)
+	var posts []*model.Post
+	var total int64
+
+	// 超管可查看所有校区的待审核列表，管理员只能查看自己校区的
+	if user.Usertype == enum.UserTypeSystemAdmin {
+		posts, total, err = prp.ListPendingReview(ctx, "", offset, pageSize)
+	} else {
+		posts, total, err = prp.ListPendingReview(ctx, user.Campus, offset, pageSize)
+	}
+
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询待审核列表失败")
 		return comm.CodeServerError

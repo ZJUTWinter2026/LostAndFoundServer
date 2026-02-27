@@ -18,6 +18,7 @@ type User struct {
 	IDCard        string    `gorm:"column:id_card;comment:身份证号" json:"id_card"`                                                          // 身份证号
 	Password      string    `gorm:"column:password;not null;comment:密码" json:"password"`                                                 // 密码
 	Usertype      string    `gorm:"column:usertype;not null;default:STUDENT;comment:用户类型: STUDENT, ADMIN, SYSTEM_ADMIN" json:"usertype"` // 用户类型: STUDENT, ADMIN, SYSTEM_ADMIN
+	Campus        string    `gorm:"column:campus;not null;comment:所属校区: ZHAO_HUI, PING_FENG, MO_GAN_SHAN, 仅管理员有效" json:"campus"`         // 所属校区: ZHAO_HUI, PING_FENG, MO_GAN_SHAN, 仅管理员有效
 	FirstLogin    bool      `gorm:"column:first_login;not null;default:1;comment:首次登陆" json:"first_login"`                               // 首次登陆
 	DisabledUntil time.Time `gorm:"column:disabled_until;not null;default:CURRENT_TIMESTAMP(3);comment:禁用截止时间" json:"disabled_until"`    // 禁用截止时间
 	CreatedAt     time.Time `gorm:"column:created_at;not null;default:CURRENT_TIMESTAMP(3);comment:创建时间" json:"created_at"`              // 创建时间

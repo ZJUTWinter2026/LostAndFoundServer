@@ -2,6 +2,7 @@ package post
 
 import (
 	"app/comm"
+	"app/comm/enum"
 	"app/dao/repo"
 	"reflect"
 	"runtime"
@@ -13,6 +14,7 @@ import (
 	"github.com/zjutjh/mygo/foundation/reply"
 	"github.com/zjutjh/mygo/kit"
 	"github.com/zjutjh/mygo/nlog"
+	"github.com/zjutjh/mygo/session"
 	"github.com/zjutjh/mygo/swagger"
 )
 
@@ -38,7 +40,7 @@ type QueryFilter struct {
 	ItemType    string    `form:"item_type" binding:"omitempty,max=20" desc:"物品类型(含其它)"`
 	Campus      string    `form:"campus" binding:"omitempty,oneof=ZHAO_HUI PING_FENG MO_GAN_SHAN" desc:"校区"`
 	Location    string    `form:"location" binding:"omitempty,max=100" desc:"地点"`
-	Status      string    `form:"status" binding:"omitempty,oneof=PENDING APPROVED MATCHED CLAIMED CANCELLED REJECTED ARCHIVED" desc:"状态"`
+	Status      string    `form:"status" binding:"omitempty,oneof=PENDING APPROVED SOLVED CANCELLED REJECTED ARCHIVED" desc:"状态"`
 	StartTime   time.Time `form:"start_time"  desc:"时间范围起"`
 	EndTime     time.Time `form:"end_time" desc:"时间范围止"`
 	Page        int       `form:"page" binding:"required,min=1" desc:"页码"`
@@ -72,6 +74,23 @@ type PostListItem struct {
 func (q *QueryApi) Run(ctx *gin.Context) kit.Code {
 	request := q.Request.Query
 
+	userID, err := session.GetIdentity[int64](ctx)
+	if err != nil {
+		return comm.CodeNotLoggedIn
+	}
+
+	urp := repo.NewUserRepo()
+	user, err := urp.FindById(ctx, userID)
+	if err != nil {
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询用户失败")
+		return comm.CodeServerError
+	}
+	if user == nil {
+		return comm.CodeNotLoggedIn
+	}
+
+	isAdmin := user.Usertype == enum.UserTypeAdmin || user.Usertype == enum.UserTypeSystemAdmin
+
 	if !hasAnyFilter(request) {
 		return comm.CodeParameterInvalid
 	}
@@ -88,12 +107,17 @@ func (q *QueryApi) Run(ctx *gin.Context) kit.Code {
 		pageSize = 50
 	}
 
+	status := request.Status
+	if !isAdmin {
+		status = enum.PostStatusApproved
+	}
+
 	filter := repo.PostListFilter{
 		PublishType: strings.TrimSpace(request.PublishType),
 		ItemType:    strings.TrimSpace(request.ItemType),
 		Campus:      strings.TrimSpace(request.Campus),
 		Location:    strings.TrimSpace(request.Location),
-		Status:      request.Status,
+		Status:      status,
 		StartTime:   request.StartTime,
 		EndTime:     request.EndTime,
 	}

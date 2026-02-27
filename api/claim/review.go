@@ -116,9 +116,9 @@ func (r *ReviewApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeServerError
 	}
 
-	// 如果同意认领，更新发布记录状态为已匹配
+	// 如果同意认领，更新发布记录状态为已解决
 	if targetStatus == enum.ClaimStatusMatched {
-		err = prp.UpdateStatus(ctx, claimRecord.PostID, enum.PostStatusMatched)
+		err = prp.UpdateStatus(ctx, claimRecord.PostID, enum.PostStatusSolved)
 		if err != nil {
 			nlog.Pick().WithContext(ctx).WithError(err).Warn("更新发布状态失败")
 			return comm.CodeServerError

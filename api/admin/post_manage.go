@@ -25,7 +25,7 @@ func ClaimPostHandler() gin.HandlerFunc {
 }
 
 type ClaimPostApi struct {
-	Info     struct{}            `name:"标记已认领" desc:"管理员标记物品为已认领"`
+	Info     struct{}            `name:"标记已解决" desc:"管理员标记物品为已解决"`
 	Request  ClaimPostApiRequest
 	Response ClaimPostApiResponse
 }
@@ -62,18 +62,18 @@ func (a *ClaimPostApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeDataNotFound
 	}
 
-	if post.Status != enum.PostStatusMatched {
+	if post.Status != enum.PostStatusApproved {
 		return comm.CodePostStatusInvalid
 	}
 
-	err = prp.MarkAsClaimed(ctx, req.PostID)
+	err = prp.MarkAsSolved(ctx, req.PostID)
 	if err != nil {
-		nlog.Pick().WithContext(ctx).WithError(err).Warn("标记已认领失败")
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("标记已解决失败")
 		return comm.CodeServerError
 	}
 
 	alr := repo.NewAuditLogRepo()
-	err = alr.CreateAuditLog(ctx, adminID, enum.AuditLogTypeUpdate, "", req.PostID, post.Status, enum.PostStatusClaimed)
+	err = alr.CreateAuditLog(ctx, adminID, enum.AuditLogTypeUpdate, "", req.PostID, post.Status, enum.PostStatusSolved)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("记录审计日志失败")
 		return comm.CodeServerError
