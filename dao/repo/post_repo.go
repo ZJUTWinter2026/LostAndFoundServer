@@ -6,7 +6,6 @@ import (
 	"app/dao/query"
 	"context"
 	"errors"
-	"strings"
 	"time"
 
 	"github.com/zjutjh/mygo/ndb"
@@ -59,20 +58,19 @@ func (r *PostRepo) FindById(ctx context.Context, id int64) (*model.Post, error) 
 func (r *PostRepo) ListByFilter(ctx context.Context, filter PostListFilter, offset int, limit int) (records []*model.Post, total int64, err error) {
 	db := ndb.Pick().WithContext(ctx).Model(&model.Post{})
 
-	if strings.TrimSpace(filter.PublishType) != "" {
-		db = db.Where("publish_type = ?", strings.TrimSpace(filter.PublishType))
+	if filter.PublishType != "" {
+		db = db.Where("publish_type = ?", filter.PublishType)
 	}
-	if strings.TrimSpace(filter.ItemType) != "" {
-		db = db.Where("item_type = ?", strings.TrimSpace(filter.ItemType))
+	if filter.ItemType != "" {
+		db = db.Where("item_type = ?", filter.ItemType)
 	}
-	if strings.TrimSpace(filter.Campus) != "" {
-		db = db.Where("campus = ?", strings.TrimSpace(filter.Campus))
+	if filter.Campus != "" {
+		db = db.Where("campus = ?", filter.Campus)
 	}
-	if strings.TrimSpace(filter.Location) != "" {
-		like := "%" + strings.TrimSpace(filter.Location) + "%"
+	if filter.Location != "" {
+		like := "%" + filter.Location + "%"
 		db = db.Where("location LIKE ?", like)
 	}
-
 	if filter.Status != "" {
 		db = db.Where("status = ?", filter.Status)
 	}
@@ -324,4 +322,24 @@ func (r *PostRepo) MigrateItemTypeToOther(ctx context.Context, oldType, newType 
 		Updates(map[string]interface{}{
 			"item_type": newType,
 		}).Error
+}
+
+// FindByIds 根据ID列表查询发布记录
+func (r *PostRepo) FindByIds(ctx context.Context, ids []int64) ([]*model.Post, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	var posts []*model.Post
+	err := ndb.Pick().WithContext(ctx).Model(&model.Post{}).
+		Where("id IN ?", ids).
+		Find(&posts).Error
+	return posts, err
+}
+
+// UpdateSummary 更新发布记录的总结文本
+func (r *PostRepo) UpdateSummary(ctx context.Context, postID int64, summary string) error {
+	return ndb.Pick().WithContext(ctx).Model(&model.Post{}).
+		Where("id = ?", postID).
+		Update("summary", summary).Error
 }

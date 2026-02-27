@@ -4,7 +4,9 @@ import (
 	"app/comm"
 	"app/comm/enum"
 	"app/dao/model"
+	"app/pkg/milvus"
 	"app/register/generate"
+	"context"
 	"fmt"
 	"time"
 
@@ -33,6 +35,7 @@ func Boot() kernel.BootList {
 
 		// 业务引导器
 		BizConfBoot(),
+		MilvusBoot(),
 		AppBoot(),
 	}
 }
@@ -44,6 +47,41 @@ func BizConfBoot() func() error {
 		if err != nil {
 			return fmt.Errorf("%w: 解析应用业务配置错误: %w", kit.ErrDataUnmarshal, err)
 		}
+		return nil
+	}
+}
+
+// MilvusBoot 初始化Milvus向量数据库引导器
+func MilvusBoot() func() error {
+	return func() error {
+		if comm.BizConf.Milvus.Address == "" {
+			nlog.Pick().Info("Milvus地址未配置，跳过初始化")
+			return nil
+		}
+
+		if err := milvus.InitClient(comm.BizConf.Milvus.Address); err != nil {
+			return fmt.Errorf("初始化Milvus失败: %w", err)
+		}
+
+		ctx := context.Background()
+		collectionName := comm.BizConf.Milvus.Collection
+		if collectionName == "" {
+			collectionName = "lost_and_found"
+		}
+
+		dimension := comm.BizConf.Embedding.Dimension
+		if dimension <= 0 {
+			dimension = 1536
+		}
+
+		if err := milvus.CreateCollectionIfNotExist(ctx, collectionName, dimension); err != nil {
+			return fmt.Errorf("创建Milvus Collection失败: %w", err)
+		}
+
+		if err := milvus.LoadCollection(ctx, collectionName); err != nil {
+			return fmt.Errorf("加载Milvus Collection失败: %w", err)
+		}
+
 		return nil
 	}
 }

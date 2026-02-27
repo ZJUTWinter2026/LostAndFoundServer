@@ -4,6 +4,7 @@ import (
 	"app/api/admin"
 	"app/api/admin/account"
 	"app/api/admin/system"
+	"app/api/agent"
 	"app/api/announcement"
 	"app/api/claim"
 	"app/api/feedback"
@@ -103,6 +104,14 @@ func Route(router *gin.Engine) {
 			accountGroup.POST("/update", account.UpdateHandler())
 			accountGroup.POST("/disable", account.DisableHandler())
 			accountGroup.POST("/enable", account.EnableHandler())
+		}
+
+		agentGroup := r.Group("/agent")
+		{
+			agentGroup.POST("/session", agent.SessionHandler())
+			agentGroup.GET("/sessions", agent.SessionListHandler())
+			agentGroup.POST("/chat", agent.ChatHandler())
+			agentGroup.GET("/history", agent.HistoryHandler())
 		}
 
 		adminPostGroup := r.Group("/admin/post")

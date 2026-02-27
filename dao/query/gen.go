@@ -19,6 +19,8 @@ var (
 	Q            = new(Query)
 	Announcement *announcement
 	AuditLog     *auditLog
+	ChatMessage  *chatMessage
+	ChatSession  *chatSession
 	Claim        *claim
 	Feedback     *feedback
 	Post         *post
@@ -30,6 +32,8 @@ func SetDefault(db *gorm.DB, opts ...gen.DOOption) {
 	*Q = *Use(db, opts...)
 	Announcement = &Q.Announcement
 	AuditLog = &Q.AuditLog
+	ChatMessage = &Q.ChatMessage
+	ChatSession = &Q.ChatSession
 	Claim = &Q.Claim
 	Feedback = &Q.Feedback
 	Post = &Q.Post
@@ -42,6 +46,8 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 		db:           db,
 		Announcement: newAnnouncement(db, opts...),
 		AuditLog:     newAuditLog(db, opts...),
+		ChatMessage:  newChatMessage(db, opts...),
+		ChatSession:  newChatSession(db, opts...),
 		Claim:        newClaim(db, opts...),
 		Feedback:     newFeedback(db, opts...),
 		Post:         newPost(db, opts...),
@@ -55,6 +61,8 @@ type Query struct {
 
 	Announcement announcement
 	AuditLog     auditLog
+	ChatMessage  chatMessage
+	ChatSession  chatSession
 	Claim        claim
 	Feedback     feedback
 	Post         post
@@ -69,6 +77,8 @@ func (q *Query) clone(db *gorm.DB) *Query {
 		db:           db,
 		Announcement: q.Announcement.clone(db),
 		AuditLog:     q.AuditLog.clone(db),
+		ChatMessage:  q.ChatMessage.clone(db),
+		ChatSession:  q.ChatSession.clone(db),
 		Claim:        q.Claim.clone(db),
 		Feedback:     q.Feedback.clone(db),
 		Post:         q.Post.clone(db),
@@ -90,6 +100,8 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 		db:           db,
 		Announcement: q.Announcement.replaceDB(db),
 		AuditLog:     q.AuditLog.replaceDB(db),
+		ChatMessage:  q.ChatMessage.replaceDB(db),
+		ChatSession:  q.ChatSession.replaceDB(db),
 		Claim:        q.Claim.replaceDB(db),
 		Feedback:     q.Feedback.replaceDB(db),
 		Post:         q.Post.replaceDB(db),
@@ -101,6 +113,8 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 type queryCtx struct {
 	Announcement IAnnouncementDo
 	AuditLog     IAuditLogDo
+	ChatMessage  IChatMessageDo
+	ChatSession  IChatSessionDo
 	Claim        IClaimDo
 	Feedback     IFeedbackDo
 	Post         IPostDo
@@ -112,6 +126,8 @@ func (q *Query) WithContext(ctx context.Context) *queryCtx {
 	return &queryCtx{
 		Announcement: q.Announcement.WithContext(ctx),
 		AuditLog:     q.AuditLog.WithContext(ctx),
+		ChatMessage:  q.ChatMessage.WithContext(ctx),
+		ChatSession:  q.ChatSession.WithContext(ctx),
 		Claim:        q.Claim.WithContext(ctx),
 		Feedback:     q.Feedback.WithContext(ctx),
 		Post:         q.Post.WithContext(ctx),

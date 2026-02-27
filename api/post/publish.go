@@ -6,6 +6,8 @@ import (
 	"app/comm/enum"
 	"app/dao/model"
 	"app/dao/repo"
+	"app/pkg/vector"
+	"context"
 	"reflect"
 	"runtime"
 	"strings"
@@ -119,6 +121,14 @@ func (p *PublishApi) Run(ctx *gin.Context) kit.Code {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("发布失败")
 		return comm.CodeServerError
 	}
+
+	go func() {
+		bgCtx := context.Background()
+		vectorSvc := vector.NewService()
+		if err := vectorSvc.UpdatePostVector(bgCtx, record); err != nil {
+			nlog.Pick().WithContext(bgCtx).WithError(err).Warn("更新向量失败")
+		}
+	}()
 
 	p.Response.Id = record.ID
 	return comm.CodeOK

@@ -36,3 +36,14 @@ var (
 	CodeArchiveReasonRequired = kit.NewCode(30019, "归档处理方式必填")
 	CodeArchiveNotExpired     = kit.NewCode(30020, "未超过认领时效，无法归档")
 )
+
+var (
+	CodeLLMNotConfigured    = kit.NewCode(30100, "大模型服务未配置")
+	CodeLLMCallFailed       = kit.NewCode(30101, "大模型调用失败")
+	CodeEmbeddingFailed     = kit.NewCode(30102, "文本向量化失败")
+	CodeMilvusNotConnected   = kit.NewCode(30103, "Milvus未连接")
+	CodeVectorOperationFailed = kit.NewCode(30104, "向量操作失败")
+	CodeAgentChatFailed      = kit.NewCode(30105, "AI对话失败")
+	CodeSessionNotFound      = kit.NewCode(30106, "会话不存在")
+	CodeSessionAccessDenied  = kit.NewCode(30107, "无权访问该会话")
+)

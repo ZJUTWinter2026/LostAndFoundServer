@@ -42,6 +42,7 @@ func newPost(db *gorm.DB, opts ...gen.DOOption) post {
 	_post.HasReward = field.NewBool(tableName, "has_reward")
 	_post.RewardDescription = field.NewString(tableName, "reward_description")
 	_post.Images = field.NewString(tableName, "images")
+	_post.Summary = field.NewString(tableName, "summary")
 	_post.Status = field.NewString(tableName, "status")
 	_post.CancelReason = field.NewString(tableName, "cancel_reason")
 	_post.RejectReason = field.NewString(tableName, "reject_reason")
@@ -77,6 +78,7 @@ type post struct {
 	HasReward         field.Bool   // 是否有悬赏
 	RewardDescription field.String // 悬赏说明(仅has_reward为true时有效)
 	Images            field.String // 图片列表(JSON数组)
+	Summary           field.String // AI生成的总结文本(用于向量化)
 	Status            field.String // 状态: PENDING, APPROVED, SOLVED, CANCELLED, REJECTED, ARCHIVED
 	CancelReason      field.String // 取消原因
 	RejectReason      field.String // 驳回原因
@@ -117,6 +119,7 @@ func (p *post) updateTableName(table string) *post {
 	p.HasReward = field.NewBool(table, "has_reward")
 	p.RewardDescription = field.NewString(table, "reward_description")
 	p.Images = field.NewString(table, "images")
+	p.Summary = field.NewString(table, "summary")
 	p.Status = field.NewString(table, "status")
 	p.CancelReason = field.NewString(table, "cancel_reason")
 	p.RejectReason = field.NewString(table, "reject_reason")
@@ -150,7 +153,7 @@ func (p *post) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (p *post) fillFieldMap() {
-	p.fieldMap = make(map[string]field.Expr, 24)
+	p.fieldMap = make(map[string]field.Expr, 25)
 	p.fieldMap["id"] = p.ID
 	p.fieldMap["publisher_id"] = p.PublisherID
 	p.fieldMap["publish_type"] = p.PublishType
@@ -166,6 +169,7 @@ func (p *post) fillFieldMap() {
 	p.fieldMap["has_reward"] = p.HasReward
 	p.fieldMap["reward_description"] = p.RewardDescription
 	p.fieldMap["images"] = p.Images
+	p.fieldMap["summary"] = p.Summary
 	p.fieldMap["status"] = p.Status
 	p.fieldMap["cancel_reason"] = p.CancelReason
 	p.fieldMap["reject_reason"] = p.RejectReason

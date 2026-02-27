@@ -1,0 +1,102 @@
+package tools
+
+import (
+	"app/comm/enum"
+	"app/dao/model"
+	"app/dao/repo"
+	"app/pkg/llm"
+	"context"
+
+	"github.com/cloudwego/eino/components/tool"
+	"github.com/cloudwego/eino/components/tool/utils"
+)
+
+type SearchPostsInput struct {
+	Query       string `json:"query" jsonschema:"description=搜索关键词或自然语言描述,required"`
+	PublishType string `json:"publish_type" jsonschema:"description=发布类型: LOST(寻物), FOUND(招领)"`
+	Campus      string `json:"campus" jsonschema:"description=校区筛选"`
+	Limit       int    `json:"limit" jsonschema:"description=返回结果数量限制，默认10"`
+}
+
+type SearchPostsOutput struct {
+	Success bool        `json:"success"`
+	Message string      `json:"message,omitempty"`
+	Data    interface{} `json:"data,omitempty"`
+	Total   int         `json:"total,omitempty"`
+}
+
+func searchPostsFunc(ctx context.Context, input *SearchPostsInput) (*SearchPostsOutput, error) {
+	postRepo := repo.NewPostRepo()
+	vectorRepo := repo.NewVectorRepo()
+
+	limit := input.Limit
+	if limit < 1 {
+		limit = 10
+	}
+
+	embedModel := llm.GetEmbeddingModel()
+	vectors, err := embedModel.EmbedStrings(ctx, []string{input.Query})
+	if err != nil {
+		return &SearchPostsOutput{Success: false, Message: "向量化失败"}, nil
+	}
+
+	if len(vectors) == 0 {
+		return &SearchPostsOutput{Success: false, Message: "向量化返回空结果"}, nil
+	}
+
+	vector := llm.Float64ToFloat32(vectors[0])
+	searchResults, err := vectorRepo.SearchSimilarPosts(ctx, vector, limit*2)
+	if err != nil {
+		return &SearchPostsOutput{Success: false, Message: "向量搜索失败"}, nil
+	}
+
+	var postIDs []int64
+	for _, result := range searchResults {
+		postIDs = append(postIDs, result.PostID)
+	}
+
+	if len(postIDs) == 0 {
+		return &SearchPostsOutput{
+			Success: true,
+			Data:    []*model.Post{},
+			Total:   0,
+		}, nil
+	}
+
+	posts, err := postRepo.FindByIds(ctx, postIDs)
+	if err != nil {
+		return &SearchPostsOutput{Success: false, Message: "查询发布记录失败"}, nil
+	}
+
+	var filteredPosts []*model.Post
+	for _, post := range posts {
+		if input.PublishType != "" && post.PublishType != input.PublishType {
+			continue
+		}
+		if input.Campus != "" && post.Campus != input.Campus {
+			continue
+		}
+		if post.Status != enum.PostStatusApproved {
+			continue
+		}
+		filteredPosts = append(filteredPosts, post)
+	}
+
+	if len(filteredPosts) > limit {
+		filteredPosts = filteredPosts[:limit]
+	}
+
+	return &SearchPostsOutput{
+		Success: true,
+		Data:    filteredPosts,
+		Total:   len(filteredPosts),
+	}, nil
+}
+
+func NewSearchPostsTool() (tool.InvokableTool, error) {
+	return utils.InferTool(
+		"search_posts",
+		"通过自然语言query进行向量搜索，查找相关的失物/招领信息",
+		searchPostsFunc,
+	)
+}

@@ -89,23 +89,6 @@ func (q *QueryApi) Run(ctx *gin.Context) kit.Code {
 	}
 
 	isAdmin := user.Usertype == enum.UserTypeAdmin || user.Usertype == enum.UserTypeSystemAdmin
-
-	if !hasAnyFilter(request) {
-		return comm.CodeParameterInvalid
-	}
-
-	page := request.Page
-	pageSize := request.PageSize
-	if page <= 0 {
-		page = 1
-	}
-	if pageSize <= 0 {
-		pageSize = 10
-	}
-	if pageSize > 50 {
-		pageSize = 50
-	}
-
 	status := request.Status
 	if !isAdmin {
 		status = enum.PostStatusApproved
@@ -120,10 +103,10 @@ func (q *QueryApi) Run(ctx *gin.Context) kit.Code {
 		StartTime:   request.StartTime,
 		EndTime:     request.EndTime,
 	}
-	offset := (page - 1) * pageSize
+	offset := (request.Page - 1) * request.PageSize
 
 	prp := repo.NewPostRepo()
-	records, total, err := prp.ListByFilter(ctx, filter, offset, pageSize)
+	records, total, err := prp.ListByFilter(ctx, filter, offset, request.PageSize)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询发布列表失败")
 		return comm.CodeServerError
@@ -156,8 +139,8 @@ func (q *QueryApi) Run(ctx *gin.Context) kit.Code {
 
 	q.Response = QueryApiResponse{
 		Total:    total,
-		Page:     page,
-		PageSize: pageSize,
+		Page:     request.Page,
+		PageSize: request.PageSize,
 		List:     items,
 	}
 	return comm.CodeOK
@@ -185,26 +168,4 @@ func hfQuery(ctx *gin.Context) {
 			reply.Fail(ctx, code)
 		}
 	}
-}
-
-func hasAnyFilter(req QueryFilter) bool {
-	if strings.TrimSpace(req.PublishType) != "" {
-		return true
-	}
-	if strings.TrimSpace(req.ItemType) != "" {
-		return true
-	}
-	if strings.TrimSpace(req.Campus) != "" {
-		return true
-	}
-	if strings.TrimSpace(req.Location) != "" {
-		return true
-	}
-	if strings.TrimSpace(req.Status) != "" {
-		return true
-	}
-	if !req.StartTime.IsZero() || !req.EndTime.IsZero() {
-		return true
-	}
-	return false
 }

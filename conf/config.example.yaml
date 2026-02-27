@@ -23,6 +23,24 @@ biz:
     base_url: "http://127.0.0.1:8000" # 访问前缀
     max_size_mb: 10 # 单文件最大 MB
 
+  # 大模型配置 (OpenAI兼容格式)
+  llm:
+    base_url: "https://api.openai.com/v1" # API地址
+    api_key: "your-api-key" # API密钥
+    model: "gpt-4o" # 模型名称
+
+  # 嵌入模型配置
+  embedding:
+    base_url: "https://api.openai.com/v1" # API地址
+    api_key: "your-api-key" # API密钥
+    model: "text-embedding-3-small" # 模型名称
+    dimension: 1536 # 向量维度
+
+  # Milvus向量数据库配置
+  milvus:
+    address: "localhost:19530" # Milvus地址
+    collection: "lost_and_found" # Collection名称
+
 # 应用业务日志配置
 log:
   level: 4 # 日志级别 0: panic 1: fatal 2: error 3: warn 4: info 5: debug 6: trace

@@ -5,6 +5,8 @@ import (
 	"app/comm"
 	"app/comm/enum"
 	"app/dao/repo"
+	"app/pkg/vector"
+	"context"
 	"reflect"
 	"runtime"
 	"time"
@@ -104,6 +106,14 @@ func (u *UpdateApi) Run(ctx *gin.Context) kit.Code {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("更新发布记录失败")
 		return comm.CodeServerError
 	}
+
+	go func() {
+		bgCtx := context.Background()
+		vectorSvc := vector.NewService()
+		if err := vectorSvc.UpdatePostVector(bgCtx, post); err != nil {
+			nlog.Pick().WithContext(bgCtx).WithError(err).Warn("更新向量失败")
+		}
+	}()
 
 	u.Response = UpdateApiResponse{Success: true}
 	return comm.CodeOK
