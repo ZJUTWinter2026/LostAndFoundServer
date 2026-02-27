@@ -10,11 +10,10 @@ import (
 
 	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
-	"github.com/spf13/cast"
 	"github.com/zjutjh/mygo/foundation/reply"
-	"github.com/zjutjh/mygo/jwt"
 	"github.com/zjutjh/mygo/kit"
 	"github.com/zjutjh/mygo/nlog"
+	"github.com/zjutjh/mygo/session"
 	"github.com/zjutjh/mygo/swagger"
 )
 
@@ -48,11 +47,10 @@ func (a *ApplyApi) Run(ctx *gin.Context) kit.Code {
 	request := a.Request.Body
 
 	// 获取当前用户ID
-	id, err := jwt.GetIdentity[string](ctx)
+	claimantID, err := session.GetIdentity[int64](ctx)
 	if err != nil {
 		return comm.CodeNotLoggedIn
 	}
-	claimantID := cast.ToInt64(id)
 
 	// 检查发布记录是否存在
 	prp := repo.NewPostRepo()

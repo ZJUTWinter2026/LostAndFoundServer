@@ -5,17 +5,22 @@ app:
 
 # HTTP 服务配置
 http_server:
-  addr: ":8888"
+  addr: ":8000"
   log:
     # 仅在本地开发调试时打开
     # access_filename: "/dev/stdout"
     # error_filename: "/dev/stderr"
 
+session:
+  driver: "memory" # 底层驱动 memory(内存) | redis
+  name: "session" # 名称
+  secret: "lostandfound2026" # 密钥
+
 # 业务私有配置
 biz:
   upload:
     dir: "uploads" # 上传目录
-    base_url: "http://127.0.0.1:8888" # 访问前缀
+    base_url: "http://127.0.0.1:8000" # 访问前缀
     max_size_mb: 10 # 单文件最大 MB
 
 # 应用业务日志配置

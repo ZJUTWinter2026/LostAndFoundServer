@@ -14,17 +14,18 @@ const TableNameAnnouncement = "announcement"
 
 // Announcement 公告通知表
 type Announcement struct {
-	ID          int64                 `gorm:"column:id;primaryKey;autoIncrement:true;comment:自增ID" json:"id"`                           // 自增ID
-	Title       string                `gorm:"column:title;not null;comment:标题" json:"title"`                                            // 标题
-	Content     string                `gorm:"column:content;not null;comment:内容" json:"content"`                                        // 内容
-	Type        string                `gorm:"column:type;not null;default:SYSTEM;comment:类型: SYSTEM系统公告, REGION区域公告" json:"type"`       // 类型: SYSTEM系统公告, REGION区域公告
-	Status      string                `gorm:"column:status;not null;default:PENDING;comment:状态: PENDING待审核, APPROVED已通过" json:"status"` // 状态: PENDING待审核, APPROVED已通过
-	PublisherID int64                 `gorm:"column:publisher_id;not null;comment:发布者ID" json:"publisher_id"`                           // 发布者ID
-	ReviewedBy  int64                 `gorm:"column:reviewed_by;comment:审核人ID" json:"reviewed_by"`                                      // 审核人ID
-	ReviewedAt  time.Time             `gorm:"column:reviewed_at;comment:审核时间" json:"reviewed_at"`                                       // 审核时间
-	CreatedAt   time.Time             `gorm:"column:created_at;not null;default:CURRENT_TIMESTAMP(3);comment:创建时间" json:"created_at"`   // 创建时间
-	UpdatedAt   time.Time             `gorm:"column:updated_at;not null;default:CURRENT_TIMESTAMP(3);comment:更新时间" json:"updated_at"`   // 更新时间
-	DeletedAt   soft_delete.DeletedAt `gorm:"column:deleted_at;comment:删除时间 (软删除);softDelete:milli" json:"-"`                           // 删除时间 (软删除)
+	ID           int64                 `gorm:"column:id;primaryKey;autoIncrement:true;comment:自增ID" json:"id"`                           // 自增ID
+	Title        string                `gorm:"column:title;not null;comment:标题" json:"title"`                                            // 标题
+	Content      string                `gorm:"column:content;not null;comment:内容" json:"content"`                                        // 内容
+	Type         string                `gorm:"column:type;not null;default:SYSTEM;comment:类型: SYSTEM系统公告, REGION区域公告" json:"type"`       // 类型: SYSTEM系统公告, REGION区域公告
+	Status       string                `gorm:"column:status;not null;default:PENDING;comment:状态: PENDING待审核, APPROVED已通过" json:"status"` // 状态: PENDING待审核, APPROVED已通过
+	PublisherID  int64                 `gorm:"column:publisher_id;not null;comment:发布者ID" json:"publisher_id"`                           // 发布者ID
+	TargetUserID *int64                `gorm:"column:target_user_id;comment:目标用户ID, NULL或0表示全局公告" json:"target_user_id"`                 // 目标用户ID, NULL或0表示全局公告
+	ReviewedBy   int64                 `gorm:"column:reviewed_by;comment:审核人ID" json:"reviewed_by"`                                      // 审核人ID
+	ReviewedAt   time.Time             `gorm:"column:reviewed_at;comment:审核时间" json:"reviewed_at"`                                       // 审核时间
+	CreatedAt    time.Time             `gorm:"column:created_at;not null;default:CURRENT_TIMESTAMP(3);comment:创建时间" json:"created_at"`   // 创建时间
+	UpdatedAt    time.Time             `gorm:"column:updated_at;not null;default:CURRENT_TIMESTAMP(3);comment:更新时间" json:"updated_at"`   // 更新时间
+	DeletedAt    soft_delete.DeletedAt `gorm:"column:deleted_at;comment:删除时间 (软删除);softDelete:milli" json:"-"`                           // 删除时间 (软删除)
 }
 
 // TableName Announcement's table name

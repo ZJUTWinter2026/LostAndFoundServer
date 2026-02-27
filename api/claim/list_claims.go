@@ -12,6 +12,7 @@ import (
 	"github.com/zjutjh/mygo/foundation/reply"
 	"github.com/zjutjh/mygo/kit"
 	"github.com/zjutjh/mygo/nlog"
+	"github.com/zjutjh/mygo/session"
 	"github.com/zjutjh/mygo/swagger"
 )
 
@@ -50,6 +51,11 @@ type ClaimItem struct {
 // Run Api业务逻辑执行点
 func (l *ListApi) Run(ctx *gin.Context) kit.Code {
 	request := l.Request.Query
+
+	_, err := session.GetIdentity[int64](ctx)
+	if err != nil {
+		return comm.CodeNotLoggedIn
+	}
 
 	// 检查发布记录是否存在
 	prp := repo.NewPostRepo()

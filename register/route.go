@@ -15,11 +15,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/zjutjh/mygo/config"
 	"github.com/zjutjh/mygo/middleware/cors"
+	"github.com/zjutjh/mygo/session"
 	"github.com/zjutjh/mygo/swagger"
 )
 
 func Route(router *gin.Engine) {
 	router.Use(cors.Pick())
+	router.Use(session.Pick())
 
 	uploadDir := comm.BizConf.Upload.Dir
 	router.Static("/"+uploadDir, "./"+uploadDir)
@@ -39,7 +41,7 @@ func Route(router *gin.Engine) {
 		{
 			lostFoundGroup.POST("/publish", post.PublishHandler())
 			lostFoundGroup.GET("/list", post.QueryHandler())
-			lostFoundGroup.GET("/detail/:id", post.DetailHandler())
+			lostFoundGroup.GET("/detail", post.DetailHandler())
 			lostFoundGroup.GET("/my-list", post.MyListHandler())
 			lostFoundGroup.PUT("/update", post.UpdateHandler())
 			lostFoundGroup.DELETE("/delete", post.DeleteHandler())
@@ -60,7 +62,7 @@ func Route(router *gin.Engine) {
 		claimGroup := r.Group("/claim")
 		{
 			claimGroup.POST("/apply", claim.ApplyHandler())
-			claimGroup.GET("/list/:post_id", claim.ListClaimsHandler())
+			claimGroup.GET("/list", claim.ListClaimsHandler())
 			claimGroup.POST("/review", claim.ReviewHandler())
 		}
 

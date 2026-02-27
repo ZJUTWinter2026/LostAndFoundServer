@@ -8,11 +8,10 @@ import (
 	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
-	"github.com/spf13/cast"
 	"github.com/zjutjh/mygo/foundation/reply"
-	"github.com/zjutjh/mygo/jwt"
 	"github.com/zjutjh/mygo/kit"
 	"github.com/zjutjh/mygo/nlog"
+	"github.com/zjutjh/mygo/session"
 	"github.com/zjutjh/mygo/swagger"
 
 	"app/comm"
@@ -35,9 +34,10 @@ type PublishApi struct {
 
 type PublishApiRequest struct {
 	Body struct {
-		Title   string `json:"title" binding:"required,max=100" desc:"标题"`
-		Content string `json:"content" binding:"required,max=5000" desc:"内容"`
-		Type    string `json:"type" binding:"required,oneof=SYSTEM REGION" desc:"类型 SYSTEM/REGION"`
+		Title       string `json:"title" binding:"required,max=100" desc:"标题"`
+		Content     string `json:"content" binding:"required,max=5000" desc:"内容"`
+		Type        string `json:"type" binding:"required,oneof=SYSTEM REGION" desc:"类型 SYSTEM/REGION"`
+		TargetUserID *int64 `json:"target_user_id" desc:"目标用户ID, 不填或0表示全局公告"`
 	}
 }
 
@@ -48,11 +48,10 @@ type PublishApiResponse struct {
 func (a *PublishApi) Run(ctx *gin.Context) kit.Code {
 	req := a.Request.Body
 
-	id, err := jwt.GetIdentity[string](ctx)
+	publisherID, err := session.GetIdentity[int64](ctx)
 	if err != nil {
 		return comm.CodeNotLoggedIn
 	}
-	publisherID := cast.ToInt64(id)
 
 	urp := repo.NewUserRepo()
 	user, err := urp.FindById(ctx, publisherID)
@@ -76,6 +75,7 @@ func (a *PublishApi) Run(ctx *gin.Context) kit.Code {
 		Type:        req.Type,
 		Status:      enum.AnnouncementStatusApproved,
 		PublisherID: publisherID,
+		TargetUserID: req.TargetUserID,
 	}
 
 	if user.Usertype == enum.UserTypeAdmin {
@@ -226,11 +226,10 @@ type ApproveApiRequest struct {
 }
 
 func (a *ApproveApi) Run(ctx *gin.Context) kit.Code {
-	id, err := jwt.GetIdentity[string](ctx)
+	reviewerID, err := session.GetIdentity[int64](ctx)
 	if err != nil {
 		return comm.CodeNotLoggedIn
 	}
-	reviewerID := cast.ToInt64(id)
 
 	if code := checkSysAdmin(ctx); code != comm.CodeOK {
 		return code
@@ -265,11 +264,10 @@ func hfApprove(ctx *gin.Context) {
 }
 
 func checkSysAdmin(ctx *gin.Context) kit.Code {
-	id, err := jwt.GetIdentity[string](ctx)
+	adminID, err := session.GetIdentity[int64](ctx)
 	if err != nil {
 		return comm.CodeNotLoggedIn
 	}
-	adminID := cast.ToInt64(id)
 
 	urp := repo.NewUserRepo()
 	user, err := urp.FindById(ctx, adminID)

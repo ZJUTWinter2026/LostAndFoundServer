@@ -6,14 +6,13 @@ import (
 	"app/dao/repo"
 	"reflect"
 	"runtime"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/zjutjh/mygo/foundation/reply"
-	"github.com/zjutjh/mygo/jwt"
 	"github.com/zjutjh/mygo/kit"
 	"github.com/zjutjh/mygo/nlog"
+	"github.com/zjutjh/mygo/session"
 	"github.com/zjutjh/mygo/swagger"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -41,7 +40,6 @@ type LoginApiResponse struct {
 	NeedUpdate bool   `json:"need_update" desc:"需要修改密码"`
 	Id         int64  `json:"id" desc:"用户id"`
 	UserType   string `json:"user_type" desc:"用户类型"`
-	Token      string `json:"token" desc:"token"`
 }
 
 func (l *LoginApi) Run(ctx *gin.Context) kit.Code {
@@ -65,9 +63,10 @@ func (l *LoginApi) Run(ctx *gin.Context) kit.Code {
 		nlog.Pick().WithContext(ctx).Warn("密码错误")
 		return comm.CodePasswordError
 	}
-	token, err := jwt.Pick[string]().GenerateToken(strconv.FormatInt(user.ID, 10))
+
+	err = session.SetIdentity(ctx, user.ID)
 	if err != nil {
-		nlog.Pick().WithContext(ctx).WithError(err).Warn("token生成失败")
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("session设置失败")
 		return comm.CodeTokenError
 	}
 
@@ -77,7 +76,6 @@ func (l *LoginApi) Run(ctx *gin.Context) kit.Code {
 		NeedUpdate: needUpdate,
 		Id:         user.ID,
 		UserType:   user.Usertype,
-		Token:      token,
 	}
 	return comm.CodeOK
 }

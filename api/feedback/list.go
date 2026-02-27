@@ -10,11 +10,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/spf13/cast"
 	"github.com/zjutjh/mygo/foundation/reply"
-	"github.com/zjutjh/mygo/jwt"
 	"github.com/zjutjh/mygo/kit"
 	"github.com/zjutjh/mygo/nlog"
+	"github.com/zjutjh/mygo/session"
 	"github.com/zjutjh/mygo/swagger"
 )
 
@@ -61,11 +60,10 @@ type FeedbackItem struct {
 func (l *ListApi) Run(ctx *gin.Context) kit.Code {
 	request := l.Request.Query
 
-	id, err := jwt.GetIdentity[string](ctx)
+	adminID, err := session.GetIdentity[int64](ctx)
 	if err != nil {
 		return comm.CodeNotLoggedIn
 	}
-	adminID := cast.ToInt64(id)
 
 	urp := repo.NewUserRepo()
 	user, err := urp.FindById(ctx, adminID)

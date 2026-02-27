@@ -1,15 +1,14 @@
 package repo
 
 import (
+	"app/comm/enum"
+	"app/dao/model"
 	"context"
 	"errors"
 	"time"
 
 	"github.com/zjutjh/mygo/ndb"
 	"gorm.io/gorm"
-
-	"app/comm/enum"
-	"app/dao/model"
 )
 
 type AnnouncementRepo struct{}
@@ -34,10 +33,11 @@ func (r *AnnouncementRepo) FindById(ctx context.Context, id int64) (*model.Annou
 	return &announcement, nil
 }
 
-func (r *AnnouncementRepo) ListApproved(ctx context.Context, offset int, limit int) ([]*model.Announcement, int64, error) {
+func (r *AnnouncementRepo) ListApprovedForUser(ctx context.Context, userID int64, offset int, limit int) ([]*model.Announcement, int64, error) {
 	var announcements []*model.Announcement
 	db := ndb.Pick().WithContext(ctx).Model(&model.Announcement{}).
-		Where("status = ?", enum.AnnouncementStatusApproved)
+		Where("status = ?", enum.AnnouncementStatusApproved).
+		Where("(target_user_id IS NULL OR target_user_id = 0 OR target_user_id = ?)", userID)
 
 	var total int64
 	if err := db.Count(&total).Error; err != nil {

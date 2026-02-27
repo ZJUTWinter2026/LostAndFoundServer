@@ -33,6 +33,7 @@ func newAnnouncement(db *gorm.DB, opts ...gen.DOOption) announcement {
 	_announcement.Type = field.NewString(tableName, "type")
 	_announcement.Status = field.NewString(tableName, "status")
 	_announcement.PublisherID = field.NewInt64(tableName, "publisher_id")
+	_announcement.TargetUserID = field.NewInt64(tableName, "target_user_id")
 	_announcement.ReviewedBy = field.NewInt64(tableName, "reviewed_by")
 	_announcement.ReviewedAt = field.NewTime(tableName, "reviewed_at")
 	_announcement.CreatedAt = field.NewTime(tableName, "created_at")
@@ -55,6 +56,7 @@ type announcement struct {
 	Type        field.String // 类型: SYSTEM系统公告, REGION区域公告
 	Status      field.String // 状态: PENDING待审核, APPROVED已通过
 	PublisherID field.Int64  // 发布者ID
+	TargetUserID field.Int64 // 目标用户ID, NULL或0表示全局公告
 	ReviewedBy  field.Int64  // 审核人ID
 	ReviewedAt  field.Time   // 审核时间
 	CreatedAt   field.Time   // 创建时间

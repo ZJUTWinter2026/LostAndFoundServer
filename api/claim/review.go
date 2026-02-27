@@ -8,11 +8,10 @@ import (
 	"runtime"
 
 	"github.com/gin-gonic/gin"
-	"github.com/spf13/cast"
 	"github.com/zjutjh/mygo/foundation/reply"
-	"github.com/zjutjh/mygo/jwt"
 	"github.com/zjutjh/mygo/kit"
 	"github.com/zjutjh/mygo/nlog"
+	"github.com/zjutjh/mygo/session"
 	"github.com/zjutjh/mygo/swagger"
 )
 
@@ -45,11 +44,10 @@ func (r *ReviewApi) Run(ctx *gin.Context) kit.Code {
 	request := r.Request.Body
 
 	// 获取当前用户ID
-	id, err := jwt.GetIdentity[string](ctx)
+	reviewerID, err := session.GetIdentity[int64](ctx)
 	if err != nil {
 		return comm.CodeNotLoggedIn
 	}
-	reviewerID := cast.ToInt64(id)
 
 	// 查询认领申请
 	crp := repo.NewClaimRepo()

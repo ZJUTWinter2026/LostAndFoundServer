@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/zjutjh/mygo/foundation/reply"
 	"github.com/zjutjh/mygo/kit"
+	"github.com/zjutjh/mygo/session"
 	"github.com/zjutjh/mygo/swagger"
 
 	"app/comm"
@@ -62,9 +63,14 @@ func (a *ListApi) Run(ctx *gin.Context) kit.Code {
 		pageSize = 50
 	}
 
+	userID, err := session.GetIdentity[int64](ctx)
+	if err != nil {
+		return comm.CodeNotLoggedIn
+	}
+
 	offset := (page - 1) * pageSize
 	arr := repo.NewAnnouncementRepo()
-	announcements, total, err := arr.ListApproved(ctx, offset, pageSize)
+	announcements, total, err := arr.ListApprovedForUser(ctx, userID, offset, pageSize)
 	if err != nil {
 		return comm.CodeServerError
 	}

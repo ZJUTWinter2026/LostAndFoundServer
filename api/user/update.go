@@ -5,14 +5,12 @@ import (
 	"app/dao/repo"
 	"reflect"
 	"runtime"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/spf13/cast"
 	"github.com/zjutjh/mygo/foundation/reply"
-	"github.com/zjutjh/mygo/jwt"
 	"github.com/zjutjh/mygo/kit"
 	"github.com/zjutjh/mygo/nlog"
+	"github.com/zjutjh/mygo/session"
 	"github.com/zjutjh/mygo/swagger"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -44,11 +42,10 @@ func (u *UpdateApi) Run(ctx *gin.Context) kit.Code {
 	urp := repo.NewUserRepo()
 	request := u.Request.Body
 
-	id, err := jwt.GetIdentity[string](ctx)
+	uid, err := session.GetIdentity[int64](ctx)
 	if err != nil {
 		return comm.CodeNotLoggedIn
 	}
-	uid := cast.ToInt64(id)
 
 	user, err := urp.FindById(ctx, uid)
 	if err != nil {
@@ -77,12 +74,7 @@ func (u *UpdateApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeServerError
 	}
 
-	token, err := jwt.Pick[string]().GenerateToken(strconv.FormatInt(uid, 10))
-	if err != nil {
-		nlog.Pick().WithContext(ctx).WithError(err).Warn("token生成失败")
-		return comm.CodeTokenError
-	}
-	u.Response.Token = token
+	u.Response.Token = "logged_in"
 	return comm.CodeOK
 }
 

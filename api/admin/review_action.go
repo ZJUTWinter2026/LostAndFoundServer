@@ -7,11 +7,10 @@ import (
 	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
-	"github.com/spf13/cast"
 	"github.com/zjutjh/mygo/foundation/reply"
-	"github.com/zjutjh/mygo/jwt"
 	"github.com/zjutjh/mygo/kit"
 	"github.com/zjutjh/mygo/nlog"
+	"github.com/zjutjh/mygo/session"
 	"github.com/zjutjh/mygo/swagger"
 
 	"app/comm"
@@ -47,11 +46,10 @@ func (a *ApproveApi) Run(ctx *gin.Context) kit.Code {
 	request := a.Request.Body
 
 	// 获取当前用户并验证是管理员
-	id, err := jwt.GetIdentity[string](ctx)
+	adminID, err := session.GetIdentity[int64](ctx)
 	if err != nil {
 		return comm.CodeNotLoggedIn
 	}
-	adminID := cast.ToInt64(id)
 
 	// 验证管理员权限
 	urp := repo.NewUserRepo()
@@ -160,11 +158,10 @@ func (r *RejectApi) Run(ctx *gin.Context) kit.Code {
 	}
 
 	// 获取当前用户并验证是管理员
-	id, err := jwt.GetIdentity[string](ctx)
+	adminID, err := session.GetIdentity[int64](ctx)
 	if err != nil {
 		return comm.CodeNotLoggedIn
 	}
-	adminID := cast.ToInt64(id)
 
 	// 验证管理员权限
 	urp := repo.NewUserRepo()

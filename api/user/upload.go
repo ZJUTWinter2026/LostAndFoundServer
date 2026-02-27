@@ -20,11 +20,6 @@ import (
 	"github.com/zjutjh/mygo/swagger"
 )
 
-const (
-	defaultUploadDir     = "uploads"
-	defaultUploadBaseURL = ""
-)
-
 // UploadHandler API router注册点
 func UploadHandler() gin.HandlerFunc {
 	api := UploadApi{}

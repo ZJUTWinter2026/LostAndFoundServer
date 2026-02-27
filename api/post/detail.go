@@ -9,8 +9,7 @@ import (
 	"time"
 
 	"github.com/bytedance/sonic"
-	"github.com/spf13/cast"
-	"github.com/zjutjh/mygo/jwt"
+	"github.com/zjutjh/mygo/session"
 
 	"github.com/gin-gonic/gin"
 	"github.com/zjutjh/mygo/foundation/reply"
@@ -111,9 +110,8 @@ func (d *DetailApi) Run(ctx *gin.Context) kit.Code {
 	}
 
 	// 权限判断：发布者本人或管理员可查看联系方式
-	id, err := jwt.GetIdentity[string](ctx)
+	userID, err := session.GetIdentity[int64](ctx)
 	if err == nil {
-		userID := cast.ToInt64(id)
 		if userID == record.PublisherID {
 			resp.ContactName = record.ContactName
 			resp.ContactPhone = record.ContactPhone

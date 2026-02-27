@@ -11,12 +11,11 @@ import (
 	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
-	"github.com/spf13/cast"
 	"github.com/zjutjh/mygo/foundation/reply"
-	"github.com/zjutjh/mygo/jwt"
 	"github.com/zjutjh/mygo/kit"
 	"github.com/zjutjh/mygo/ndb"
 	"github.com/zjutjh/mygo/nlog"
+	"github.com/zjutjh/mygo/session"
 	"github.com/zjutjh/mygo/swagger"
 )
 
@@ -46,11 +45,10 @@ type SendNotificationApiResponse struct {
 }
 
 func (a *SendNotificationApi) Run(ctx *gin.Context) kit.Code {
-	id, err := jwt.GetIdentity[string](ctx)
+	publisherID, err := session.GetIdentity[int64](ctx)
 	if err != nil {
 		return comm.CodeNotLoggedIn
 	}
-	publisherID := cast.ToInt64(id)
 
 	urp := repo.NewUserRepo()
 	user, err := urp.FindById(ctx, publisherID)

@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/zjutjh/mygo/jwt"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/zjutjh/mygo/config"
@@ -31,7 +30,6 @@ func Boot() kernel.BootList {
 		ndb.Boot(), // DB
 		// nedis.Boot(), // Redis
 		nesty.Boot(), // HTTP Client
-		jwt.Boot[string](),
 
 		// 业务引导器
 		BizConfBoot(),
