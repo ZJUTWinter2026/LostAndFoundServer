@@ -2,9 +2,7 @@ package account
 
 import (
 	"app/comm"
-	"app/comm/enum"
 	"app/dao/model"
-	"app/dao/repo"
 	"reflect"
 	"runtime"
 	"time"
@@ -13,7 +11,6 @@ import (
 	"github.com/zjutjh/mygo/foundation/reply"
 	"github.com/zjutjh/mygo/kit"
 	"github.com/zjutjh/mygo/ndb"
-	"github.com/zjutjh/mygo/session"
 	"github.com/zjutjh/mygo/swagger"
 )
 
@@ -56,7 +53,7 @@ type AccountItem struct {
 }
 
 func (a *ListApi) Run(ctx *gin.Context) kit.Code {
-	if code := checkSysAdmin(ctx); code != comm.CodeOK {
+	if code := comm.CheckSysAdmin(ctx); code != comm.CodeOK {
 		return code
 	}
 
@@ -130,21 +127,4 @@ func hfList(ctx *gin.Context) {
 	} else {
 		reply.Fail(ctx, code)
 	}
-}
-
-func checkSysAdmin(ctx *gin.Context) kit.Code {
-	adminID, err := session.GetIdentity[int64](ctx)
-	if err != nil {
-		return comm.CodeNotLoggedIn
-	}
-
-	urp := repo.NewUserRepo()
-	user, err := urp.FindById(ctx, adminID)
-	if err != nil {
-		return comm.CodeServerError
-	}
-	if user == nil || user.Usertype != enum.UserTypeSystemAdmin {
-		return comm.CodeAdminPermissionDenied
-	}
-	return comm.CodeOK
 }

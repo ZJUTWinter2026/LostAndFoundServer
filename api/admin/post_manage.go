@@ -48,7 +48,7 @@ func (a *ClaimPostApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeNotLoggedIn
 	}
 
-	if code := checkAdminPermission(ctx, adminID); code != comm.CodeOK {
+	if code := comm.CheckAdminPermission(ctx, adminID); code != comm.CodeOK {
 		return code
 	}
 
@@ -139,7 +139,7 @@ func (a *ArchivePostApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeNotLoggedIn
 	}
 
-	if code := checkAdminPermission(ctx, adminID); code != comm.CodeOK {
+	if code := comm.CheckAdminPermission(ctx, adminID); code != comm.CodeOK {
 		return code
 	}
 
@@ -202,17 +202,4 @@ func hfArchivePost(ctx *gin.Context) {
 	} else {
 		reply.Fail(ctx, code)
 	}
-}
-
-func checkAdminPermission(ctx *gin.Context, adminID int64) kit.Code {
-	urp := repo.NewUserRepo()
-	user, err := urp.FindById(ctx, adminID)
-	if err != nil {
-		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询用户失败")
-		return comm.CodeServerError
-	}
-	if user == nil || (user.Usertype != enum.UserTypeAdmin && user.Usertype != enum.UserTypeSystemAdmin) {
-		return comm.CodeAdminPermissionDenied
-	}
-	return comm.CodeOK
 }

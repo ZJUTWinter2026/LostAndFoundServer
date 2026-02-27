@@ -169,7 +169,7 @@ type ReviewAnnouncementItem struct {
 }
 
 func (a *ReviewListApi) Run(ctx *gin.Context) kit.Code {
-	if code := checkSysAdmin(ctx); code != comm.CodeOK {
+	if code := comm.CheckSysAdmin(ctx); code != comm.CodeOK {
 		return code
 	}
 
@@ -256,7 +256,7 @@ func (a *ApproveApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeNotLoggedIn
 	}
 
-	if code := checkSysAdmin(ctx); code != comm.CodeOK {
+	if code := comm.CheckSysAdmin(ctx); code != comm.CodeOK {
 		return code
 	}
 
@@ -305,23 +305,6 @@ func hfApprove(ctx *gin.Context) {
 	}
 }
 
-func checkSysAdmin(ctx *gin.Context) kit.Code {
-	adminID, err := session.GetIdentity[int64](ctx)
-	if err != nil {
-		return comm.CodeNotLoggedIn
-	}
-
-	urp := repo.NewUserRepo()
-	user, err := urp.FindById(ctx, adminID)
-	if err != nil {
-		return comm.CodeServerError
-	}
-	if user == nil || user.Usertype != enum.UserTypeSystemAdmin {
-		return comm.CodeAdminPermissionDenied
-	}
-	return comm.CodeOK
-}
-
 func DeleteHandler() gin.HandlerFunc {
 	api := DeleteApi{}
 	swagger.CM[runtime.FuncForPC(reflect.ValueOf(hfDelete).Pointer()).Name()] = api
@@ -341,7 +324,7 @@ type DeleteApiRequest struct {
 }
 
 func (a *DeleteApi) Run(ctx *gin.Context) kit.Code {
-	if code := checkSysAdmin(ctx); code != comm.CodeOK {
+	if code := comm.CheckSysAdmin(ctx); code != comm.CodeOK {
 		return code
 	}
 
@@ -420,7 +403,7 @@ type AllAnnouncementItem struct {
 }
 
 func (a *AllListApi) Run(ctx *gin.Context) kit.Code {
-	if code := checkSysAdmin(ctx); code != comm.CodeOK {
+	if code := comm.CheckSysAdmin(ctx); code != comm.CodeOK {
 		return code
 	}
 

@@ -29,7 +29,7 @@ type DisableApiRequest struct {
 }
 
 func (a *DisableApi) Run(ctx *gin.Context) kit.Code {
-	if code := checkSysAdmin(ctx); code != comm.CodeOK {
+	if code := comm.CheckSysAdmin(ctx); code != comm.CodeOK {
 		return code
 	}
 
@@ -101,7 +101,7 @@ type EnableApiRequest struct {
 }
 
 func (a *EnableApi) Run(ctx *gin.Context) kit.Code {
-	if code := checkSysAdmin(ctx); code != comm.CodeOK {
+	if code := comm.CheckSysAdmin(ctx); code != comm.CodeOK {
 		return code
 	}
 

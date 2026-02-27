@@ -38,7 +38,7 @@ type UpdateApiRequest struct {
 }
 
 func (a *UpdateApi) Run(ctx *gin.Context) kit.Code {
-	if code := checkSysAdmin(ctx); code != comm.CodeOK {
+	if code := comm.CheckSysAdmin(ctx); code != comm.CodeOK {
 		return code
 	}
 

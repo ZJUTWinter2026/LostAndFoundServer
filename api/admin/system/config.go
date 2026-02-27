@@ -2,7 +2,6 @@ package system
 
 import (
 	"app/comm"
-	"app/comm/enum"
 	"app/dao/repo"
 	"context"
 	"reflect"
@@ -25,7 +24,7 @@ func ConfigListHandler() gin.HandlerFunc {
 }
 
 type ConfigListApi struct {
-	Info     struct{}               `name:"获取系统配置" desc:"获取系统配置"`
+	Info     struct{} `name:"获取系统配置" desc:"获取系统配置"`
 	Request  ConfigListApiRequest
 	Response ConfigListApiResponse
 }
@@ -99,7 +98,7 @@ func UpdateFeedbackTypesHandler() gin.HandlerFunc {
 }
 
 type UpdateFeedbackTypesApi struct {
-	Info     struct{}                     `name:"更新投诉反馈类型" desc:"更新投诉反馈类型"`
+	Info     struct{} `name:"更新投诉反馈类型" desc:"更新投诉反馈类型"`
 	Request  UpdateFeedbackTypesApiRequest
 	Response struct{}
 }
@@ -111,7 +110,7 @@ type UpdateFeedbackTypesApiRequest struct {
 }
 
 func (a *UpdateFeedbackTypesApi) Run(ctx *gin.Context) kit.Code {
-	if code := checkSysAdmin(ctx); code != comm.CodeOK {
+	if code := comm.CheckSysAdmin(ctx); code != comm.CodeOK {
 		return code
 	}
 
@@ -173,7 +172,7 @@ func UpdateItemTypesHandler() gin.HandlerFunc {
 }
 
 type UpdateItemTypesApi struct {
-	Info     struct{}                  `name:"更新物品类型" desc:"更新物品类型"`
+	Info     struct{} `name:"更新物品类型" desc:"更新物品类型"`
 	Request  UpdateItemTypesApiRequest
 	Response struct{}
 }
@@ -185,7 +184,7 @@ type UpdateItemTypesApiRequest struct {
 }
 
 func (a *UpdateItemTypesApi) Run(ctx *gin.Context) kit.Code {
-	if code := checkSysAdmin(ctx); code != comm.CodeOK {
+	if code := comm.CheckSysAdmin(ctx); code != comm.CodeOK {
 		return code
 	}
 
@@ -247,7 +246,7 @@ func UpdateClaimValidityDaysHandler() gin.HandlerFunc {
 }
 
 type UpdateClaimValidityDaysApi struct {
-	Info     struct{}                          `name:"更新认领时效" desc:"更新认领时效"`
+	Info     struct{} `name:"更新认领时效" desc:"更新认领时效"`
 	Request  UpdateClaimValidityDaysApiRequest
 	Response struct{}
 }
@@ -259,7 +258,7 @@ type UpdateClaimValidityDaysApiRequest struct {
 }
 
 func (a *UpdateClaimValidityDaysApi) Run(ctx *gin.Context) kit.Code {
-	if code := checkSysAdmin(ctx); code != comm.CodeOK {
+	if code := comm.CheckSysAdmin(ctx); code != comm.CodeOK {
 		return code
 	}
 
@@ -299,7 +298,7 @@ func UpdatePublishLimitHandler() gin.HandlerFunc {
 }
 
 type UpdatePublishLimitApi struct {
-	Info     struct{}                      `name:"更新发布限制" desc:"更新每日发布限制"`
+	Info     struct{} `name:"更新发布限制" desc:"更新每日发布限制"`
 	Request  UpdatePublishLimitApiRequest
 	Response struct{}
 }
@@ -311,7 +310,7 @@ type UpdatePublishLimitApiRequest struct {
 }
 
 func (a *UpdatePublishLimitApi) Run(ctx *gin.Context) kit.Code {
-	if code := checkSysAdmin(ctx); code != comm.CodeOK {
+	if code := comm.CheckSysAdmin(ctx); code != comm.CodeOK {
 		return code
 	}
 
@@ -342,23 +341,6 @@ func hfUpdatePublishLimit(ctx *gin.Context) {
 	} else {
 		reply.Fail(ctx, code)
 	}
-}
-
-func checkSysAdmin(ctx *gin.Context) kit.Code {
-	adminID, err := session.GetIdentity[int64](ctx)
-	if err != nil {
-		return comm.CodeNotLoggedIn
-	}
-
-	urp := repo.NewUserRepo()
-	user, err := urp.FindById(ctx, adminID)
-	if err != nil {
-		return comm.CodeServerError
-	}
-	if user == nil || user.Usertype != enum.UserTypeSystemAdmin {
-		return comm.CodeAdminPermissionDenied
-	}
-	return comm.CodeOK
 }
 
 func findDeletedTypes(oldTypes, newTypes []string) []string {
