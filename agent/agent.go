@@ -14,9 +14,8 @@ import (
 )
 
 type ChatMessage struct {
-	Role    string   `json:"role"`
-	Content string   `json:"content"`
-	Images  []string `json:"images,omitempty"`
+	Role    string `json:"role"`
+	Content string `json:"content"`
 }
 
 type StreamEvent struct {
@@ -142,9 +141,6 @@ func convertMessages(messages []ChatMessage) []*schema.Message {
 func convertMessage(msg ChatMessage) *schema.Message {
 	switch msg.Role {
 	case "user":
-		if len(msg.Images) > 0 {
-			return buildUserMessageWithImages(msg.Content, msg.Images)
-		}
 		return schema.UserMessage(msg.Content)
 	case "assistant":
 		return &schema.Message{
@@ -158,30 +154,6 @@ func convertMessage(msg ChatMessage) *schema.Message {
 			Role:    schema.RoleType(msg.Role),
 			Content: msg.Content,
 		}
-	}
-}
-
-func buildUserMessageWithImages(text string, imageUrls []string) *schema.Message {
-	parts := make([]schema.MessageInputPart, 0, len(imageUrls)+1)
-	parts = append(parts, schema.MessageInputPart{
-		Type: schema.ChatMessagePartTypeText,
-		Text: text,
-	})
-
-	for _, url := range imageUrls {
-		parts = append(parts, schema.MessageInputPart{
-			Type: schema.ChatMessagePartTypeImageURL,
-			Image: &schema.MessageInputImage{
-				MessagePartCommon: schema.MessagePartCommon{
-					URL: &url,
-				},
-			},
-		})
-	}
-
-	return &schema.Message{
-		Role:                   schema.User,
-		UserInputMultiContent: parts,
 	}
 }
 
@@ -224,7 +196,15 @@ func buildSystemPrompt(toolCtx *tools.ToolContext) string {
 	var sb strings.Builder
 
 	sb.WriteString("你是校园失物招领系统的AI助手，帮助用户处理失物招领相关事务。\n\n")
-	sb.WriteString("你可以使用以下工具来帮助用户：\n")
+
+	sb.WriteString("## 工具调用规范（重要）\n")
+	sb.WriteString("在调用任何工具之前，你必须遵循以下原则：\n")
+	sb.WriteString("1. **参数完整性检查**：仔细检查工具所需的所有参数是否已经由用户提供。如果缺少必要信息，主动向用户询问，不要猜测或编造参数值。\n")
+	sb.WriteString("2. **明确告知用户**：在调用工具前，向用户清楚说明你将要执行的操作，包括工具名称和参数内容。\n")
+	sb.WriteString("3. **征求用户同意**：在用户确认同意后再执行工具调用，不要在用户不知情的情况下直接调用工具。\n")
+	sb.WriteString("4. **安全优先**：对于涉及数据修改的操作（如发布、认领、审核等），必须确保用户已提供完整且准确的信息。\n\n")
+
+	sb.WriteString("## 可用工具\n")
 	sb.WriteString("- get_post_detail: 获取发布详情\n")
 	sb.WriteString("- search_posts: 搜索失物/招领信息\n")
 	sb.WriteString("- get_my_posts: 获取我的发布列表\n")
@@ -236,7 +216,9 @@ func buildSystemPrompt(toolCtx *tools.ToolContext) string {
 	sb.WriteString("- review_claim: 审核认领申请\n")
 	sb.WriteString("- submit_feedback: 提交投诉反馈\n")
 	sb.WriteString("- cancel_post: 取消发布\n\n")
-	sb.WriteString(fmt.Sprintf("当前用户ID: %d\n", toolCtx.UserID))
+
+	sb.WriteString("## 当前用户信息\n")
+	sb.WriteString(fmt.Sprintf("用户ID: %d\n", toolCtx.UserID))
 	sb.WriteString(fmt.Sprintf("用户类型: %s\n", toolCtx.UserType))
 
 	return sb.String()

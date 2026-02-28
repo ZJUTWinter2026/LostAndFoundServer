@@ -3,6 +3,8 @@ package service
 import (
 	"app/agent"
 	"app/agent/tools"
+	"app/dao/repo"
+	"app/pkg/llm"
 	"context"
 	"fmt"
 	"sync"
@@ -22,26 +24,32 @@ type ChatSession struct {
 }
 
 type ChatMessageRecord struct {
-	SessionID string
-	Role      string
-	Content   string
-	Images    []string
-	CreatedAt time.Time
+	SessionID         string
+	Role              string
+	Content           string
+	Images            []string
+	ImageDescriptions []string
+	CreatedAt         time.Time
 }
 
 type AgentService struct {
-	agent      *agent.Agent
+	agent    *agent.Agent
+	chatRepo *repo.ChatRepo
+
 	sessions   map[string]*ChatSession
 	sessionMux sync.RWMutex
 }
 
-var agentService *AgentService
-var agentServiceOnce sync.Once
+var (
+	agentService     *AgentService
+	agentServiceOnce sync.Once
+)
 
 func GetAgentService() *AgentService {
 	agentServiceOnce.Do(func() {
 		agentService = &AgentService{
 			agent:    agent.NewAgent(),
+			chatRepo: repo.NewChatRepo(),
 			sessions: make(map[string]*ChatSession),
 		}
 	})
@@ -50,14 +58,26 @@ func GetAgentService() *AgentService {
 
 func (s *AgentService) CreateSession(ctx context.Context, userID int64, title string) (*ChatSession, error) {
 	sessionID := uuid.New().String()
+	now := time.Now()
 
 	session := &ChatSession{
 		SessionID: sessionID,
 		UserID:    userID,
 		Title:     title,
 		Messages:  []ChatMessageRecord{},
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
+	dbSession := &repo.ChatSession{
+		SessionID: sessionID,
+		UserID:    userID,
+		Title:     title,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+	if err := s.chatRepo.CreateSession(ctx, dbSession); err != nil {
+		return nil, err
 	}
 
 	s.sessionMux.Lock()
@@ -73,7 +93,46 @@ func (s *AgentService) GetSession(ctx context.Context, sessionID string, userID 
 	s.sessionMux.RUnlock()
 
 	if !ok {
-		return nil, fmt.Errorf("会话不存在")
+		dbSession, err := s.chatRepo.GetSessionByID(ctx, sessionID)
+		if err != nil {
+			return nil, err
+		}
+		if dbSession == nil {
+			return nil, fmt.Errorf("会话不存在")
+		}
+		if dbSession.UserID != userID {
+			return nil, fmt.Errorf("无权访问该会话")
+		}
+
+		messages, err := s.chatRepo.ListMessagesBySessionID(ctx, sessionID)
+		if err != nil {
+			return nil, err
+		}
+
+		msgRecords := make([]ChatMessageRecord, 0, len(messages))
+		for _, m := range messages {
+			msgRecords = append(msgRecords, ChatMessageRecord{
+				SessionID:         m.SessionID,
+				Role:              m.Role,
+				Content:           m.Content,
+				Images:            m.Images,
+				ImageDescriptions: m.ImageDescriptions,
+				CreatedAt:         m.CreatedAt,
+			})
+		}
+
+		session = &ChatSession{
+			SessionID: dbSession.SessionID,
+			UserID:    dbSession.UserID,
+			Title:     dbSession.Title,
+			Messages:  msgRecords,
+			CreatedAt: dbSession.CreatedAt,
+			UpdatedAt: dbSession.UpdatedAt,
+		}
+
+		s.sessionMux.Lock()
+		s.sessions[sessionID] = session
+		s.sessionMux.Unlock()
 	}
 
 	if session.UserID != userID {
@@ -89,21 +148,43 @@ func (s *AgentService) Stream(ctx context.Context, sessionID string, userID int6
 		return nil, err
 	}
 
-	userMsgRecord := ChatMessageRecord{
-		SessionID: sessionID,
-		Role:      "user",
-		Content:   userMessage,
-		Images:    images,
-		CreatedAt: time.Now(),
+	var imageDescriptions []string
+	if len(images) > 0 {
+		imageDescriptions, _ = llm.DescribeImages(ctx, images)
 	}
+
+	now := time.Now()
+	userMsgRecord := ChatMessageRecord{
+		SessionID:         sessionID,
+		Role:              "user",
+		Content:           userMessage,
+		Images:            images,
+		ImageDescriptions: imageDescriptions,
+		CreatedAt:         now,
+	}
+
+	if err := s.chatRepo.CreateMessage(ctx, &repo.ChatMessageData{
+		SessionID:         sessionID,
+		Role:              "user",
+		Content:           userMessage,
+		Images:            images,
+		ImageDescriptions: imageDescriptions,
+		CreatedAt:         now,
+	}); err != nil {
+		return nil, fmt.Errorf("保存消息失败: %w", err)
+	}
+
 	session.Messages = append(session.Messages, userMsgRecord)
 
 	var messages []agent.ChatMessage
 	for _, msg := range session.Messages {
+		msgContent := msg.Content
+		if len(msg.Images) > 0 && msg.Role == "user" {
+			msgContent += llm.BuildImageContext(msg.Images, msg.ImageDescriptions)
+		}
 		messages = append(messages, agent.ChatMessage{
 			Role:    msg.Role,
-			Content: msg.Content,
-			Images:  msg.Images,
+			Content: msgContent,
 		})
 	}
 
@@ -122,6 +203,7 @@ func (s *AgentService) Stream(ctx context.Context, sessionID string, userID int6
 		if len(session.Title) > 50 {
 			session.Title = session.Title[:50] + "..."
 		}
+		_ = s.chatRepo.UpdateSessionTitle(ctx, sessionID, session.Title)
 	}
 
 	return stream, nil
@@ -133,14 +215,27 @@ func (s *AgentService) SaveAssistantMessage(ctx context.Context, sessionID strin
 		return err
 	}
 
+	now := time.Now()
 	assistantMsgRecord := ChatMessageRecord{
 		SessionID: sessionID,
 		Role:      "assistant",
 		Content:   content,
-		CreatedAt: time.Now(),
+		CreatedAt: now,
 	}
+
+	if err := s.chatRepo.CreateMessage(ctx, &repo.ChatMessageData{
+		SessionID: sessionID,
+		Role:      "assistant",
+		Content:   content,
+		CreatedAt: now,
+	}); err != nil {
+		return err
+	}
+
 	session.Messages = append(session.Messages, assistantMsgRecord)
-	session.UpdatedAt = time.Now()
+	session.UpdatedAt = now
+
+	_ = s.chatRepo.UpdateSessionUpdatedAt(ctx, sessionID)
 
 	return nil
 }
@@ -155,13 +250,28 @@ func (s *AgentService) GetChatHistory(ctx context.Context, sessionID string, use
 }
 
 func (s *AgentService) ListSessions(ctx context.Context, userID int64) ([]*ChatSession, error) {
-	s.sessionMux.RLock()
-	defer s.sessionMux.RUnlock()
+	dbSessions, err := s.chatRepo.ListSessionsByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
 
-	var sessions []*ChatSession
-	for _, session := range s.sessions {
-		if session.UserID == userID {
-			sessions = append(sessions, session)
+	sessions := make([]*ChatSession, 0, len(dbSessions))
+	for _, dbSess := range dbSessions {
+		s.sessionMux.RLock()
+		cached, ok := s.sessions[dbSess.SessionID]
+		s.sessionMux.RUnlock()
+
+		if ok {
+			sessions = append(sessions, cached)
+		} else {
+			sessions = append(sessions, &ChatSession{
+				SessionID: dbSess.SessionID,
+				UserID:    dbSess.UserID,
+				Title:     dbSess.Title,
+				Messages:  []ChatMessageRecord{},
+				CreatedAt: dbSess.CreatedAt,
+				UpdatedAt: dbSess.UpdatedAt,
+			})
 		}
 	}
 

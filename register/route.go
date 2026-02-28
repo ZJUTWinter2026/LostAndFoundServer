@@ -11,6 +11,7 @@ import (
 	"app/api/post"
 	"app/api/user"
 	"app/comm"
+	"app/middleware"
 	"slices"
 
 	"github.com/gin-gonic/gin"
@@ -107,6 +108,7 @@ func Route(router *gin.Engine) {
 		}
 
 		agentGroup := r.Group("/agent")
+		agentGroup.Use(middleware.AgentEnabled())
 		{
 			agentGroup.POST("/session", agent.SessionHandler())
 			agentGroup.GET("/sessions", agent.SessionListHandler())

@@ -3,6 +3,7 @@ package agent
 import (
 	"app/agent"
 	"app/comm"
+	"app/dao/repo"
 	"app/service"
 	"io"
 	"net/http"
@@ -49,19 +50,25 @@ func (a *StreamApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeNotLoggedIn
 	}
 
+	userRepo := repo.NewUserRepo()
+	user, err := userRepo.FindById(ctx, userID)
+	if err != nil || user == nil {
+		return comm.CodeServerError
+	}
+
 	agentService := service.GetAgentService()
 
-	stream, err := agentService.Stream(ctx, request.SessionID, userID, "", request.Message, request.Images)
+	stream, err := agentService.Stream(ctx, request.SessionID, userID, user.Usertype, request.Message, request.Images)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("Agent流式对话失败")
 		return comm.CodeServerError
 	}
 
-	a.handleStream(ctx, agentService, request.SessionID, request.Message, request.Images, userID, stream)
+	a.handleStream(ctx, agentService, request.SessionID, userID, stream)
 	return comm.CodeOK
 }
 
-func (a *StreamApi) handleStream(ctx *gin.Context, agentService *service.AgentService, sessionID, message string, images []string, userID int64, stream *schema.StreamReader[*schema.Message]) {
+func (a *StreamApi) handleStream(ctx *gin.Context, agentService *service.AgentService, sessionID string, userID int64, stream *schema.StreamReader[*schema.Message]) {
 	ctx.Header("Content-Type", "text/event-stream")
 	ctx.Header("Cache-Control", "no-cache")
 	ctx.Header("Connection", "keep-alive")

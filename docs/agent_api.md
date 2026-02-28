@@ -8,6 +8,8 @@
 - 基础路径: `/api/agent`
 - 响应格式: JSON
 
+**注意：** Agent功能需要后端配置启用。如果功能禁用，所有agent接口将返回错误码`30108`。
+
 ---
 
 ## 1. 创建会话
@@ -115,6 +117,17 @@
 | session_id | string | 是 | 会话ID |
 | message | string | 是 | 用户消息内容 |
 | images | []string | 否 | 图片URL列表，支持多图 |
+
+### 图片处理机制
+
+当用户上传图片时，系统会：
+1. 使用VisionLLM对每张图片进行内容描述
+2. 将图片描述和URL注入到对话上下文中
+3. 主LLM可以理解图片内容并正确使用图片URL
+
+这样确保了：
+- LLM能理解图片内容（如"一把黑色雨伞"）
+- LLM知道图片对应的URL，可在工具调用中正确使用
 
 ### 响应
 
@@ -306,13 +319,49 @@ AI助手可调用的工具：
 | 0 | 成功 |
 | 10001 | 参数无效 |
 | 10002 | 未登录 |
+| 30108 | AI助手功能已禁用 |
 | 50001 | 服务器内部错误 |
+
+---
+
+## 配置说明
+
+后端需要配置以下内容才能使用Agent功能：
+
+```yaml
+agent:
+  enable: true
+  llm:
+    base_url: "https://api.openai.com/v1"
+    api_key: "your-api-key"
+    model: "gpt-4"
+  vision_llm:
+    base_url: "https://api.openai.com/v1"
+    api_key: "your-api-key"
+    model: "gpt-4-vision-preview"
+  embedding:
+    base_url: "https://api.openai.com/v1"
+    api_key: "your-api-key"
+    model: "text-embedding-3-small"
+    dimension: 1536
+  milvus:
+    address: "localhost:19530"
+    collection: "lost_and_found"
+```
+
+| 配置项 | 说明 |
+|--------|------|
+| enable | 是否启用Agent功能 |
+| llm | 主LLM配置，用于对话和工具调用 |
+| vision_llm | 视觉LLM配置，用于图片内容识别 |
+| embedding | 向量化模型配置，用于语义搜索 |
+| milvus | 向量数据库配置 |
 
 ---
 
 ## 注意事项
 
-1. **图片支持**: 用户消息可以包含多张图片URL，AI会结合图片内容进行分析
+1. **图片支持**: 用户消息可以包含多张图片URL，系统会使用VisionLLM识别图片内容
 2. **工具调用**: 在流式输出中，前端应展示工具调用过程，让用户了解AI正在执行的操作
 3. **会话管理**: 会话数据存储在内存中，服务重启后会丢失
-4. **多模态**: 图片URL需要是可公开访问的完整URL
+4. **功能开关**: 如果后端禁用Agent功能，所有agent接口将返回错误码30108

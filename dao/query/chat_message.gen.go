@@ -31,6 +31,8 @@ func newChatMessage(db *gorm.DB, opts ...gen.DOOption) chatMessage {
 	_chatMessage.SessionID = field.NewString(tableName, "session_id")
 	_chatMessage.Role = field.NewString(tableName, "role")
 	_chatMessage.Content = field.NewString(tableName, "content")
+	_chatMessage.Images = field.NewString(tableName, "images")
+	_chatMessage.ImageDescriptions = field.NewString(tableName, "image_descriptions")
 	_chatMessage.CreatedAt = field.NewTime(tableName, "created_at")
 	_chatMessage.DeletedAt = field.NewField(tableName, "deleted_at")
 
@@ -43,13 +45,15 @@ func newChatMessage(db *gorm.DB, opts ...gen.DOOption) chatMessage {
 type chatMessage struct {
 	chatMessageDo chatMessageDo
 
-	ALL       field.Asterisk
-	ID        field.Int64  // 自增ID
-	SessionID field.String // 会话ID
-	Role      field.String // 角色: user, assistant, system
-	Content   field.String // 消息内容
-	CreatedAt field.Time   // 创建时间
-	DeletedAt field.Field  // 删除时间 (软删除)
+	ALL               field.Asterisk
+	ID                field.Int64  // 自增ID
+	SessionID         field.String // 会话ID
+	Role              field.String // 角色: user, assistant, system
+	Content           field.String // 消息内容
+	Images            field.String // 图片URL列表(JSON数组)
+	ImageDescriptions field.String // 图片描述列表(JSON数组)
+	CreatedAt         field.Time   // 创建时间
+	DeletedAt         field.Field  // 删除时间 (软删除)
 
 	fieldMap map[string]field.Expr
 }
@@ -70,6 +74,8 @@ func (c *chatMessage) updateTableName(table string) *chatMessage {
 	c.SessionID = field.NewString(table, "session_id")
 	c.Role = field.NewString(table, "role")
 	c.Content = field.NewString(table, "content")
+	c.Images = field.NewString(table, "images")
+	c.ImageDescriptions = field.NewString(table, "image_descriptions")
 	c.CreatedAt = field.NewTime(table, "created_at")
 	c.DeletedAt = field.NewField(table, "deleted_at")
 
@@ -98,11 +104,13 @@ func (c *chatMessage) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (c *chatMessage) fillFieldMap() {
-	c.fieldMap = make(map[string]field.Expr, 6)
+	c.fieldMap = make(map[string]field.Expr, 8)
 	c.fieldMap["id"] = c.ID
 	c.fieldMap["session_id"] = c.SessionID
 	c.fieldMap["role"] = c.Role
 	c.fieldMap["content"] = c.Content
+	c.fieldMap["images"] = c.Images
+	c.fieldMap["image_descriptions"] = c.ImageDescriptions
 	c.fieldMap["created_at"] = c.CreatedAt
 	c.fieldMap["deleted_at"] = c.DeletedAt
 }

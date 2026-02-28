@@ -6,13 +6,15 @@ import (
 	"app/dao/repo"
 	"context"
 
+	"github.com/bytedance/sonic"
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/components/tool/utils"
 )
 
 type ApplyClaimInput struct {
-	PostID      int64  `json:"post_id" jsonschema:"description=发布ID,required"`
-	Description string `json:"description" jsonschema:"description=认领说明，描述为什么这是你的物品,required"`
+	PostID       int64    `json:"post_id" jsonschema:"description=发布ID,required"`
+	Description  string   `json:"description" jsonschema:"description=认领说明,描述为什么这是你的物品,required"`
+	ProofImages  []string `json:"proof_images" jsonschema:"description=证明图片URL列表"`
 }
 
 type ApplyClaimOutput struct {
@@ -56,11 +58,17 @@ func applyClaimFunc(ctx context.Context, input *ApplyClaimInput) (*ApplyClaimOut
 		return &ApplyClaimOutput{Success: false, Message: "您已有待确认或已匹配的认领申请"}, nil
 	}
 
+	var proofImagesJSON string
+	if len(input.ProofImages) > 0 {
+		proofImagesJSON, _ = sonic.MarshalString(input.ProofImages)
+	}
+
 	claim := &model.Claim{
-		PostID:      input.PostID,
+		PostID:       input.PostID,
 		ClaimantID:  tc.UserID,
 		Description: input.Description,
-		Status:      enum.ClaimStatusPending,
+		ProofImages:  proofImagesJSON,
+		Status:       enum.ClaimStatusPending,
 	}
 
 	err = claimRepo.Create(ctx, claim)

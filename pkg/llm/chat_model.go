@@ -12,11 +12,14 @@ import (
 var (
 	chatModel     model.ToolCallingChatModel
 	chatModelOnce sync.Once
+
+	visionModel     model.ToolCallingChatModel
+	visionModelOnce sync.Once
 )
 
 func GetChatModel() model.ToolCallingChatModel {
 	chatModelOnce.Do(func() {
-		cfg := comm.BizConf.LLM
+		cfg := comm.BizConf.Agent.LLM
 		cm, err := openai.NewChatModel(context.Background(), &openai.ChatModelConfig{
 			Model:   cfg.Model,
 			APIKey:  cfg.APIKey,
@@ -28,4 +31,20 @@ func GetChatModel() model.ToolCallingChatModel {
 		chatModel = cm
 	})
 	return chatModel
+}
+
+func GetVisionModel() model.ToolCallingChatModel {
+	visionModelOnce.Do(func() {
+		cfg := comm.BizConf.Agent.VisionLLM
+		cm, err := openai.NewChatModel(context.Background(), &openai.ChatModelConfig{
+			Model:   cfg.Model,
+			APIKey:  cfg.APIKey,
+			BaseURL: cfg.BaseURL,
+		})
+		if err != nil {
+			panic(err)
+		}
+		visionModel = cm
+	})
+	return visionModel
 }

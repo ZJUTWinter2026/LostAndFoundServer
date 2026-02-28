@@ -4,13 +4,11 @@ import (
 	"app/comm"
 	"app/comm/enum"
 	"app/dao/model"
+	"app/pkg/llm"
 	"app/pkg/milvus"
 	"app/register/generate"
-	"context"
 	"fmt"
 	"time"
-
-	"golang.org/x/crypto/bcrypt"
 
 	"github.com/zjutjh/mygo/config"
 	"github.com/zjutjh/mygo/feishu"
@@ -19,6 +17,7 @@ import (
 	"github.com/zjutjh/mygo/ndb"
 	"github.com/zjutjh/mygo/nesty"
 	"github.com/zjutjh/mygo/nlog"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func Boot() kernel.BootList {
@@ -35,8 +34,8 @@ func Boot() kernel.BootList {
 
 		// 业务引导器
 		BizConfBoot(),
-		MilvusBoot(),
-		AppBoot(),
+		initAgentServices,
+		initDefaultAdmin,
 	}
 }
 
@@ -49,46 +48,6 @@ func BizConfBoot() func() error {
 		}
 		return nil
 	}
-}
-
-// MilvusBoot 初始化Milvus向量数据库引导器
-func MilvusBoot() func() error {
-	return func() error {
-		if comm.BizConf.Milvus.Address == "" {
-			nlog.Pick().Info("Milvus地址未配置，跳过初始化")
-			return nil
-		}
-
-		if err := milvus.InitClient(comm.BizConf.Milvus.Address); err != nil {
-			return fmt.Errorf("初始化Milvus失败: %w", err)
-		}
-
-		ctx := context.Background()
-		collectionName := comm.BizConf.Milvus.Collection
-		if collectionName == "" {
-			collectionName = "lost_and_found"
-		}
-
-		dimension := comm.BizConf.Embedding.Dimension
-		if dimension <= 0 {
-			dimension = 1536
-		}
-
-		if err := milvus.CreateCollectionIfNotExist(ctx, collectionName, dimension); err != nil {
-			return fmt.Errorf("创建Milvus Collection失败: %w", err)
-		}
-
-		if err := milvus.LoadCollection(ctx, collectionName); err != nil {
-			return fmt.Errorf("加载Milvus Collection失败: %w", err)
-		}
-
-		return nil
-	}
-}
-
-// AppBoot 应用定制引导器
-func AppBoot() func() error {
-	return initDefaultAdmin
 }
 
 // initDefaultAdmin 初始化默认系统管理员
@@ -123,5 +82,40 @@ func initDefaultAdmin() error {
 	}
 
 	nlog.Pick().Info("默认系统管理员已创建")
+	return nil
+}
+
+func initAgentServices() error {
+	if !comm.BizConf.Agent.Enable {
+		nlog.Pick().Info("Agent功能已禁用，跳过初始化")
+		return nil
+	}
+
+	cfg := comm.BizConf.Agent
+
+	if cfg.LLM.Model != "" {
+		llm.GetChatModel()
+		nlog.Pick().Info("LLM模型初始化完成")
+	}
+
+	if cfg.VisionLLM.Model != "" {
+		llm.GetVisionModel()
+		nlog.Pick().Info("VisionLLM模型初始化完成")
+	}
+
+	if cfg.Embedding.Model != "" {
+		llm.GetEmbeddingModel()
+		nlog.Pick().Info("Embedding模型初始化完成")
+	}
+
+	if cfg.Milvus.Address != "" {
+		err := milvus.InitClient(cfg.Milvus.Address)
+		if err != nil {
+			nlog.Pick().WithError(err).Warn("Milvus初始化失败")
+		} else {
+			nlog.Pick().Info("Milvus初始化完成")
+		}
+	}
+
 	return nil
 }

@@ -16,7 +16,7 @@ var (
 
 func GetEmbeddingModel() embedding.Embedder {
 	embedModelOnce.Do(func() {
-		cfg := comm.BizConf.Embedding
+		cfg := comm.BizConf.Agent.Embedding
 		em, err := openai.NewEmbedder(context.Background(), &openai.EmbeddingConfig{
 			Model:      cfg.Model,
 			Dimensions: &cfg.Dimension,

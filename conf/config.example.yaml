@@ -1,7 +1,7 @@
 # 应用基础配置
 app:
-  name: "app" # 应用名称
-  env: "dev" # 应用环境 dev|test|prod
+  name: "app"
+  env: "dev"
 
 # HTTP 服务配置
 http_server:
@@ -12,38 +12,48 @@ http_server:
     # error_filename: "/dev/stderr"
 
 session:
-  driver: "memory" # 底层驱动 memory(内存) | redis
-  name: "session" # 名称
-  secret: "lostandfound2026" # 密钥
+  driver: "memory"
+  name: "session"
+  secret: "lostandfound2026"
 
 # 业务私有配置
 biz:
   upload:
-    dir: "uploads" # 上传目录
-    base_url: "http://127.0.0.1:8000" # 访问前缀
-    max_size_mb: 10 # 单文件最大 MB
+    dir: "uploads"
+    base_url: "http://127.0.0.1:8000"
+    max_size_mb: 10
 
-  # 大模型配置 (OpenAI兼容格式)
-  llm:
-    base_url: "https://api.openai.com/v1" # API地址
-    api_key: "your-api-key" # API密钥
-    model: "gpt-4o" # 模型名称
+  # Agent配置
+  agent:
+    enable: true
 
-  # 嵌入模型配置
-  embedding:
-    base_url: "https://api.openai.com/v1" # API地址
-    api_key: "your-api-key" # API密钥
-    model: "text-embedding-3-small" # 模型名称
-    dimension: 1536 # 向量维度
+    # 主LLM配置 (OpenAI兼容格式)
+    llm:
+      base_url: "https://api.openai.com/v1"
+      api_key: "your-api-key"
+      model: "gpt-4o"
 
-  # Milvus向量数据库配置
-  milvus:
-    address: "localhost:19530" # Milvus地址
-    collection: "lost_and_found" # Collection名称
+    # 视觉LLM配置 (用于图片内容识别)
+    vision_llm:
+      base_url: "https://api.openai.com/v1"
+      api_key: "your-api-key"
+      model: "gpt-4o"
+
+    # 嵌入模型配置
+    embedding:
+      base_url: "https://api.openai.com/v1"
+      api_key: "your-api-key"
+      model: "text-embedding-3-small"
+      dimension: 1536
+
+    # Milvus向量数据库配置
+    milvus:
+      address: "localhost:19530"
+      collection: "lost_and_found"
 
 # 应用业务日志配置
 log:
-  level: 4 # 日志级别 0: panic 1: fatal 2: error 3: warn 4: info 5: debug 6: trace
+  level: 4
   # 仅在本地开发调试时打开
   # filename: "/dev/stdout"
 
