@@ -12,8 +12,8 @@ import (
 )
 
 type SearchPostsInput struct {
-	Query       string `json:"query" jsonschema:"description=搜索关键词或自然语言描述,required"`
-	PublishType string `json:"publish_type" jsonschema:"description=发布类型: LOST(寻物), FOUND(招领)"`
+	Query       string `json:"query" jsonschema:"description=搜索内容，使用自然语言描述,required"`
+	PublishType string `json:"publish_type" jsonschema:"description=筛选发布类型: LOST(寻物), FOUND(招领)"`
 	Campus      string `json:"campus" jsonschema:"description=校区筛选"`
 	Limit       int    `json:"limit" jsonschema:"description=返回结果数量限制，默认10"`
 }

@@ -4,6 +4,7 @@ import (
 	"app/dao/model"
 	"app/dao/repo"
 	"context"
+	"time"
 
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/components/tool/utils"
@@ -45,6 +46,8 @@ func submitFeedbackFunc(ctx context.Context, input *SubmitFeedbackInput) (*Submi
 		Type:        input.Type,
 		Description: input.Content,
 		Processed:   false,
+		ProcessedBy: 0,
+		ProcessedAt: time.Now(),
 	}
 
 	err = feedbackRepo.Create(ctx, feedback)

@@ -21,8 +21,3 @@ func GetToolContext(ctx context.Context) *ToolContext {
 	}
 	return nil
 }
-
-type CommonOutput struct {
-	Success bool   `json:"success"`
-	Message string `json:"message,omitempty"`
-}

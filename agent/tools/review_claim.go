@@ -46,10 +46,8 @@ func reviewClaimFunc(ctx context.Context, input *ReviewClaimInput) (*ReviewClaim
 		return &ReviewClaimOutput{Success: false, Message: "发布记录不存在"}, nil
 	}
 
-	isAdmin := tc.UserType == enum.UserTypeSystemAdmin || tc.UserType == enum.UserTypeAdmin
 	isPublisher := post.PublisherID == tc.UserID
-
-	if !isAdmin && !isPublisher {
+	if !isPublisher {
 		return &ReviewClaimOutput{Success: false, Message: "您没有权限审核该认领申请"}, nil
 	}
 
@@ -82,7 +80,7 @@ func reviewClaimFunc(ctx context.Context, input *ReviewClaimInput) (*ReviewClaim
 func NewReviewClaimTool() (tool.InvokableTool, error) {
 	return utils.InferTool(
 		"review_claim",
-		"帮用户（发布者或管理员）审核认领申请",
+		"帮用户（发布者）审核认领申请",
 		reviewClaimFunc,
 	)
 }
