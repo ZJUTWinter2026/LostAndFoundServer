@@ -24,7 +24,6 @@ var (
 	CodeClaimStatusInvalid    = kit.NewCode(30007, "认领申请状态不允许此操作")
 	CodeClaimNotFound         = kit.NewCode(30008, "认领申请不存在")
 	CodeFeedbackTypeInvalid   = kit.NewCode(30009, "投诉类型无效")
-	CodeFeedbackTypeOther     = kit.NewCode(30010, "投诉类型为其它时必须填写说明")
 	CodePostNotOwner          = kit.NewCode(30011, "您没有权限操作该发布记录")
 	CodePostStatusInvalid     = kit.NewCode(30012, "当前状态不允许此操作")
 	CodePostCannotModify      = kit.NewCode(30013, "该发布记录不能修改")
