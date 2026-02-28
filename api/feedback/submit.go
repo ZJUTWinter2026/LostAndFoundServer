@@ -7,6 +7,7 @@ import (
 	"app/dao/repo"
 	"reflect"
 	"runtime"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/zjutjh/mygo/foundation/reply"
@@ -68,6 +69,8 @@ func (s *SubmitApi) Run(ctx *gin.Context) kit.Code {
 		Type:        request.Type,
 		Description: request.Description,
 		Processed:   false,
+		ProcessedBy: 0,
+		ProcessedAt: time.Now(),
 	}
 
 	frp := repo.NewFeedbackRepo()

@@ -42,8 +42,8 @@ type DetailApiResponse struct {
 	Type        string                `json:"type" desc:"投诉类型"`
 	Description string                `json:"description" desc:"详细说明"`
 	Processed   bool                  `json:"processed" desc:"是否已处理"`
-	ProcessedBy int64                 `json:"processed_by,omitempty" desc:"处理人ID"`
-	ProcessedAt *time.Time            `json:"processed_at,omitempty" desc:"处理时间"`
+	ProcessedBy int64                 `json:"processed_by" desc:"处理人ID"`
+	ProcessedAt time.Time             `json:"processed_at" desc:"处理时间"`
 	CreatedAt   time.Time             `json:"created_at" desc:"创建时间"`
 	Post        *PostDetailInFeedback `json:"post,omitempty" desc:"关联物品信息"`
 }
@@ -93,10 +93,8 @@ func (d *DetailApi) Run(ctx *gin.Context) kit.Code {
 		Description: feedback.Description,
 		Processed:   feedback.Processed,
 		ProcessedBy: feedback.ProcessedBy,
+		ProcessedAt: feedback.ProcessedAt,
 		CreatedAt:   feedback.CreatedAt,
-	}
-	if !feedback.ProcessedAt.IsZero() {
-		response.ProcessedAt = &feedback.ProcessedAt
 	}
 
 	prp := repo.NewPostRepo()

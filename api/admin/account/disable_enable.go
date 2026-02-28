@@ -16,7 +16,7 @@ import (
 )
 
 type DisableApi struct {
-	Info     struct{}          `name:"禁用用户" desc:"禁用用户账号"`
+	Info     struct{} `name:"禁用用户" desc:"禁用用户账号"`
 	Request  DisableApiRequest
 	Response struct{}
 }
@@ -89,7 +89,7 @@ func DisableHandler() gin.HandlerFunc {
 }
 
 type EnableApi struct {
-	Info     struct{}         `name:"恢复用户" desc:"恢复用户账号"`
+	Info     struct{} `name:"恢复用户" desc:"恢复用户账号"`
 	Request  EnableApiRequest
 	Response struct{}
 }
@@ -113,7 +113,7 @@ func (a *EnableApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeDataNotFound
 	}
 
-	user.DisabledUntil = time.Time{}
+	user.DisabledUntil = time.Now()
 
 	if err := db.Save(&user).Error; err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("恢复用户失败")
