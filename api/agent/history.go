@@ -37,9 +37,10 @@ type HistoryApiResponse struct {
 }
 
 type MessageInfo struct {
-	Role      string `json:"role" desc:"角色: user, assistant"`
-	Content   string `json:"content" desc:"消息内容"`
-	CreatedAt string `json:"created_at" desc:"创建时间"`
+	Role      string   `json:"role" desc:"角色: user, assistant"`
+	Content   string   `json:"content" desc:"消息内容"`
+	Images    []string `json:"images,omitempty" desc:"图片URL列表"`
+	CreatedAt string   `json:"created_at" desc:"创建时间"`
 }
 
 func (a *HistoryApi) Run(ctx *gin.Context) kit.Code {
@@ -62,6 +63,7 @@ func (a *HistoryApi) Run(ctx *gin.Context) kit.Code {
 		messageInfos = append(messageInfos, MessageInfo{
 			Role:      m.Role,
 			Content:   m.Content,
+			Images:    m.Images,
 			CreatedAt: m.CreatedAt.Format("2006-01-02 15:04:05"),
 		})
 	}

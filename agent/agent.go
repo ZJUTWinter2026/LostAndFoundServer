@@ -5,7 +5,6 @@ import (
 	"app/pkg/llm"
 	"context"
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/cloudwego/eino/components/tool"
@@ -15,8 +14,9 @@ import (
 )
 
 type ChatMessage struct {
-	Role    string
-	Content string
+	Role    string   `json:"role"`
+	Content string   `json:"content"`
+	Images  []string `json:"images,omitempty"`
 }
 
 type StreamEvent struct {
@@ -113,42 +113,6 @@ func (a *Agent) getOrCreateReactAgent(ctx context.Context, toolCtx *tools.ToolCo
 	return agent, nil
 }
 
-func (a *Agent) Chat(ctx context.Context, messages []ChatMessage, toolCtx *tools.ToolContext) (string, error) {
-	ctx = tools.WithToolContext(ctx, toolCtx)
-
-	agent, err := a.getOrCreateReactAgent(ctx, toolCtx)
-	if err != nil {
-		return "", err
-	}
-
-	var schemaMessages []*schema.Message
-	for _, msg := range messages {
-		switch msg.Role {
-		case "user":
-			schemaMessages = append(schemaMessages, schema.UserMessage(msg.Content))
-		case "assistant":
-			schemaMessages = append(schemaMessages, &schema.Message{
-				Role:    schema.Assistant,
-				Content: msg.Content,
-			})
-		case "system":
-			schemaMessages = append(schemaMessages, schema.SystemMessage(msg.Content))
-		default:
-			schemaMessages = append(schemaMessages, &schema.Message{
-				Role:    schema.RoleType(msg.Role),
-				Content: msg.Content,
-			})
-		}
-	}
-
-	resp, err := agent.Generate(ctx, schemaMessages)
-	if err != nil {
-		return "", fmt.Errorf("AI对话失败: %w", err)
-	}
-
-	return resp.Content, nil
-}
-
 func (a *Agent) Stream(ctx context.Context, messages []ChatMessage, toolCtx *tools.ToolContext) (*schema.StreamReader[*schema.Message], error) {
 	ctx = tools.WithToolContext(ctx, toolCtx)
 
@@ -157,25 +121,7 @@ func (a *Agent) Stream(ctx context.Context, messages []ChatMessage, toolCtx *too
 		return nil, err
 	}
 
-	var schemaMessages []*schema.Message
-	for _, msg := range messages {
-		switch msg.Role {
-		case "user":
-			schemaMessages = append(schemaMessages, schema.UserMessage(msg.Content))
-		case "assistant":
-			schemaMessages = append(schemaMessages, &schema.Message{
-				Role:    schema.Assistant,
-				Content: msg.Content,
-			})
-		case "system":
-			schemaMessages = append(schemaMessages, schema.SystemMessage(msg.Content))
-		default:
-			schemaMessages = append(schemaMessages, &schema.Message{
-				Role:    schema.RoleType(msg.Role),
-				Content: msg.Content,
-			})
-		}
-	}
+	schemaMessages := convertMessages(messages)
 
 	stream, err := agent.Stream(ctx, schemaMessages)
 	if err != nil {
@@ -183,6 +129,60 @@ func (a *Agent) Stream(ctx context.Context, messages []ChatMessage, toolCtx *too
 	}
 
 	return stream, nil
+}
+
+func convertMessages(messages []ChatMessage) []*schema.Message {
+	var schemaMessages []*schema.Message
+	for _, msg := range messages {
+		schemaMessages = append(schemaMessages, convertMessage(msg))
+	}
+	return schemaMessages
+}
+
+func convertMessage(msg ChatMessage) *schema.Message {
+	switch msg.Role {
+	case "user":
+		if len(msg.Images) > 0 {
+			return buildUserMessageWithImages(msg.Content, msg.Images)
+		}
+		return schema.UserMessage(msg.Content)
+	case "assistant":
+		return &schema.Message{
+			Role:    schema.Assistant,
+			Content: msg.Content,
+		}
+	case "system":
+		return schema.SystemMessage(msg.Content)
+	default:
+		return &schema.Message{
+			Role:    schema.RoleType(msg.Role),
+			Content: msg.Content,
+		}
+	}
+}
+
+func buildUserMessageWithImages(text string, imageUrls []string) *schema.Message {
+	parts := make([]schema.MessageInputPart, 0, len(imageUrls)+1)
+	parts = append(parts, schema.MessageInputPart{
+		Type: schema.ChatMessagePartTypeText,
+		Text: text,
+	})
+
+	for _, url := range imageUrls {
+		parts = append(parts, schema.MessageInputPart{
+			Type: schema.ChatMessagePartTypeImageURL,
+			Image: &schema.MessageInputImage{
+				MessagePartCommon: schema.MessagePartCommon{
+					URL: &url,
+				},
+			},
+		})
+	}
+
+	return &schema.Message{
+		Role:                   schema.User,
+		UserInputMultiContent: parts,
+	}
 }
 
 func ParseStreamMessage(msg *schema.Message) StreamEvent {
@@ -218,23 +218,6 @@ func ParseStreamMessage(msg *schema.Message) StreamEvent {
 			Content: msg.Content,
 		}
 	}
-}
-
-func CollectStreamContent(stream *schema.StreamReader[*schema.Message]) (string, error) {
-	var content strings.Builder
-	for {
-		msg, err := stream.Recv()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return "", err
-		}
-		if msg.Role == schema.Assistant && len(msg.ToolCalls) == 0 {
-			content.WriteString(msg.Content)
-		}
-	}
-	return content.String(), nil
 }
 
 func buildSystemPrompt(toolCtx *tools.ToolContext) string {

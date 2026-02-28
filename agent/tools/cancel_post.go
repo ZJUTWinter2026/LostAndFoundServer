@@ -50,7 +50,7 @@ func cancelPostFunc(ctx context.Context, input *CancelPostInput) (*CancelPostOut
 		return &CancelPostOutput{Success: false, Message: "取消发布失败"}, nil
 	}
 
-	vectorRepo.DeletePostVector(ctx, input.PostID)
+	vectorRepo.Delete(ctx, input.PostID)
 
 	return &CancelPostOutput{
 		Success: true,

@@ -110,7 +110,7 @@ func Route(router *gin.Engine) {
 		{
 			agentGroup.POST("/session", agent.SessionHandler())
 			agentGroup.GET("/sessions", agent.SessionListHandler())
-			agentGroup.POST("/chat", agent.ChatHandler())
+			agentGroup.POST("/stream", agent.StreamHandler())
 			agentGroup.GET("/history", agent.HistoryHandler())
 		}
 

@@ -10,6 +10,7 @@ import (
 	"runtime"
 
 	"github.com/bytedance/sonic"
+	"github.com/cloudwego/eino/schema"
 	"github.com/gin-gonic/gin"
 	"github.com/zjutjh/mygo/foundation/reply"
 	"github.com/zjutjh/mygo/kit"
@@ -18,31 +19,29 @@ import (
 	"github.com/zjutjh/mygo/swagger"
 )
 
-func ChatHandler() gin.HandlerFunc {
-	api := ChatApi{}
-	swagger.CM[runtime.FuncForPC(reflect.ValueOf(hfChat).Pointer()).Name()] = api
-	return hfChat
+func StreamHandler() gin.HandlerFunc {
+	api := StreamApi{}
+	swagger.CM[runtime.FuncForPC(reflect.ValueOf(hfStream).Pointer()).Name()] = api
+	return hfStream
 }
 
-type ChatApi struct {
-	Info     struct{} `name:"Agent对话" desc:"发送消息给AI助手"`
-	Request  ChatApiRequest
-	Response ChatApiResponse
+type StreamApi struct {
+	Info     struct{} `name:"Agent流式对话" desc:"发送消息给AI助手（流式输出）"`
+	Request  StreamApiRequest
+	Response StreamApiResponse
 }
 
-type ChatApiRequest struct {
+type StreamApiRequest struct {
 	Body struct {
-		SessionID string `json:"session_id" binding:"required" desc:"会话ID"`
-		Message   string `json:"message" binding:"required" desc:"用户消息"`
-		Stream    bool   `json:"stream" desc:"是否使用流式输出"`
+		SessionID string   `json:"session_id" binding:"required" desc:"会话ID"`
+		Message   string   `json:"message" binding:"required" desc:"用户消息"`
+		Images    []string `json:"images" desc:"图片URL列表"`
 	}
 }
 
-type ChatApiResponse struct {
-	Response string `json:"response" desc:"AI回复"`
-}
+type StreamApiResponse struct{}
 
-func (a *ChatApi) Run(ctx *gin.Context) kit.Code {
+func (a *StreamApi) Run(ctx *gin.Context) kit.Code {
 	request := a.Request.Body
 
 	userID, err := session.GetIdentity[int64](ctx)
@@ -52,29 +51,17 @@ func (a *ChatApi) Run(ctx *gin.Context) kit.Code {
 
 	agentService := service.GetAgentService()
 
-	if request.Stream {
-		a.handleStream(ctx, agentService, request.SessionID, request.Message, userID)
-		return comm.CodeOK
-	}
-
-	response, err := agentService.Chat(ctx, request.SessionID, userID, "", request.Message)
+	stream, err := agentService.Stream(ctx, request.SessionID, userID, "", request.Message, request.Images)
 	if err != nil {
-		nlog.Pick().WithContext(ctx).WithError(err).Warn("Agent对话失败")
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("Agent流式对话失败")
 		return comm.CodeServerError
 	}
 
-	a.Response.Response = response
+	a.handleStream(ctx, agentService, request.SessionID, request.Message, request.Images, userID, stream)
 	return comm.CodeOK
 }
 
-func (a *ChatApi) handleStream(ctx *gin.Context, agentService *service.AgentService, sessionID, message string, userID int64) {
-	stream, err := agentService.Stream(ctx, sessionID, userID, "", message)
-	if err != nil {
-		nlog.Pick().WithContext(ctx).WithError(err).Warn("Agent流式对话失败")
-		reply.Fail(ctx, comm.CodeServerError)
-		return
-	}
-
+func (a *StreamApi) handleStream(ctx *gin.Context, agentService *service.AgentService, sessionID, message string, images []string, userID int64, stream *schema.StreamReader[*schema.Message]) {
 	ctx.Header("Content-Type", "text/event-stream")
 	ctx.Header("Cache-Control", "no-cache")
 	ctx.Header("Connection", "keep-alive")
@@ -120,7 +107,7 @@ func (a *ChatApi) handleStream(ctx *gin.Context, agentService *service.AgentServ
 	flusher.Flush()
 }
 
-func (a *ChatApi) Init(ctx *gin.Context) (err error) {
+func (a *StreamApi) Init(ctx *gin.Context) (err error) {
 	err = ctx.ShouldBindJSON(&a.Request.Body)
 	if err != nil {
 		return err
@@ -128,8 +115,8 @@ func (a *ChatApi) Init(ctx *gin.Context) (err error) {
 	return err
 }
 
-func hfChat(ctx *gin.Context) {
-	api := &ChatApi{}
+func hfStream(ctx *gin.Context) {
+	api := &StreamApi{}
 	err := api.Init(ctx)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("参数绑定校验错误")
@@ -137,11 +124,7 @@ func hfChat(ctx *gin.Context) {
 		return
 	}
 	code := api.Run(ctx)
-	if !ctx.IsAborted() {
-		if code == comm.CodeOK && !api.Request.Body.Stream {
-			reply.Success(ctx, api.Response)
-		} else if code != comm.CodeOK {
-			reply.Fail(ctx, code)
-		}
+	if !ctx.IsAborted() && code != comm.CodeOK {
+		reply.Fail(ctx, code)
 	}
 }

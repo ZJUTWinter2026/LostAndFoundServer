@@ -5,7 +5,6 @@ import (
 	"app/agent/tools"
 	"context"
 	"fmt"
-	"io"
 	"sync"
 	"time"
 
@@ -26,6 +25,7 @@ type ChatMessageRecord struct {
 	SessionID string
 	Role      string
 	Content   string
+	Images    []string
 	CreatedAt time.Time
 }
 
@@ -83,58 +83,7 @@ func (s *AgentService) GetSession(ctx context.Context, sessionID string, userID 
 	return session, nil
 }
 
-func (s *AgentService) Chat(ctx context.Context, sessionID string, userID int64, userType string, userMessage string) (string, error) {
-	session, err := s.GetSession(ctx, sessionID, userID)
-	if err != nil {
-		return "", err
-	}
-
-	userMsgRecord := ChatMessageRecord{
-		SessionID: sessionID,
-		Role:      "user",
-		Content:   userMessage,
-		CreatedAt: time.Now(),
-	}
-	session.Messages = append(session.Messages, userMsgRecord)
-
-	var messages []agent.ChatMessage
-	for _, msg := range session.Messages {
-		messages = append(messages, agent.ChatMessage{
-			Role:    msg.Role,
-			Content: msg.Content,
-		})
-	}
-
-	toolCtx := &tools.ToolContext{
-		UserID:   userID,
-		UserType: userType,
-	}
-
-	response, err := s.agent.Chat(ctx, messages, toolCtx)
-	if err != nil {
-		return "", fmt.Errorf("AI对话失败: %w", err)
-	}
-
-	assistantMsgRecord := ChatMessageRecord{
-		SessionID: sessionID,
-		Role:      "assistant",
-		Content:   response,
-		CreatedAt: time.Now(),
-	}
-	session.Messages = append(session.Messages, assistantMsgRecord)
-	session.UpdatedAt = time.Now()
-
-	if session.Title == "" && len(session.Messages) > 0 {
-		session.Title = userMessage
-		if len(session.Title) > 50 {
-			session.Title = session.Title[:50] + "..."
-		}
-	}
-
-	return response, nil
-}
-
-func (s *AgentService) Stream(ctx context.Context, sessionID string, userID int64, userType string, userMessage string) (*schema.StreamReader[*schema.Message], error) {
+func (s *AgentService) Stream(ctx context.Context, sessionID string, userID int64, userType string, userMessage string, images []string) (*schema.StreamReader[*schema.Message], error) {
 	session, err := s.GetSession(ctx, sessionID, userID)
 	if err != nil {
 		return nil, err
@@ -144,6 +93,7 @@ func (s *AgentService) Stream(ctx context.Context, sessionID string, userID int6
 		SessionID: sessionID,
 		Role:      "user",
 		Content:   userMessage,
+		Images:    images,
 		CreatedAt: time.Now(),
 	}
 	session.Messages = append(session.Messages, userMsgRecord)
@@ -153,6 +103,7 @@ func (s *AgentService) Stream(ctx context.Context, sessionID string, userID int6
 		messages = append(messages, agent.ChatMessage{
 			Role:    msg.Role,
 			Content: msg.Content,
+			Images:  msg.Images,
 		})
 	}
 
@@ -192,23 +143,6 @@ func (s *AgentService) SaveAssistantMessage(ctx context.Context, sessionID strin
 	session.UpdatedAt = time.Now()
 
 	return nil
-}
-
-func (s *AgentService) CollectStreamContent(stream *schema.StreamReader[*schema.Message]) (string, error) {
-	var content string
-	for {
-		msg, err := stream.Recv()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return "", err
-		}
-		if msg.Role == schema.Assistant && len(msg.ToolCalls) == 0 {
-			content += msg.Content
-		}
-	}
-	return content, nil
 }
 
 func (s *AgentService) GetChatHistory(ctx context.Context, sessionID string, userID int64) ([]ChatMessageRecord, error) {

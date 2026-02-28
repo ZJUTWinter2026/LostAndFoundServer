@@ -30,11 +30,3 @@ func GetEmbeddingModel() embedding.Embedder {
 	})
 	return embedModel
 }
-
-func Float64ToFloat32(in []float64) []float32 {
-	out := make([]float32, len(in))
-	for i, v := range in {
-		out[i] = float32(v)
-	}
-	return out
-}

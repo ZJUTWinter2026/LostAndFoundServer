@@ -44,8 +44,7 @@ func searchPostsFunc(ctx context.Context, input *SearchPostsInput) (*SearchPosts
 		return &SearchPostsOutput{Success: false, Message: "向量化返回空结果"}, nil
 	}
 
-	vector := llm.Float64ToFloat32(vectors[0])
-	searchResults, err := vectorRepo.SearchSimilarPosts(ctx, vector, limit*2)
+	searchResults, err := vectorRepo.Search(ctx, vectors[0], limit*2)
 	if err != nil {
 		return &SearchPostsOutput{Success: false, Message: "向量搜索失败"}, nil
 	}

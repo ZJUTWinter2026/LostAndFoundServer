@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/cloudwego/eino/schema"
 )
 
@@ -39,10 +40,8 @@ func (s *Service) UpdatePostVector(ctx context.Context, post *model.Post) error 
 		return fmt.Errorf("向量化返回空结果")
 	}
 
-	vector := llm.Float64ToFloat32(vectors[0])
 	vectorRepo := repo.NewVectorRepo()
-
-	if err := vectorRepo.UpdatePostVector(ctx, post.ID, vector); err != nil {
+	if err := vectorRepo.Update(ctx, post.ID, vectors[0]); err != nil {
 		return fmt.Errorf("更新向量失败: %w", err)
 	}
 
@@ -72,9 +71,16 @@ func (s *Service) generateSummary(ctx context.Context, post *model.Post) (string
 
 	sb.WriteString("\n请生成一段简洁的总结文本，包含时间、地点、物品特征等关键信息，便于语义搜索匹配。")
 
+	var imageUrls []string
+	if post.Images != "" {
+		_ = sonic.UnmarshalString(post.Images, &imageUrls)
+	}
+
+	userMsg := s.buildUserMessage(sb.String(), imageUrls)
+
 	messages := []*schema.Message{
-		schema.SystemMessage("你是一个专业的失物招领信息总结助手。请根据用户提供的失物/招领信息，生成一段简洁准确的总结文本，用于后续的语义搜索匹配。总结应包含时间、地点、物品特征等关键信息。"),
-		schema.UserMessage(sb.String()),
+		schema.SystemMessage("你是一个专业的失物招领信息总结助手。请根据用户提供的失物/招领信息（可能包含图片），生成一段简洁准确的总结文本，用于后续的语义搜索匹配。总结应包含时间、地点、物品特征等关键信息。如果提供了图片，请结合图片内容进行分析。"),
+		userMsg,
 	}
 
 	chatModel := llm.GetChatModel()
@@ -84,4 +90,32 @@ func (s *Service) generateSummary(ctx context.Context, post *model.Post) (string
 	}
 
 	return strings.TrimSpace(resp.Content), nil
+}
+
+func (s *Service) buildUserMessage(text string, imageUrls []string) *schema.Message {
+	if len(imageUrls) == 0 {
+		return schema.UserMessage(text)
+	}
+
+	parts := make([]schema.MessageInputPart, 0, len(imageUrls)+1)
+	parts = append(parts, schema.MessageInputPart{
+		Type: schema.ChatMessagePartTypeText,
+		Text: text,
+	})
+
+	for _, url := range imageUrls {
+		parts = append(parts, schema.MessageInputPart{
+			Type: schema.ChatMessagePartTypeImageURL,
+			Image: &schema.MessageInputImage{
+				MessagePartCommon: schema.MessagePartCommon{
+					URL: &url,
+				},
+			},
+		})
+	}
+
+	return &schema.Message{
+		Role:                   schema.User,
+		UserInputMultiContent: parts,
+	}
 }
