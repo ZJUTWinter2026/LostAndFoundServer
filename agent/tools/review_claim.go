@@ -68,7 +68,7 @@ func reviewClaimFunc(ctx context.Context, input *ReviewClaimInput) (*ReviewClaim
 	}
 
 	if input.Approved {
-		postRepo.MarkAsSolved(ctx, claim.PostID)
+		_ = postRepo.MarkAsSolved(ctx, claim.PostID)
 	}
 
 	return &ReviewClaimOutput{

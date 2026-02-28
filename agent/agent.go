@@ -42,7 +42,7 @@ type Agent struct {
 }
 
 func NewAgent() *Agent {
-	toolList := make([]tool.BaseTool, 0, 11)
+	toolList := make([]tool.BaseTool, 0, 12)
 
 	if t, err := tools.NewGetPostDetailTool(); err == nil {
 		toolList = append(toolList, t)
@@ -75,6 +75,9 @@ func NewAgent() *Agent {
 		toolList = append(toolList, t)
 	}
 	if t, err := tools.NewCancelPostTool(); err == nil {
+		toolList = append(toolList, t)
+	}
+	if t, err := tools.NewGetSystemConfigTool(); err == nil {
 		toolList = append(toolList, t)
 	}
 
@@ -215,7 +218,8 @@ func buildSystemPrompt(toolCtx *tools.ToolContext) string {
 	sb.WriteString("- cancel_claim: 取消认领申请\n")
 	sb.WriteString("- review_claim: 审核认领申请\n")
 	sb.WriteString("- submit_feedback: 提交投诉反馈\n")
-	sb.WriteString("- cancel_post: 取消发布\n\n")
+	sb.WriteString("- cancel_post: 取消发布\n")
+	sb.WriteString("- get_system_config: 获取系统配置（物品类型、反馈类型等）\n\n")
 
 	sb.WriteString("## 当前用户信息\n")
 	sb.WriteString(fmt.Sprintf("用户ID: %d\n", toolCtx.UserID))

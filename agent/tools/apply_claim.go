@@ -12,9 +12,9 @@ import (
 )
 
 type ApplyClaimInput struct {
-	PostID       int64    `json:"post_id" jsonschema:"description=发布ID,required"`
-	Description  string   `json:"description" jsonschema:"description=认领说明,描述为什么这是你的物品,required"`
-	ProofImages  []string `json:"proof_images" jsonschema:"description=证明图片URL列表"`
+	PostID      int64    `json:"post_id" jsonschema:"description=发布ID,required"`
+	Description string   `json:"description" jsonschema:"description=认领说明,描述为什么这是你的物品,required"`
+	ProofImages []string `json:"proof_images" jsonschema:"description=证明图片URL列表"`
 }
 
 type ApplyClaimOutput struct {
@@ -64,11 +64,11 @@ func applyClaimFunc(ctx context.Context, input *ApplyClaimInput) (*ApplyClaimOut
 	}
 
 	claim := &model.Claim{
-		PostID:       input.PostID,
+		PostID:      input.PostID,
 		ClaimantID:  tc.UserID,
 		Description: input.Description,
-		ProofImages:  proofImagesJSON,
-		Status:       enum.ClaimStatusPending,
+		ProofImages: proofImagesJSON,
+		Status:      enum.ClaimStatusPending,
 	}
 
 	err = claimRepo.Create(ctx, claim)
@@ -76,7 +76,7 @@ func applyClaimFunc(ctx context.Context, input *ApplyClaimInput) (*ApplyClaimOut
 		return &ApplyClaimOutput{Success: false, Message: "创建认领申请失败"}, nil
 	}
 
-	postRepo.IncrementClaimCount(ctx, input.PostID)
+	_ = postRepo.IncrementClaimCount(ctx, input.PostID)
 
 	return &ApplyClaimOutput{
 		Success: true,
