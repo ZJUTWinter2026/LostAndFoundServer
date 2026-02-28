@@ -190,8 +190,7 @@ func (s *AgentService) Stream(ctx context.Context, sessionID string, userID int6
 	}
 
 	toolCtx := &tools.ToolContext{
-		UserID:   userID,
-		UserType: userType,
+		UserID: userID,
 	}
 
 	stream, err := s.agent.Stream(ctx, messages, toolCtx)

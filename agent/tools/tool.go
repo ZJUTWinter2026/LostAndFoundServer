@@ -5,8 +5,7 @@ import (
 )
 
 type ToolContext struct {
-	UserID   int64
-	UserType string
+	UserID int64
 }
 
 type toolContextKey struct{}
