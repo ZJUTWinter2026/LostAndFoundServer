@@ -45,15 +45,15 @@ type ListApiResponse struct {
 }
 
 type FeedbackItem struct {
-	ID          int64      `json:"id" desc:"投诉ID"`
-	PostID      int64      `json:"post_id" desc:"物品ID"`
-	ReporterID  int64      `json:"reporter_id" desc:"投诉者ID"`
-	Type        string     `json:"type" desc:"投诉类型"`
-	Description string     `json:"description" desc:"详细说明"`
-	Processed   bool       `json:"processed" desc:"是否已处理"`
-	ProcessedBy int64      `json:"processed_by,omitempty" desc:"处理人ID"`
-	ProcessedAt *time.Time `json:"processed_at,omitempty" desc:"处理时间"`
-	CreatedAt   time.Time  `json:"created_at" desc:"创建时间"`
+	ID          int64     `json:"id" desc:"投诉ID"`
+	PostID      int64     `json:"post_id" desc:"物品ID"`
+	ReporterID  int64     `json:"reporter_id" desc:"投诉者ID"`
+	Type        string    `json:"type" desc:"投诉类型"`
+	Description string    `json:"description" desc:"详细说明"`
+	Processed   bool      `json:"processed" desc:"是否已处理"`
+	ProcessedBy int64     `json:"processed_by" desc:"处理人ID"`
+	ProcessedAt time.Time `json:"processed_at" desc:"处理时间"`
+	CreatedAt   time.Time `json:"created_at" desc:"创建时间"`
 }
 
 func (l *ListApi) Run(ctx *gin.Context) kit.Code {
@@ -113,10 +113,8 @@ func (l *ListApi) Run(ctx *gin.Context) kit.Code {
 			Description: fb.Description,
 			Processed:   fb.Processed,
 			ProcessedBy: fb.ProcessedBy,
+			ProcessedAt: fb.ProcessedAt,
 			CreatedAt:   fb.CreatedAt,
-		}
-		if !fb.ProcessedAt.IsZero() {
-			item.ProcessedAt = &fb.ProcessedAt
 		}
 		items = append(items, item)
 	}

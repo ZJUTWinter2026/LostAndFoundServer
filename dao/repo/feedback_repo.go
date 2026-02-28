@@ -60,13 +60,12 @@ func (r *FeedbackRepo) ListByProcessed(ctx context.Context, processed string, of
 }
 
 func (r *FeedbackRepo) MarkAsProcessed(ctx context.Context, id int64, processedBy int64) error {
-	now := time.Now()
 	return ndb.Pick().WithContext(ctx).Model(&model.Feedback{}).
 		Where("id = ?", id).
 		Updates(map[string]interface{}{
 			"processed":    true,
 			"processed_by": processedBy,
-			"processed_at": now,
+			"processed_at": time.Now(),
 		}).Error
 }
 
