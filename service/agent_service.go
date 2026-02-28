@@ -3,6 +3,7 @@ package service
 import (
 	"app/agent"
 	"app/agent/tools"
+	"app/dao/model"
 	"app/dao/repo"
 	"app/pkg/llm"
 	"context"
@@ -69,7 +70,7 @@ func (s *AgentService) CreateSession(ctx context.Context, userID int64, title st
 		UpdatedAt: now,
 	}
 
-	dbSession := &repo.ChatSession{
+	dbSession := &model.ChatSession{
 		SessionID: sessionID,
 		UserID:    userID,
 		Title:     title,

@@ -5,40 +5,12 @@ import (
 	"errors"
 	"time"
 
+	"app/dao/model"
+
 	"github.com/bytedance/sonic"
 	"github.com/zjutjh/mygo/ndb"
 	"gorm.io/gorm"
-	"gorm.io/plugin/soft_delete"
 )
-
-type ChatSession struct {
-	ID        int64                 `gorm:"column:id;primaryKey;autoIncrement:true"`
-	SessionID string                `gorm:"column:session_id;uniqueIndex;not null"`
-	UserID    int64                 `gorm:"column:user_id;not null"`
-	Title     string                `gorm:"column:title;not null;default:''"`
-	CreatedAt time.Time             `gorm:"column:created_at;not null"`
-	UpdatedAt time.Time             `gorm:"column:updated_at;not null"`
-	DeletedAt soft_delete.DeletedAt `gorm:"column:deleted_at;softDelete:milli"`
-}
-
-func (*ChatSession) TableName() string {
-	return "chat_session"
-}
-
-type ChatMessage struct {
-	ID               int64                 `gorm:"column:id;primaryKey;autoIncrement:true"`
-	SessionID        string                `gorm:"column:session_id;not null;index"`
-	Role             string                `gorm:"column:role;not null"`
-	Content          string                `gorm:"column:content;not null"`
-	Images           string                `gorm:"column:images"`
-	ImageDescriptions string               `gorm:"column:image_descriptions"`
-	CreatedAt        time.Time             `gorm:"column:created_at;not null"`
-	DeletedAt        soft_delete.DeletedAt `gorm:"column:deleted_at;softDelete:milli"`
-}
-
-func (*ChatMessage) TableName() string {
-	return "chat_message"
-}
 
 type ChatMessageData struct {
 	SessionID         string
@@ -55,12 +27,12 @@ func NewChatRepo() *ChatRepo {
 	return &ChatRepo{}
 }
 
-func (r *ChatRepo) CreateSession(ctx context.Context, session *ChatSession) error {
+func (r *ChatRepo) CreateSession(ctx context.Context, session *model.ChatSession) error {
 	return ndb.Pick().WithContext(ctx).Create(session).Error
 }
 
-func (r *ChatRepo) GetSessionByID(ctx context.Context, sessionID string) (*ChatSession, error) {
-	var session ChatSession
+func (r *ChatRepo) GetSessionByID(ctx context.Context, sessionID string) (*model.ChatSession, error) {
+	var session model.ChatSession
 	err := ndb.Pick().WithContext(ctx).Where("session_id = ?", sessionID).First(&session).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
@@ -72,19 +44,19 @@ func (r *ChatRepo) GetSessionByID(ctx context.Context, sessionID string) (*ChatS
 }
 
 func (r *ChatRepo) UpdateSessionTitle(ctx context.Context, sessionID string, title string) error {
-	return ndb.Pick().WithContext(ctx).Model(&ChatSession{}).
+	return ndb.Pick().WithContext(ctx).Model(&model.ChatSession{}).
 		Where("session_id = ?", sessionID).
 		Update("title", title).Error
 }
 
 func (r *ChatRepo) UpdateSessionUpdatedAt(ctx context.Context, sessionID string) error {
-	return ndb.Pick().WithContext(ctx).Model(&ChatSession{}).
+	return ndb.Pick().WithContext(ctx).Model(&model.ChatSession{}).
 		Where("session_id = ?", sessionID).
 		Update("updated_at", time.Now()).Error
 }
 
-func (r *ChatRepo) ListSessionsByUserID(ctx context.Context, userID int64) ([]*ChatSession, error) {
-	var sessions []*ChatSession
+func (r *ChatRepo) ListSessionsByUserID(ctx context.Context, userID int64) ([]*model.ChatSession, error) {
+	var sessions []*model.ChatSession
 	err := ndb.Pick().WithContext(ctx).Where("user_id = ?", userID).
 		Order("updated_at DESC").
 		Find(&sessions).Error
@@ -95,7 +67,7 @@ func (r *ChatRepo) CreateMessage(ctx context.Context, data *ChatMessageData) err
 	imagesJSON, _ := sonic.MarshalString(data.Images)
 	descJSON, _ := sonic.MarshalString(data.ImageDescriptions)
 
-	msg := &ChatMessage{
+	msg := &model.ChatMessage{
 		SessionID:         data.SessionID,
 		Role:              data.Role,
 		Content:           data.Content,
@@ -107,7 +79,7 @@ func (r *ChatRepo) CreateMessage(ctx context.Context, data *ChatMessageData) err
 }
 
 func (r *ChatRepo) ListMessagesBySessionID(ctx context.Context, sessionID string) ([]*ChatMessageData, error) {
-	var messages []*ChatMessage
+	var messages []*model.ChatMessage
 	err := ndb.Pick().WithContext(ctx).Where("session_id = ?", sessionID).
 		Order("created_at ASC").
 		Find(&messages).Error
