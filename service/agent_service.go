@@ -200,9 +200,12 @@ func (s *AgentService) Stream(ctx context.Context, sessionID string, userID int6
 
 	if session.Title == "" && len(session.Messages) > 0 {
 		session.Title = userMessage
-		if len(session.Title) > 50 {
-			session.Title = session.Title[:50] + "..."
+
+		runes := []rune(session.Title)
+		if len(runes) > 10 {
+			session.Title = string(runes[:10]) + "..."
 		}
+
 		_ = s.chatRepo.UpdateSessionTitle(ctx, sessionID, session.Title)
 	}
 

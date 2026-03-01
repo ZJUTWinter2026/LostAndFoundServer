@@ -69,7 +69,7 @@ func (s *Service) generateSummary(ctx context.Context, post *model.Post) (string
 		sb.WriteString(fmt.Sprintf("悬赏说明: %s\n", post.RewardDescription))
 	}
 
-	sb.WriteString("\n请生成一段简洁的总结文本，包含时间、地点、物品特征等关键信息，便于语义搜索匹配。如果有图片，请结合图片内容进行分析。")
+	sb.WriteString("\n请生成一段简洁的总结纯文本，包含时间、地点、物品特征等关键信息，便于语义搜索匹配。如果有图片，请结合图片内容进行分析。")
 
 	var imageUrls []string
 	if post.Images != "" {

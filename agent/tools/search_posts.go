@@ -9,6 +9,7 @@ import (
 
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/components/tool/utils"
+	"github.com/zjutjh/mygo/nlog"
 )
 
 type SearchPostsInput struct {
@@ -26,6 +27,8 @@ type SearchPostsOutput struct {
 }
 
 func searchPostsFunc(ctx context.Context, input *SearchPostsInput) (*SearchPostsOutput, error) {
+	nlog.Pick().WithContext(ctx).Infof("[Tool:search_posts] 调用参数: query=%s, publish_type=%s, campus=%s, limit=%d", input.Query, input.PublishType, input.Campus, input.Limit)
+
 	postRepo := repo.NewPostRepo()
 	vectorRepo := repo.NewVectorRepo()
 
@@ -37,15 +40,18 @@ func searchPostsFunc(ctx context.Context, input *SearchPostsInput) (*SearchPosts
 	embedModel := llm.GetEmbeddingModel()
 	vectors, err := embedModel.EmbedStrings(ctx, []string{input.Query})
 	if err != nil {
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("[Tool:search_posts] 向量化失败")
 		return &SearchPostsOutput{Success: false, Message: "向量化失败"}, nil
 	}
 
 	if len(vectors) == 0 {
+		nlog.Pick().WithContext(ctx).Warn("[Tool:search_posts] 向量化返回空结果")
 		return &SearchPostsOutput{Success: false, Message: "向量化返回空结果"}, nil
 	}
 
 	searchResults, err := vectorRepo.Search(ctx, vectors[0], limit*2)
 	if err != nil {
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("[Tool:search_posts] 向量搜索失败")
 		return &SearchPostsOutput{Success: false, Message: "向量搜索失败"}, nil
 	}
 
@@ -55,6 +61,7 @@ func searchPostsFunc(ctx context.Context, input *SearchPostsInput) (*SearchPosts
 	}
 
 	if len(postIDs) == 0 {
+		nlog.Pick().WithContext(ctx).Infof("[Tool:search_posts] 未找到匹配结果")
 		return &SearchPostsOutput{
 			Success: true,
 			Data:    []*model.Post{},
@@ -64,6 +71,7 @@ func searchPostsFunc(ctx context.Context, input *SearchPostsInput) (*SearchPosts
 
 	posts, err := postRepo.FindByIds(ctx, postIDs)
 	if err != nil {
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("[Tool:search_posts] 查询发布记录失败")
 		return &SearchPostsOutput{Success: false, Message: "查询发布记录失败"}, nil
 	}
 
@@ -85,6 +93,7 @@ func searchPostsFunc(ctx context.Context, input *SearchPostsInput) (*SearchPosts
 		filteredPosts = filteredPosts[:limit]
 	}
 
+	nlog.Pick().WithContext(ctx).Infof("[Tool:search_posts] 返回结果: total=%d", len(filteredPosts))
 	return &SearchPostsOutput{
 		Success: true,
 		Data:    filteredPosts,

@@ -41,15 +41,15 @@ func float64ToFloat32(in []float64) []float32 {
 }
 
 func (r *VectorRepo) Insert(ctx context.Context, postID int64, vector []float64) error {
-	client := r.getClient()
-	if client == nil {
+	getClient := r.getClient()
+	if getClient == nil {
 		return fmt.Errorf("Milvus客户端未初始化")
 	}
 
 	postIDColumn := entity.NewColumnInt64("post_id", []int64{postID})
 	vectorColumn := entity.NewColumnFloatVector("vector", len(vector), [][]float32{float64ToFloat32(vector)})
 
-	_, err := client.Insert(ctx, r.getCollectionName(), "", postIDColumn, vectorColumn)
+	_, err := getClient.Insert(ctx, r.getCollectionName(), "", postIDColumn, vectorColumn)
 	if err != nil {
 		return fmt.Errorf("插入向量失败: %w", err)
 	}
@@ -58,12 +58,12 @@ func (r *VectorRepo) Insert(ctx context.Context, postID int64, vector []float64)
 }
 
 func (r *VectorRepo) Delete(ctx context.Context, postID int64) error {
-	client := r.getClient()
-	if client == nil {
+	getClient := r.getClient()
+	if getClient == nil {
 		return fmt.Errorf("Milvus客户端未初始化")
 	}
 
-	err := client.DeleteByPks(ctx, r.getCollectionName(), "", entity.NewColumnInt64("post_id", []int64{postID}))
+	err := getClient.DeleteByPks(ctx, r.getCollectionName(), "", entity.NewColumnInt64("post_id", []int64{postID}))
 	if err != nil {
 		return fmt.Errorf("删除向量失败: %w", err)
 	}
@@ -84,8 +84,8 @@ type VectorSearchResult struct {
 }
 
 func (r *VectorRepo) Search(ctx context.Context, vector []float64, topK int) ([]VectorSearchResult, error) {
-	client := r.getClient()
-	if client == nil {
+	getClient := r.getClient()
+	if getClient == nil {
 		return nil, fmt.Errorf("Milvus客户端未初始化")
 	}
 
@@ -94,7 +94,7 @@ func (r *VectorRepo) Search(ctx context.Context, vector []float64, topK int) ([]
 		return nil, fmt.Errorf("创建搜索参数失败: %w", err)
 	}
 
-	results, err := client.Search(
+	results, err := getClient.Search(
 		ctx,
 		r.getCollectionName(),
 		[]string{},

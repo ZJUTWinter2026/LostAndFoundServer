@@ -12,6 +12,7 @@ import (
 	"github.com/bytedance/sonic"
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/components/tool/utils"
+	"github.com/zjutjh/mygo/nlog"
 )
 
 type PublishPostInput struct {
@@ -39,13 +40,17 @@ type PublishPostOutput struct {
 func publishPostFunc(ctx context.Context, input *PublishPostInput) (*PublishPostOutput, error) {
 	tc := GetToolContext(ctx)
 	if tc == nil {
+		nlog.Pick().WithContext(ctx).Warn("[Tool:publish_post] 工具上下文未初始化")
 		return &PublishPostOutput{Success: false, Message: "工具上下文未初始化"}, nil
 	}
+
+	nlog.Pick().WithContext(ctx).Infof("[Tool:publish_post] 调用参数: user_id=%d, publish_type=%s, item_name=%s, item_type=%s, campus=%s", tc.UserID, input.PublishType, input.ItemName, input.ItemType, input.Campus)
 
 	postRepo := repo.NewPostRepo()
 
 	eventTime, err := time.Parse(time.DateTime, input.EventTime)
 	if err != nil {
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("[Tool:publish_post] 事件时间格式错误")
 		return &PublishPostOutput{Success: false, Message: "事件时间格式错误"}, nil
 	}
 
@@ -72,14 +77,17 @@ func publishPostFunc(ctx context.Context, input *PublishPostInput) (*PublishPost
 
 	err = postRepo.Create(ctx, record)
 	if err != nil {
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("[Tool:publish_post] 创建发布记录失败")
 		return &PublishPostOutput{Success: false, Message: "创建发布记录失败"}, nil
 	}
 
 	vectorSvc := vector.NewService()
 	if err := vectorSvc.UpdatePostVector(ctx, record); err != nil {
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("[Tool:publish_post] 更新向量失败")
 		return &PublishPostOutput{Success: false, Message: "更新向量失败"}, nil
 	}
 
+	nlog.Pick().WithContext(ctx).Infof("[Tool:publish_post] 发布成功: post_id=%d", record.ID)
 	return &PublishPostOutput{
 		Success: true,
 		Message: "发布成功，等待审核",

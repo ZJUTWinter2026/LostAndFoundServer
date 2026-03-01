@@ -6,6 +6,7 @@ import (
 
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/components/tool/utils"
+	"github.com/zjutjh/mygo/nlog"
 )
 
 type GetMyPostsInput struct {
@@ -26,8 +27,11 @@ type GetMyPostsOutput struct {
 func getMyPostsFunc(ctx context.Context, input *GetMyPostsInput) (*GetMyPostsOutput, error) {
 	tc := GetToolContext(ctx)
 	if tc == nil {
+		nlog.Pick().WithContext(ctx).Warn("[Tool:get_my_posts] 工具上下文未初始化")
 		return &GetMyPostsOutput{Success: false, Message: "工具上下文未初始化"}, nil
 	}
+
+	nlog.Pick().WithContext(ctx).Infof("[Tool:get_my_posts] 调用参数: user_id=%d, publish_type=%s, status=%s, page=%d, page_size=%d", tc.UserID, input.PublishType, input.Status, input.Page, input.PageSize)
 
 	postRepo := repo.NewPostRepo()
 
@@ -43,9 +47,11 @@ func getMyPostsFunc(ctx context.Context, input *GetMyPostsInput) (*GetMyPostsOut
 	offset := (page - 1) * pageSize
 	posts, total, err := postRepo.ListByPublisher(ctx, tc.UserID, input.PublishType, input.Status, offset, pageSize)
 	if err != nil {
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("[Tool:get_my_posts] 查询失败")
 		return &GetMyPostsOutput{Success: false, Message: "查询失败"}, nil
 	}
 
+	nlog.Pick().WithContext(ctx).Infof("[Tool:get_my_posts] 查询成功: total=%d, page=%d", total, page)
 	return &GetMyPostsOutput{
 		Success: true,
 		Data:    posts,

@@ -6,6 +6,7 @@ import (
 
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/components/tool/utils"
+	"github.com/zjutjh/mygo/nlog"
 )
 
 type GetMyFeedbacksInput struct {
@@ -24,8 +25,11 @@ type GetMyFeedbacksOutput struct {
 func getMyFeedbacksFunc(ctx context.Context, input *GetMyFeedbacksInput) (*GetMyFeedbacksOutput, error) {
 	tc := GetToolContext(ctx)
 	if tc == nil {
+		nlog.Pick().WithContext(ctx).Warn("[Tool:get_my_feedbacks] 工具上下文未初始化")
 		return &GetMyFeedbacksOutput{Success: false, Message: "工具上下文未初始化"}, nil
 	}
+
+	nlog.Pick().WithContext(ctx).Infof("[Tool:get_my_feedbacks] 调用参数: user_id=%d, page=%d, page_size=%d", tc.UserID, input.Page, input.PageSize)
 
 	feedbackRepo := repo.NewFeedbackRepo()
 
@@ -41,9 +45,11 @@ func getMyFeedbacksFunc(ctx context.Context, input *GetMyFeedbacksInput) (*GetMy
 	offset := (page - 1) * pageSize
 	feedbacks, total, err := feedbackRepo.ListByReporter(ctx, tc.UserID, offset, pageSize)
 	if err != nil {
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("[Tool:get_my_feedbacks] 查询失败")
 		return &GetMyFeedbacksOutput{Success: false, Message: "查询失败"}, nil
 	}
 
+	nlog.Pick().WithContext(ctx).Infof("[Tool:get_my_feedbacks] 查询成功: total=%d, page=%d", total, page)
 	return &GetMyFeedbacksOutput{
 		Success: true,
 		Data:    feedbacks,

@@ -56,7 +56,6 @@ func (a *DisableApi) Run(ctx *gin.Context) kit.Code {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("禁用用户失败")
 		return comm.CodeServerError
 	}
-
 	return comm.CodeOK
 }
 

@@ -6,6 +6,7 @@ import (
 
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/components/tool/utils"
+	"github.com/zjutjh/mygo/nlog"
 )
 
 type GetMyClaimsInput struct {
@@ -24,8 +25,11 @@ type GetMyClaimsOutput struct {
 func getMyClaimsFunc(ctx context.Context, input *GetMyClaimsInput) (*GetMyClaimsOutput, error) {
 	tc := GetToolContext(ctx)
 	if tc == nil {
+		nlog.Pick().WithContext(ctx).Warn("[Tool:get_my_claims] 工具上下文未初始化")
 		return &GetMyClaimsOutput{Success: false, Message: "工具上下文未初始化"}, nil
 	}
+
+	nlog.Pick().WithContext(ctx).Infof("[Tool:get_my_claims] 调用参数: user_id=%d, page=%d, page_size=%d", tc.UserID, input.Page, input.PageSize)
 
 	claimRepo := repo.NewClaimRepo()
 
@@ -41,9 +45,11 @@ func getMyClaimsFunc(ctx context.Context, input *GetMyClaimsInput) (*GetMyClaims
 	offset := (page - 1) * pageSize
 	claims, total, err := claimRepo.ListByClaimant(ctx, tc.UserID, offset, pageSize)
 	if err != nil {
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("[Tool:get_my_claims] 查询失败")
 		return &GetMyClaimsOutput{Success: false, Message: "查询失败"}, nil
 	}
 
+	nlog.Pick().WithContext(ctx).Infof("[Tool:get_my_claims] 查询成功: total=%d, page=%d", total, page)
 	return &GetMyClaimsOutput{
 		Success: true,
 		Data:    claims,
