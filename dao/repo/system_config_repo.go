@@ -143,3 +143,11 @@ func (r *SystemConfigRepo) GetPublishLimit(ctx context.Context) (int, error) {
 func (r *SystemConfigRepo) UpdatePublishLimit(ctx context.Context, limit int) error {
 	return r.UpdateValue(ctx, ConfigKeyPublishLimit, strconv.Itoa(limit))
 }
+
+func (r *SystemConfigRepo) ListAll(ctx context.Context) ([]*model.SystemConfig, error) {
+	var configs []*model.SystemConfig
+	err := ndb.Pick().WithContext(ctx).Model(&model.SystemConfig{}).
+		Order("created_at DESC").
+		Find(&configs).Error
+	return configs, err
+}

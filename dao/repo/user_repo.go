@@ -61,3 +61,24 @@ func (r *UserRepo) UpdateFirstLogin(ctx context.Context, id int64) error {
 func (r *UserRepo) Save(ctx context.Context, user *model.User) error {
 	return ndb.Pick().WithContext(ctx).Save(user).Error
 }
+
+func (r *UserRepo) FindByUsernameAndIDCard(ctx context.Context, username string, idCard string) (*model.User, error) {
+	u := r.query.User
+	record, err := u.WithContext(ctx).Where(u.Username.Eq(username), u.IDCard.Eq(idCard)).First()
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return record, nil
+}
+
+func (r *UserRepo) ListAll(ctx context.Context) ([]*model.User, error) {
+	u := r.query.User
+	records, err := u.WithContext(ctx).Find()
+	if err != nil {
+		return nil, err
+	}
+	return records, nil
+}

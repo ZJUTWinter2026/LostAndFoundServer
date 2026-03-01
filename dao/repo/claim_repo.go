@@ -102,3 +102,11 @@ func (r *ClaimRepo) Delete(ctx context.Context, id int64, claimantID int64) erro
 		Where("id = ? AND claimant_id = ? AND status = ?", id, claimantID, enum.ClaimStatusPending).
 		Delete(&model.Claim{}).Error
 }
+
+func (r *ClaimRepo) ListAll(ctx context.Context) ([]*model.Claim, error) {
+	var claims []*model.Claim
+	err := ndb.Pick().WithContext(ctx).Model(&model.Claim{}).
+		Order("created_at DESC").
+		Find(&claims).Error
+	return claims, err
+}

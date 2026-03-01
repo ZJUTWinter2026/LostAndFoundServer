@@ -343,3 +343,26 @@ func (r *PostRepo) UpdateSummary(ctx context.Context, postID int64, summary stri
 		Where("id = ?", postID).
 		Update("summary", summary).Error
 }
+
+func (r *PostRepo) ListAll(ctx context.Context) ([]*model.Post, error) {
+	var posts []*model.Post
+	err := ndb.Pick().WithContext(ctx).Model(&model.Post{}).
+		Order("created_at DESC").
+		Find(&posts).Error
+	return posts, err
+}
+
+func (r *PostRepo) ListExpired(ctx context.Context) ([]*model.Post, error) {
+	var posts []*model.Post
+	err := ndb.Pick().WithContext(ctx).Model(&model.Post{}).
+		Where("status IN ?", []string{enum.PostStatusArchived, enum.PostStatusCancelled, enum.PostStatusRejected}).
+		Order("created_at DESC").
+		Find(&posts).Error
+	return posts, err
+}
+
+func (r *PostRepo) DeleteExpired(ctx context.Context) error {
+	return ndb.Pick().WithContext(ctx).Model(&model.Post{}).
+		Where("status IN ?", []string{enum.PostStatusArchived, enum.PostStatusCancelled, enum.PostStatusRejected}).
+		Delete(&model.Post{}).Error
+}

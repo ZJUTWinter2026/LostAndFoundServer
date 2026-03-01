@@ -41,7 +41,7 @@ type PublishApiRequest struct {
 		ItemType          string    `json:"item_type" binding:"required,max=20" desc:"物品类型"`
 		Campus            string    `json:"campus" binding:"required,oneof=ZHAO_HUI PING_FENG MO_GAN_SHAN" desc:"校区"`
 		Location          string    `json:"location" binding:"required,max=100" desc:"地点"`
-		StorageLocation   string    `json:"storage_location" binding:"required,max=100" desc:"存放地点"`
+		StorageLocation   string    `json:"storage_location" binding:"omitempty,max=100" desc:"存放地点"`
 		EventTime         time.Time `json:"event_time" binding:"required" desc:"丢失/拾取时间"`
 		Features          string    `json:"features" binding:"required,max=255" desc:"物品特征"`
 		ContactName       string    `json:"contact_name" binding:"required,max=30" desc:"联系人"`

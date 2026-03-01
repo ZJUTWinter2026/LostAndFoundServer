@@ -25,3 +25,11 @@ func (r *AuditLogRepo) CreateAuditLog(ctx context.Context, adminID int64, action
 	}
 	return ndb.Pick().WithContext(ctx).Create(log).Error
 }
+
+func (r *AuditLogRepo) ListAll(ctx context.Context) ([]*model.AuditLog, error) {
+	var logs []*model.AuditLog
+	err := ndb.Pick().WithContext(ctx).Model(&model.AuditLog{}).
+		Order("created_at DESC").
+		Find(&logs).Error
+	return logs, err
+}

@@ -36,6 +36,7 @@ func Route(router *gin.Engine) {
 		userGroup := r.Group("/user")
 		{
 			userGroup.POST("/login", user.LoginHandler())
+			userGroup.POST("/forgot-password", user.ForgotPasswordHandler())
 			userGroup.POST("/update", user.UpdateHandler())
 			userGroup.POST("upload", user.UploadHandler())
 		}
@@ -60,6 +61,10 @@ func Route(router *gin.Engine) {
 			adminGroup.GET("/statistics", admin.StatisticsHandler())
 			adminGroup.POST("/claim", admin.ClaimPostHandler())
 			adminGroup.POST("/archive", admin.ArchivePostHandler())
+			adminGroup.GET("/export", admin.ExportDataHandler())
+			adminGroup.GET("/expired-list", admin.ExpiredListHandler())
+			adminGroup.DELETE("/expired-clean", admin.ExpiredCleanHandler())
+			adminGroup.GET("/post-list", admin.PostListHandler())
 		}
 
 		claimGroup := r.Group("/claim")
