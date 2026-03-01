@@ -16,12 +16,13 @@ import (
 )
 
 type ChatSession struct {
-	SessionID string
-	UserID    int64
-	Title     string
-	Messages  []ChatMessageRecord
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	SessionID    string
+	UserID       int64
+	Title        string
+	Messages     []ChatMessageRecord
+	IsProcessing bool
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
 }
 
 type ChatMessageRecord struct {
@@ -149,6 +150,14 @@ func (s *AgentService) Stream(ctx context.Context, sessionID string, userID int6
 		return nil, err
 	}
 
+	s.sessionMux.Lock()
+	if session.IsProcessing {
+		s.sessionMux.Unlock()
+		return nil, fmt.Errorf("会话正在处理中")
+	}
+	session.IsProcessing = true
+	s.sessionMux.Unlock()
+
 	var imageDescriptions []string
 	if len(images) > 0 {
 		imageDescriptions, _ = llm.DescribeImages(ctx, images)
@@ -172,12 +181,15 @@ func (s *AgentService) Stream(ctx context.Context, sessionID string, userID int6
 		ImageDescriptions: imageDescriptions,
 		CreatedAt:         now,
 	}); err != nil {
+		s.sessionMux.Lock()
+		session.IsProcessing = false
+		s.sessionMux.Unlock()
 		return nil, fmt.Errorf("保存消息失败: %w", err)
 	}
 
+	s.sessionMux.Lock()
 	session.Messages = append(session.Messages, userMsgRecord)
-
-	var messages []agent.ChatMessage
+	messages := make([]agent.ChatMessage, 0, len(session.Messages))
 	for _, msg := range session.Messages {
 		msgContent := msg.Content
 		if len(msg.Images) > 0 && msg.Role == "user" {
@@ -188,6 +200,7 @@ func (s *AgentService) Stream(ctx context.Context, sessionID string, userID int6
 			Content: msgContent,
 		})
 	}
+	s.sessionMux.Unlock()
 
 	toolCtx := &tools.ToolContext{
 		UserID: userID,
@@ -195,27 +208,39 @@ func (s *AgentService) Stream(ctx context.Context, sessionID string, userID int6
 
 	stream, err := s.agent.Stream(ctx, messages, toolCtx)
 	if err != nil {
+		s.sessionMux.Lock()
+		session.IsProcessing = false
+		s.sessionMux.Unlock()
 		return nil, fmt.Errorf("AI对话失败: %w", err)
 	}
 
+	s.sessionMux.Lock()
 	if session.Title == "" && len(session.Messages) > 0 {
 		session.Title = userMessage
-
 		runes := []rune(session.Title)
 		if len(runes) > 10 {
 			session.Title = string(runes[:10]) + "..."
 		}
-
+		s.sessionMux.Unlock()
 		_ = s.chatRepo.UpdateSessionTitle(ctx, sessionID, session.Title)
+	} else {
+		s.sessionMux.Unlock()
 	}
 
 	return stream, nil
 }
 
 func (s *AgentService) SaveAssistantMessage(ctx context.Context, sessionID string, userID int64, content string) error {
-	session, err := s.GetSession(ctx, sessionID, userID)
-	if err != nil {
-		return err
+	s.sessionMux.Lock()
+	session, ok := s.sessions[sessionID]
+	s.sessionMux.Unlock()
+
+	if !ok {
+		return fmt.Errorf("会话不存在")
+	}
+
+	if session.UserID != userID {
+		return fmt.Errorf("无权访问该会话")
 	}
 
 	now := time.Now()
@@ -232,11 +257,17 @@ func (s *AgentService) SaveAssistantMessage(ctx context.Context, sessionID strin
 		Content:   content,
 		CreatedAt: now,
 	}); err != nil {
+		s.sessionMux.Lock()
+		session.IsProcessing = false
+		s.sessionMux.Unlock()
 		return err
 	}
 
+	s.sessionMux.Lock()
 	session.Messages = append(session.Messages, assistantMsgRecord)
 	session.UpdatedAt = now
+	session.IsProcessing = false
+	s.sessionMux.Unlock()
 
 	_ = s.chatRepo.UpdateSessionUpdatedAt(ctx, sessionID)
 

@@ -61,6 +61,9 @@ func (a *StreamApi) Run(ctx *gin.Context) kit.Code {
 	stream, err := agentService.Stream(ctx, request.SessionID, userID, user.Usertype, request.Message, request.Images)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("Agent流式对话失败")
+		if err.Error() == "会话正在处理中" {
+			return comm.CodeSessionProcessing
+		}
 		return comm.CodeServerError
 	}
 

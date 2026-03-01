@@ -46,4 +46,5 @@ var (
 	CodeSessionNotFound      = kit.NewCode(30106, "会话不存在")
 	CodeSessionAccessDenied  = kit.NewCode(30107, "无权访问该会话")
 	CodeAgentDisabled        = kit.NewCode(30108, "AI助手功能已禁用")
+	CodeSessionProcessing    = kit.NewCode(30109, "会话正在处理中，请稍后再试")
 )
