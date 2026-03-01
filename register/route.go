@@ -29,6 +29,7 @@ func Route(router *gin.Engine) {
 	router.Static("/"+uploadDir, "./"+uploadDir)
 
 	r := router.Group(routePrefix())
+	r.Use(middleware.CheckUserDisabled())
 	{
 		routeBase(r, router)
 
