@@ -15,6 +15,12 @@ import (
 	"github.com/zjutjh/mygo/swagger"
 )
 
+func DisableHandler() gin.HandlerFunc {
+	api := DisableApi{}
+	swagger.CM[runtime.FuncForPC(reflect.ValueOf(hfDisable).Pointer()).Name()] = api
+	return hfDisable
+}
+
 type DisableApi struct {
 	Info     struct{} `name:"禁用用户" desc:"禁用用户账号"`
 	Request  DisableApiRequest
@@ -56,7 +62,6 @@ func (a *DisableApi) Run(ctx *gin.Context) kit.Code {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("禁用用户失败")
 		return comm.CodeServerError
 	}
-
 	return comm.CodeOK
 }
 
@@ -80,73 +85,4 @@ func hfDisable(ctx *gin.Context) {
 			reply.Fail(ctx, code)
 		}
 	}
-}
-
-func DisableHandler() gin.HandlerFunc {
-	api := DisableApi{}
-	swagger.CM[runtime.FuncForPC(reflect.ValueOf(hfDisable).Pointer()).Name()] = api
-	return hfDisable
-}
-
-type EnableApi struct {
-	Info     struct{} `name:"恢复用户" desc:"恢复用户账号"`
-	Request  EnableApiRequest
-	Response struct{}
-}
-
-type EnableApiRequest struct {
-	Body struct {
-		ID int64 `json:"id" binding:"required" desc:"用户ID"`
-	}
-}
-
-func (a *EnableApi) Run(ctx *gin.Context) kit.Code {
-	if code := comm.CheckSysAdmin(ctx); code != comm.CodeOK {
-		return code
-	}
-
-	req := a.Request.Body
-	db := ndb.Pick().WithContext(ctx)
-
-	var user model.User
-	if err := db.First(&user, req.ID).Error; err != nil {
-		return comm.CodeDataNotFound
-	}
-
-	user.DisabledUntil = time.Now()
-
-	if err := db.Save(&user).Error; err != nil {
-		nlog.Pick().WithContext(ctx).WithError(err).Warn("恢复用户失败")
-		return comm.CodeServerError
-	}
-
-	return comm.CodeOK
-}
-
-func (a *EnableApi) Init(ctx *gin.Context) error {
-	return ctx.ShouldBindJSON(&a.Request.Body)
-}
-
-func hfEnable(ctx *gin.Context) {
-	api := &EnableApi{}
-	err := api.Init(ctx)
-	if err != nil {
-		nlog.Pick().WithContext(ctx).WithError(err).Warn("参数绑定校验错误")
-		reply.Fail(ctx, comm.CodeParameterInvalid)
-		return
-	}
-	code := api.Run(ctx)
-	if !ctx.IsAborted() {
-		if code == comm.CodeOK {
-			reply.Success(ctx, struct{}{})
-		} else {
-			reply.Fail(ctx, code)
-		}
-	}
-}
-
-func EnableHandler() gin.HandlerFunc {
-	api := EnableApi{}
-	swagger.CM[runtime.FuncForPC(reflect.ValueOf(hfEnable).Pointer()).Name()] = api
-	return hfEnable
 }

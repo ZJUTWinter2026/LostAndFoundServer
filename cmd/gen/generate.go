@@ -19,6 +19,8 @@ var tables = []string{
 	"audit_log",
 	"announcement",
 	"system_config",
+	"chat_session",
+	"chat_message",
 }
 
 func main() {

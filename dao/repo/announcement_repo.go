@@ -102,3 +102,11 @@ func (r *AnnouncementRepo) ListAll(ctx context.Context, offset int, limit int) (
 	err := db.Order("created_at DESC").Offset(offset).Limit(limit).Find(&announcements).Error
 	return announcements, total, err
 }
+
+func (r *AnnouncementRepo) ListAllData(ctx context.Context) ([]*model.Announcement, error) {
+	var announcements []*model.Announcement
+	err := ndb.Pick().WithContext(ctx).Model(&model.Announcement{}).
+		Order("created_at DESC").
+		Find(&announcements).Error
+	return announcements, err
+}

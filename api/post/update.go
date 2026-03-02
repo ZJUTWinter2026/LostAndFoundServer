@@ -5,6 +5,8 @@ import (
 	"app/comm"
 	"app/comm/enum"
 	"app/dao/repo"
+	"app/pkg/vector"
+	"context"
 	"reflect"
 	"runtime"
 	"time"
@@ -37,7 +39,7 @@ type UpdateApiRequest struct {
 		ItemType          string    `json:"item_type" binding:"required,max=20" desc:"物品类型"`
 		Campus            string    `json:"campus" binding:"required,oneof=ZHAO_HUI PING_FENG MO_GAN_SHAN" desc:"校区"`
 		Location          string    `json:"location" binding:"required,max=100" desc:"地点"`
-		StorageLocation   string    `json:"storage_location" binding:"required,max=100" desc:"存放地点"`
+		StorageLocation   string    `json:"storage_location" binding:"omitempty,max=100" desc:"存放地点"`
 		EventTime         time.Time `json:"event_time" binding:"required" desc:"事件时间"`
 		Features          string    `json:"features" binding:"required,max=200" desc:"物品特征"`
 		ContactName       string    `json:"contact_name" binding:"required,max=30" desc:"联系人"`
@@ -104,6 +106,14 @@ func (u *UpdateApi) Run(ctx *gin.Context) kit.Code {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("更新发布记录失败")
 		return comm.CodeServerError
 	}
+
+	go func() {
+		bgCtx := context.Background()
+		vectorSvc := vector.NewService()
+		if err := vectorSvc.UpdatePostVector(bgCtx, post); err != nil {
+			nlog.Pick().WithContext(bgCtx).WithError(err).Warn("更新向量失败")
+		}
+	}()
 
 	u.Response = UpdateApiResponse{Success: true}
 	return comm.CodeOK

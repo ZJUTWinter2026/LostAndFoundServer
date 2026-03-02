@@ -14,11 +14,9 @@ import (
 	"github.com/zjutjh/mygo/foundation/reply"
 	"github.com/zjutjh/mygo/kit"
 	"github.com/zjutjh/mygo/nlog"
-	"github.com/zjutjh/mygo/session"
 	"github.com/zjutjh/mygo/swagger"
 )
 
-// QueryHandler API router注册点
 func QueryHandler() gin.HandlerFunc {
 	api := QueryApi{}
 	swagger.CM[runtime.FuncForPC(reflect.ValueOf(hfQuery).Pointer()).Name()] = api
@@ -26,9 +24,9 @@ func QueryHandler() gin.HandlerFunc {
 }
 
 type QueryApi struct {
-	Info     struct{}         `name:"失物/招领信息查询" desc:"失物/招领信息查询"`
-	Request  QueryApiRequest  // API请求参数 (Body/Header/Body/Body)
-	Response QueryApiResponse // API响应数据 (Body中的Data部分)
+	Info     struct{}         `name:"失物/招领信息查询" desc:"普通用户查询已审核通过的失物/招领信息"`
+	Request  QueryApiRequest
+	Response QueryApiResponse
 }
 
 type QueryApiRequest struct {
@@ -40,8 +38,7 @@ type QueryFilter struct {
 	ItemType    string    `form:"item_type" binding:"omitempty,max=20" desc:"物品类型(含其它)"`
 	Campus      string    `form:"campus" binding:"omitempty,oneof=ZHAO_HUI PING_FENG MO_GAN_SHAN" desc:"校区"`
 	Location    string    `form:"location" binding:"omitempty,max=100" desc:"地点"`
-	Status      string    `form:"status" binding:"omitempty,oneof=PENDING APPROVED SOLVED CANCELLED REJECTED ARCHIVED" desc:"状态"`
-	StartTime   time.Time `form:"start_time"  desc:"时间范围起"`
+	StartTime   time.Time `form:"start_time" desc:"时间范围起"`
 	EndTime     time.Time `form:"end_time" desc:"时间范围止"`
 	Page        int       `form:"page" binding:"required,min=1" desc:"页码"`
 	PageSize    int       `form:"page_size" binding:"required,min=1,max=50" desc:"每页数量"`
@@ -69,37 +66,15 @@ type PostListItem struct {
 	Images            []string  `json:"images" desc:"图片"`
 }
 
-// Run Api业务逻辑执行点
 func (q *QueryApi) Run(ctx *gin.Context) kit.Code {
 	request := q.Request.Query
-
-	userID, err := session.GetIdentity[int64](ctx)
-	if err != nil {
-		return comm.CodeNotLoggedIn
-	}
-
-	urp := repo.NewUserRepo()
-	user, err := urp.FindById(ctx, userID)
-	if err != nil {
-		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询用户失败")
-		return comm.CodeServerError
-	}
-	if user == nil {
-		return comm.CodeNotLoggedIn
-	}
-
-	isAdmin := user.Usertype == enum.UserTypeAdmin || user.Usertype == enum.UserTypeSystemAdmin
-	status := request.Status
-	if !isAdmin {
-		status = enum.PostStatusApproved
-	}
 
 	filter := repo.PostListFilter{
 		PublishType: strings.TrimSpace(request.PublishType),
 		ItemType:    strings.TrimSpace(request.ItemType),
 		Campus:      strings.TrimSpace(request.Campus),
 		Location:    strings.TrimSpace(request.Location),
-		Status:      status,
+		Status:      enum.PostStatusApproved,
 		StartTime:   request.StartTime,
 		EndTime:     request.EndTime,
 	}
@@ -146,12 +121,10 @@ func (q *QueryApi) Run(ctx *gin.Context) kit.Code {
 	return comm.CodeOK
 }
 
-// Init Api初始化 进行参数校验和绑定
 func (q *QueryApi) Init(ctx *gin.Context) (err error) {
 	return ctx.ShouldBindQuery(&q.Request.Query)
 }
 
-// hfQuery API执行入口
 func hfQuery(ctx *gin.Context) {
 	api := &QueryApi{}
 	err := api.Init(ctx)

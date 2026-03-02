@@ -104,3 +104,11 @@ func (r *FeedbackRepo) MigrateTypeToOther(ctx context.Context, oldType, newType 
 			"type": newType,
 		}).Error
 }
+
+func (r *FeedbackRepo) ListAllData(ctx context.Context) ([]*model.Feedback, error) {
+	var feedbacks []*model.Feedback
+	err := ndb.Pick().WithContext(ctx).Model(&model.Feedback{}).
+		Order("created_at DESC").
+		Find(&feedbacks).Error
+	return feedbacks, err
+}

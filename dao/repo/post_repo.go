@@ -71,7 +71,6 @@ func (r *PostRepo) ListByFilter(ctx context.Context, filter PostListFilter, offs
 		like := "%" + filter.Location + "%"
 		db = db.Where("location LIKE ?", like)
 	}
-
 	if filter.Status != "" {
 		db = db.Where("status = ?", filter.Status)
 	}
@@ -305,6 +304,13 @@ func (r *PostRepo) IncrementClaimCount(ctx context.Context, postID int64) error 
 		Update("claim_count", gorm.Expr("claim_count + 1")).Error
 }
 
+// DecrementClaimCount 减少认领人数（最小保持为0）
+func (r *PostRepo) DecrementClaimCount(ctx context.Context, postID int64) error {
+	return ndb.Pick().WithContext(ctx).Model(&model.Post{}).
+		Where("id = ? AND claim_count > 0", postID).
+		Update("claim_count", gorm.Expr("claim_count - 1")).Error
+}
+
 // ArchivePost 归档发布记录
 func (r *PostRepo) ArchivePost(ctx context.Context, postID int64, archiveMethod string) error {
 	return ndb.Pick().WithContext(ctx).Model(&model.Post{}).
@@ -323,4 +329,47 @@ func (r *PostRepo) MigrateItemTypeToOther(ctx context.Context, oldType, newType 
 		Updates(map[string]interface{}{
 			"item_type": newType,
 		}).Error
+}
+
+// FindByIds 根据ID列表查询发布记录
+func (r *PostRepo) FindByIds(ctx context.Context, ids []int64) ([]*model.Post, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	var posts []*model.Post
+	err := ndb.Pick().WithContext(ctx).Model(&model.Post{}).
+		Where("id IN ?", ids).
+		Find(&posts).Error
+	return posts, err
+}
+
+// UpdateSummary 更新发布记录的总结文本
+func (r *PostRepo) UpdateSummary(ctx context.Context, postID int64, summary string) error {
+	return ndb.Pick().WithContext(ctx).Model(&model.Post{}).
+		Where("id = ?", postID).
+		Update("summary", summary).Error
+}
+
+func (r *PostRepo) ListAll(ctx context.Context) ([]*model.Post, error) {
+	var posts []*model.Post
+	err := ndb.Pick().WithContext(ctx).Model(&model.Post{}).
+		Order("created_at DESC").
+		Find(&posts).Error
+	return posts, err
+}
+
+func (r *PostRepo) ListExpired(ctx context.Context) ([]*model.Post, error) {
+	var posts []*model.Post
+	err := ndb.Pick().WithContext(ctx).Model(&model.Post{}).
+		Where("status IN ?", []string{enum.PostStatusArchived, enum.PostStatusCancelled, enum.PostStatusRejected}).
+		Order("created_at DESC").
+		Find(&posts).Error
+	return posts, err
+}
+
+func (r *PostRepo) DeleteExpired(ctx context.Context) error {
+	return ndb.Pick().WithContext(ctx).Model(&model.Post{}).
+		Where("status IN ?", []string{enum.PostStatusArchived, enum.PostStatusCancelled, enum.PostStatusRejected}).
+		Delete(&model.Post{}).Error
 }

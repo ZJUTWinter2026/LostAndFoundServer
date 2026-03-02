@@ -38,9 +38,6 @@ go.work.sum
 /logs
 *.log
 
-# generate
-/register/generate/status_codes_generated.go
-
 uploads/
 
 app
