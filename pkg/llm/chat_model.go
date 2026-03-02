@@ -21,9 +21,10 @@ func GetChatModel() model.ToolCallingChatModel {
 	chatModelOnce.Do(func() {
 		cfg := comm.BizConf.Agent.LLM
 		cm, err := openai.NewChatModel(context.Background(), &openai.ChatModelConfig{
-			Model:   cfg.Model,
-			APIKey:  cfg.APIKey,
-			BaseURL: cfg.BaseURL,
+			Model:       cfg.Model,
+			APIKey:      cfg.APIKey,
+			BaseURL:     cfg.BaseURL,
+			ExtraFields: cfg.ExtraFields,
 		})
 		if err != nil {
 			panic(err)
