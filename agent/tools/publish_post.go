@@ -48,7 +48,7 @@ func publishPostFunc(ctx context.Context, input *PublishPostInput) (*PublishPost
 
 	postRepo := repo.NewPostRepo()
 
-	eventTime, err := time.Parse(time.DateTime, input.EventTime)
+	eventTime, err := time.ParseInLocation(time.DateTime, input.EventTime, time.Local)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("[Tool:publish_post] 事件时间格式错误")
 		return &PublishPostOutput{Success: false, Message: "事件时间格式错误"}, nil

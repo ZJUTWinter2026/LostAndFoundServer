@@ -288,7 +288,7 @@ func (r *PostRepo) DeletePostByAdmin(ctx context.Context, postID int64) error {
 func (r *PostRepo) CountTodayByPublisher(ctx context.Context, publisherID int64) (int64, error) {
 	var count int64
 	today := time.Now().Format("2006-01-02")
-	startTime, _ := time.Parse("2006-01-02", today)
+	startTime, _ := time.ParseInLocation("2006-01-02", today, time.Local)
 	endTime := startTime.Add(24 * time.Hour)
 
 	err := ndb.Pick().WithContext(ctx).Model(&model.Post{}).
