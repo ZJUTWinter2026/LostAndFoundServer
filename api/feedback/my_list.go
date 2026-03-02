@@ -44,13 +44,13 @@ type MyListApiResponse struct {
 }
 
 type MyFeedbackItem struct {
-	ID          int64     `json:"id" desc:"投诉ID"`
-	PostID      int64     `json:"post_id" desc:"物品ID"`
-	Type        string    `json:"type" desc:"投诉类型"`
-	Description string    `json:"description" desc:"详细说明"`
-	Processed   bool      `json:"processed" desc:"是否已处理"`
-	ProcessedAt time.Time `json:"processed_at" desc:"处理时间"`
-	CreatedAt   time.Time `json:"created_at" desc:"创建时间"`
+	ID          int64      `json:"id" desc:"投诉ID"`
+	PostID      int64      `json:"post_id" desc:"物品ID"`
+	Type        string     `json:"type" desc:"投诉类型"`
+	Description string     `json:"description" desc:"详细说明"`
+	Processed   bool       `json:"processed" desc:"是否已处理"`
+	ProcessedAt *time.Time `json:"processed_at,omitempty" desc:"处理时间"`
+	CreatedAt   time.Time  `json:"created_at" desc:"创建时间"`
 }
 
 func (m *MyListApi) Run(ctx *gin.Context) kit.Code {
@@ -98,7 +98,7 @@ func (m *MyListApi) Run(ctx *gin.Context) kit.Code {
 			Type:        fb.Type,
 			Description: fb.Description,
 			Processed:   fb.Processed,
-			ProcessedAt: *fb.ProcessedAt,
+			ProcessedAt: fb.ProcessedAt,
 			CreatedAt:   fb.CreatedAt,
 		}
 		items = append(items, item)

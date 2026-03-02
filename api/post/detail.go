@@ -38,27 +38,27 @@ type DetailApiRequest struct {
 }
 
 type DetailApiResponse struct {
-	ID                int64     `json:"id" desc:"发布ID"`
-	PublishType       string    `json:"publish_type" desc:"发布类型 LOST/FOUND"`
-	ItemName          string    `json:"item_name" desc:"物品名称"`
-	ItemType          string    `json:"item_type" desc:"物品类型"`
-	Campus            string    `json:"campus" desc:"校区"`
-	Location          string    `json:"location" desc:"地点"`
-	StorageLocation   string    `json:"storage_location" desc:"存放地点"`
-	EventTime         time.Time `json:"event_time" desc:"事件时间"`
-	Features          string    `json:"features" desc:"物品特征"`
-	ContactName       string    `json:"contact_name" desc:"联系人"`
-	ContactPhone      string    `json:"contact_phone" desc:"联系电话"`
-	HasReward         bool      `json:"has_reward" desc:"是否有悬赏"`
-	RewardDescription string    `json:"reward_description" desc:"悬赏说明"`
-	Images            []string  `json:"images" desc:"图片"`
-	Status            string    `json:"status" desc:"状态"`
-	CancelReason      string    `json:"cancel_reason" desc:"取消原因"`
-	RejectReason      string    `json:"reject_reason" desc:"驳回原因"`
-	ClaimCount        int32     `json:"claim_count" desc:"认领人数"`
-	ArchiveMethod     string    `json:"archive_method" desc:"物品处理方式"`
-	ProcessedAt       time.Time `json:"processed_at" desc:"处理时间"`
-	CreatedAt         time.Time `json:"created_at" desc:"创建时间"`
+	ID                int64      `json:"id" desc:"发布ID"`
+	PublishType       string     `json:"publish_type" desc:"发布类型 LOST/FOUND"`
+	ItemName          string     `json:"item_name" desc:"物品名称"`
+	ItemType          string     `json:"item_type" desc:"物品类型"`
+	Campus            string     `json:"campus" desc:"校区"`
+	Location          string     `json:"location" desc:"地点"`
+	StorageLocation   string     `json:"storage_location" desc:"存放地点"`
+	EventTime         time.Time  `json:"event_time" desc:"事件时间"`
+	Features          string     `json:"features" desc:"物品特征"`
+	ContactName       string     `json:"contact_name" desc:"联系人"`
+	ContactPhone      string     `json:"contact_phone" desc:"联系电话"`
+	HasReward         bool       `json:"has_reward" desc:"是否有悬赏"`
+	RewardDescription string     `json:"reward_description" desc:"悬赏说明"`
+	Images            []string   `json:"images" desc:"图片"`
+	Status            string     `json:"status" desc:"状态"`
+	CancelReason      string     `json:"cancel_reason" desc:"取消原因"`
+	RejectReason      string     `json:"reject_reason" desc:"驳回原因"`
+	ClaimCount        int32      `json:"claim_count" desc:"认领人数"`
+	ArchiveMethod     string     `json:"archive_method" desc:"物品处理方式"`
+	ProcessedAt       *time.Time `json:"processed_at,omitempty" desc:"处理时间"`
+	CreatedAt         time.Time  `json:"created_at" desc:"创建时间"`
 }
 
 // Run Api业务逻辑执行点
@@ -125,7 +125,7 @@ func (d *DetailApi) Run(ctx *gin.Context) kit.Code {
 		RejectReason:      record.RejectReason,
 		ClaimCount:        record.ClaimCount,
 		ArchiveMethod:     record.ArchiveMethod,
-		ProcessedAt:       *record.ProcessedAt,
+		ProcessedAt:       record.ProcessedAt,
 		CreatedAt:         record.CreatedAt,
 	}
 
