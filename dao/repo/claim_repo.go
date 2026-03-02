@@ -103,6 +103,17 @@ func (r *ClaimRepo) Delete(ctx context.Context, id int64, claimantID int64) erro
 		Delete(&model.Claim{}).Error
 }
 
+// RejectOtherPendingClaims 将同一帖子下除指定ID外的所有 PENDING 认领改为 REJECTED
+func (r *ClaimRepo) RejectOtherPendingClaims(ctx context.Context, postID int64, excludeClaimID int64) error {
+	now := time.Now()
+	return ndb.Pick().WithContext(ctx).Model(&model.Claim{}).
+		Where("post_id = ? AND id != ? AND status = ?", postID, excludeClaimID, enum.ClaimStatusPending).
+		Updates(map[string]interface{}{
+			"status":      enum.ClaimStatusRejected,
+			"reviewed_at": now,
+		}).Error
+}
+
 func (r *ClaimRepo) ListAll(ctx context.Context) ([]*model.Claim, error) {
 	var claims []*model.Claim
 	err := ndb.Pick().WithContext(ctx).Model(&model.Claim{}).

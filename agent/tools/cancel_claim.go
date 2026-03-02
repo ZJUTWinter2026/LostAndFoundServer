@@ -29,7 +29,7 @@ func cancelClaimFunc(ctx context.Context, input *CancelClaimInput) (*CancelClaim
 	nlog.Pick().WithContext(ctx).Infof("[Tool:cancel_claim] 调用参数: user_id=%d, claim_id=%d", tc.UserID, input.ClaimID)
 
 	claimRepo := repo.NewClaimRepo()
-
+	postRepo := repo.NewPostRepo()
 	claim, err := claimRepo.FindById(ctx, input.ClaimID)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("[Tool:cancel_claim] 查询认领申请失败")
@@ -56,6 +56,9 @@ func cancelClaimFunc(ctx context.Context, input *CancelClaimInput) (*CancelClaim
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("[Tool:cancel_claim] 取消认领申请失败")
 		return &CancelClaimOutput{Success: false, Message: "取消认领申请失败"}, nil
 	}
+
+	// 认领取消后递减帖子的认领计数
+	_ = postRepo.DecrementClaimCount(ctx, claim.PostID)
 
 	nlog.Pick().WithContext(ctx).Infof("[Tool:cancel_claim] 认领申请已取消: claim_id=%d, user_id=%d", input.ClaimID, tc.UserID)
 	return &CancelClaimOutput{

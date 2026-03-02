@@ -304,6 +304,13 @@ func (r *PostRepo) IncrementClaimCount(ctx context.Context, postID int64) error 
 		Update("claim_count", gorm.Expr("claim_count + 1")).Error
 }
 
+// DecrementClaimCount 减少认领人数（最小保持为0）
+func (r *PostRepo) DecrementClaimCount(ctx context.Context, postID int64) error {
+	return ndb.Pick().WithContext(ctx).Model(&model.Post{}).
+		Where("id = ? AND claim_count > 0", postID).
+		Update("claim_count", gorm.Expr("claim_count - 1")).Error
+}
+
 // ArchivePost 归档发布记录
 func (r *PostRepo) ArchivePost(ctx context.Context, postID int64, archiveMethod string) error {
 	return ndb.Pick().WithContext(ctx).Model(&model.Post{}).

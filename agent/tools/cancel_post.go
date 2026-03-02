@@ -48,7 +48,7 @@ func cancelPostFunc(ctx context.Context, input *CancelPostInput) (*CancelPostOut
 		return &CancelPostOutput{Success: false, Message: "您没有权限取消该发布记录"}, nil
 	}
 
-	if post.Status != enum.PostStatusApproved {
+	if post.Status != enum.PostStatusApproved && post.Status != enum.PostStatusPending {
 		nlog.Pick().WithContext(ctx).Infof("[Tool:cancel_post] 发布记录状态不允许取消: post_id=%d, status=%s", input.PostID, post.Status)
 		return &CancelPostOutput{Success: false, Message: "该发布记录当前状态不允许取消"}, nil
 	}
@@ -71,7 +71,7 @@ func cancelPostFunc(ctx context.Context, input *CancelPostInput) (*CancelPostOut
 func NewCancelPostTool() (tool.InvokableTool, error) {
 	return utils.InferTool(
 		"cancel_post",
-		"帮用户取消已通过的发布信息",
+		"帮用户取消发布信息（支持待审核和已通过状态）",
 		cancelPostFunc,
 	)
 }

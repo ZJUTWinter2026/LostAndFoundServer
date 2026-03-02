@@ -80,6 +80,10 @@ func reviewClaimFunc(ctx context.Context, input *ReviewClaimInput) (*ReviewClaim
 
 	if input.Approved {
 		_ = postRepo.MarkAsSolved(ctx, claim.PostID)
+		// 批量拒绝同一帖子下其他待处理的认领申请
+		if err := claimRepo.RejectOtherPendingClaims(ctx, claim.PostID, input.ClaimID); err != nil {
+			nlog.Pick().WithContext(ctx).WithError(err).Warn("[Tool:review_claim] 批量拒绝其他认领申请失败")
+		}
 	}
 
 	nlog.Pick().WithContext(ctx).Infof("[Tool:review_claim] 审核完成: claim_id=%d, approved=%v, new_status=%s", input.ClaimID, input.Approved, newStatus)

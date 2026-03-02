@@ -9,12 +9,24 @@ import (
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
+// defaultVectorCollection 是全局默认的 Milvus Collection 名称，
+// 在应用启动时由 register/boot.go 调用 SetDefaultVectorCollection 设置。
+var defaultVectorCollection = "lost_and_found"
+
+// SetDefaultVectorCollection 设置默认 Milvus Collection 名称（应在启动阶段调用）
+func SetDefaultVectorCollection(name string) {
+	if name != "" {
+		defaultVectorCollection = name
+	}
+}
+
 type VectorRepo struct {
 	collectionName string
 }
 
 func NewVectorRepo() *VectorRepo {
-	return &VectorRepo{}
+	// 使用包级默认值，该值在启动时从配置读取
+	return &VectorRepo{collectionName: defaultVectorCollection}
 }
 
 func (r *VectorRepo) SetCollectionName(name string) {
@@ -72,10 +84,13 @@ func (r *VectorRepo) Delete(ctx context.Context, postID int64) error {
 }
 
 func (r *VectorRepo) Update(ctx context.Context, postID int64, vector []float64) error {
-	if err := r.Delete(ctx, postID); err != nil {
+	// 先 Insert 再 Delete：若 Insert 失败则旧数据仍在，避免向量永久丢失
+	if err := r.Insert(ctx, postID, vector); err != nil {
 		return err
 	}
-	return r.Insert(ctx, postID, vector)
+	// 删除旧条目（忽略删除失败，数据库中顶多有一条重复记录，不影响搜索正确性）
+	_ = r.Delete(ctx, postID)
+	return nil
 }
 
 type VectorSearchResult struct {
@@ -102,7 +117,7 @@ func (r *VectorRepo) Search(ctx context.Context, vector []float64, topK int) ([]
 		[]string{"post_id"},
 		[]entity.Vector{entity.FloatVector(float64ToFloat32(vector))},
 		"vector",
-		entity.MetricType(entity.AUTOINDEX),
+		entity.L2,
 		topK,
 		sp,
 	)

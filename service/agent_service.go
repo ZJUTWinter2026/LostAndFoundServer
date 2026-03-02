@@ -158,6 +158,15 @@ func (s *AgentService) Stream(ctx context.Context, sessionID string, userID int6
 	session.IsProcessing = true
 	s.sessionMux.Unlock()
 
+	// 兜底机制：当请求上下文取消时（客户端断开/超时），自动重置 IsProcessing，
+	// 防止会话永久被锁死。SaveAssistantMessage 正常完成时也会重置，两者幂等无冲突。
+	go func() {
+		<-ctx.Done()
+		s.sessionMux.Lock()
+		session.IsProcessing = false
+		s.sessionMux.Unlock()
+	}()
+
 	var imageDescriptions []string
 	if len(images) > 0 {
 		imageDescriptions, _ = llm.DescribeImages(ctx, images)

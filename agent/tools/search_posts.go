@@ -6,6 +6,7 @@ import (
 	"app/dao/repo"
 	"app/pkg/llm"
 	"context"
+	"sort"
 
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/components/tool/utils"
@@ -14,8 +15,8 @@ import (
 
 type SearchPostsInput struct {
 	Query       string `json:"query" jsonschema:"description=搜索内容，使用自然语言描述,required"`
-	PublishType string `json:"publish_type" jsonschema:"description=筛选发布类型: LOST(寻物), FOUND(招领)"`
-	Campus      string `json:"campus" jsonschema:"description=校区筛选"`
+	PublishType string `json:"publish_type" jsonschema:"description=筛选发布类型: LOST(寻物), FOUND(招领),enum=LOST,enum=FOUND"`
+	Campus      string `json:"campus" jsonschema:"description=校区筛选,enum=ZHAO_HUI,enum=PING_FENG,enum=MO_GAN_SHAN"`
 	Limit       int    `json:"limit" jsonschema:"description=返回结果数量限制，默认10"`
 }
 
@@ -55,9 +56,12 @@ func searchPostsFunc(ctx context.Context, input *SearchPostsInput) (*SearchPosts
 		return &SearchPostsOutput{Success: false, Message: "向量搜索失败"}, nil
 	}
 
+	// 建立 postID → score 映射，用于后续按相似度排序
+	scoreMap := make(map[int64]float32, len(searchResults))
 	var postIDs []int64
 	for _, result := range searchResults {
 		postIDs = append(postIDs, result.PostID)
+		scoreMap[result.PostID] = result.Score
 	}
 
 	if len(postIDs) == 0 {
@@ -88,6 +92,11 @@ func searchPostsFunc(ctx context.Context, input *SearchPostsInput) (*SearchPosts
 		}
 		filteredPosts = append(filteredPosts, post)
 	}
+
+	// 按向量相似度分数降序重排，保留语义搜索的顺序
+	sort.Slice(filteredPosts, func(i, j int) bool {
+		return scoreMap[filteredPosts[i].ID] > scoreMap[filteredPosts[j].ID]
+	})
 
 	if len(filteredPosts) > limit {
 		filteredPosts = filteredPosts[:limit]

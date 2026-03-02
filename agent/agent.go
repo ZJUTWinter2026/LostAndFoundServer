@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/compose"
@@ -37,6 +38,7 @@ type ToolResultInfo struct {
 }
 
 type Agent struct {
+	mu         sync.Mutex
 	reactAgent *react.Agent
 	tools      []tool.BaseTool
 }
@@ -86,7 +88,10 @@ func NewAgent() *Agent {
 	}
 }
 
-func (a *Agent) getOrCreateReactAgent(ctx context.Context, toolCtx *tools.ToolContext) (*react.Agent, error) {
+func (a *Agent) getOrCreateReactAgent(ctx context.Context) (*react.Agent, error) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
 	if a.reactAgent != nil {
 		return a.reactAgent, nil
 	}
@@ -99,7 +104,9 @@ func (a *Agent) getOrCreateReactAgent(ctx context.Context, toolCtx *tools.ToolCo
 			Tools: a.tools,
 		},
 		MessageModifier: func(ctx context.Context, input []*schema.Message) []*schema.Message {
-			systemPrompt := buildSystemPrompt(toolCtx)
+			// 每次请求从 ctx 动态取 toolCtx，避免首次创建时的用户ID被永久锁定
+			tc := tools.GetToolContext(ctx)
+			systemPrompt := buildSystemPrompt(tc)
 			result := make([]*schema.Message, 0, len(input)+1)
 			result = append(result, schema.SystemMessage(systemPrompt))
 			result = append(result, input...)
@@ -118,7 +125,7 @@ func (a *Agent) getOrCreateReactAgent(ctx context.Context, toolCtx *tools.ToolCo
 func (a *Agent) Stream(ctx context.Context, messages []ChatMessage, toolCtx *tools.ToolContext) (*schema.StreamReader[*schema.Message], error) {
 	ctx = tools.WithToolContext(ctx, toolCtx)
 
-	agent, err := a.getOrCreateReactAgent(ctx, toolCtx)
+	agent, err := a.getOrCreateReactAgent(ctx)
 	if err != nil {
 		return nil, err
 	}

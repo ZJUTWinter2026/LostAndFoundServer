@@ -4,9 +4,11 @@ import (
 	"app/comm"
 	"app/comm/enum"
 	"app/dao/model"
+	"app/dao/repo"
 	"app/pkg/llm"
 	"app/pkg/milvus"
 	"app/register/generate"
+	"context"
 	"fmt"
 	"time"
 
@@ -114,6 +116,31 @@ func initAgentServices() error {
 			nlog.Pick().WithError(err).Warn("Milvus初始化失败")
 		} else {
 			nlog.Pick().Info("Milvus初始化完成")
+
+			// 确保 Collection 存在并已加载
+			collectionName := cfg.Milvus.Collection
+			if collectionName == "" {
+				collectionName = "lost_and_found"
+			}
+
+			// 将配置的 collection 名同步给 VectorRepo
+			repo.SetDefaultVectorCollection(collectionName)
+			dimension := cfg.Embedding.Dimension
+			if dimension <= 0 {
+				dimension = 1536
+			}
+
+			bgCtx := context.Background()
+			if err := milvus.CreateCollectionIfNotExist(bgCtx, collectionName, dimension); err != nil {
+				nlog.Pick().WithError(err).Warn("Milvus Collection 创建失败")
+			} else {
+				nlog.Pick().Infof("Milvus Collection [%s] 就绪", collectionName)
+				if err := milvus.LoadCollection(bgCtx, collectionName); err != nil {
+					nlog.Pick().WithError(err).Warn("Milvus Collection 加载失败")
+				} else {
+					nlog.Pick().Infof("Milvus Collection [%s] 已加载", collectionName)
+				}
+			}
 		}
 	}
 
