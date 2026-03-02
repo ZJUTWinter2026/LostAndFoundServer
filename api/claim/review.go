@@ -3,17 +3,25 @@ package claim
 import (
 	"app/comm"
 	"app/comm/enum"
+	"app/dao/model"
 	"app/dao/repo"
+	"errors"
 	"reflect"
 	"runtime"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/zjutjh/mygo/foundation/reply"
 	"github.com/zjutjh/mygo/kit"
+	"github.com/zjutjh/mygo/ndb"
 	"github.com/zjutjh/mygo/nlog"
 	"github.com/zjutjh/mygo/session"
 	"github.com/zjutjh/mygo/swagger"
+	"gorm.io/gorm"
 )
+
+// errClaimAlreadyMatchedTx 是事务内检测到竞态时返回的哨兵错误
+var errClaimAlreadyMatchedTx = errors.New("claim already matched")
 
 // ReviewHandler API router注册点
 func ReviewHandler() gin.HandlerFunc {
@@ -90,43 +98,50 @@ func (r *ReviewApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodePermissionDenied
 	}
 
-	// 如果是同意操作，检查是否已有已匹配的认领
+	// 根据操作类型执行对应逻辑
 	if request.Approve {
-		hasMatched, err := crp.HasMatchedClaim(ctx, claimRecord.PostID)
-		if err != nil {
-			nlog.Pick().WithContext(ctx).WithError(err).Warn("检查已匹配认领失败")
-			return comm.CodeServerError
-		}
-		if hasMatched {
+		// 同意认领：在事务中完成竞态检查+状态更新，防止并发竞争
+		txErr := ndb.Pick().WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+			// 事务内再次检查是否已有已匹配认领（防止并发竞态）
+			var matchedCount int64
+			if e := tx.Model(&model.Claim{}).
+				Where("post_id = ? AND status = ?", claimRecord.PostID, enum.ClaimStatusMatched).
+				Count(&matchedCount).Error; e != nil {
+				return e
+			}
+			if matchedCount > 0 {
+				return errClaimAlreadyMatchedTx
+			}
+			now := time.Now()
+			// 更新认领状态为 MATCHED
+			if e := tx.Model(&model.Claim{}).
+				Where("id = ?", request.ClaimID).
+				Updates(map[string]interface{}{
+					"status":      enum.ClaimStatusMatched,
+					"reviewed_by": reviewerID,
+					"reviewed_at": now,
+				}).Error; e != nil {
+				return e
+			}
+			// 更新帖子状态为 SOLVED
+			if e := tx.Model(&model.Post{}).
+				Where("id = ?", claimRecord.PostID).
+				Update("status", enum.PostStatusSolved).Error; e != nil {
+				return e
+			}
+			return nil
+		})
+		if errors.Is(txErr, errClaimAlreadyMatchedTx) {
 			return comm.CodeClaimAlreadyMatched
 		}
-	}
-
-	// 更新状态
-	var targetStatus string
-	if request.Approve {
-		targetStatus = enum.ClaimStatusMatched
-	} else {
-		targetStatus = enum.ClaimStatusRejected
-	}
-
-	err = crp.UpdateStatus(ctx, request.ClaimID, targetStatus, reviewerID)
-	if err != nil {
-		nlog.Pick().WithContext(ctx).WithError(err).Warn("更新认领状态失败")
-		return comm.CodeServerError
-	}
-
-	// 如果同意认领，更新发布记录状态为已解决
-	if targetStatus == enum.ClaimStatusMatched {
-		err = prp.UpdateStatus(ctx, claimRecord.PostID, enum.PostStatusSolved)
-		if err != nil {
-			nlog.Pick().WithContext(ctx).WithError(err).Warn("更新发布状态失败")
+		if txErr != nil {
+			nlog.Pick().WithContext(ctx).WithError(txErr).Warn("审核认领事务失败")
 			return comm.CodeServerError
 		}
-
-		err = prp.IncrementClaimCount(ctx, claimRecord.PostID)
-		if err != nil {
-			nlog.Pick().WithContext(ctx).WithError(err).Warn("增加认领人数失败")
+	} else {
+		// 拒绝认领：直接更新状态
+		if err = crp.UpdateStatus(ctx, request.ClaimID, enum.ClaimStatusRejected, reviewerID); err != nil {
+			nlog.Pick().WithContext(ctx).WithError(err).Warn("更新认领状态失败")
 			return comm.CodeServerError
 		}
 	}

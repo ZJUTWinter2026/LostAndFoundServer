@@ -7,7 +7,6 @@ import (
 	"reflect"
 	"runtime"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/zjutjh/mygo/foundation/reply"
@@ -74,14 +73,13 @@ func (a *CreateApi) Run(ctx *gin.Context) kit.Code {
 	}
 
 	user := &model.User{
-		Username:      strings.TrimSpace(req.Username),
-		Name:          strings.TrimSpace(req.Name),
-		IDCard:        req.IDCard,
-		Password:      string(hashedPwd),
-		Usertype:      req.UserType,
-		Campus:        req.Campus,
-		FirstLogin:    req.UserType == enum.UserTypeStudent,
-		DisabledUntil: time.Now(),
+		Username:   strings.TrimSpace(req.Username),
+		Name:       strings.TrimSpace(req.Name),
+		IDCard:     req.IDCard,
+		Password:   string(hashedPwd),
+		Usertype:   req.UserType,
+		Campus:     req.Campus,
+		FirstLogin: req.UserType == enum.UserTypeStudent,
 	}
 
 	if err := db.Create(user).Error; err != nil {

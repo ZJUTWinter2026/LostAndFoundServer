@@ -8,7 +8,6 @@ import (
 	"reflect"
 	"runtime"
 	"strings"
-	"time"
 	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
@@ -86,8 +85,6 @@ func (a *PublishApi) Run(ctx *gin.Context) kit.Code {
 		Type:         req.Type,
 		PublisherID:  publisherID,
 		TargetUserID: req.TargetUserID,
-		ReviewedBy:   0,
-		ReviewedAt:   time.Now(),
 	}
 
 	if req.Type == enum.AnnouncementTypeRegion {

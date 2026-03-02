@@ -73,10 +73,8 @@ func (a *ClaimPostApi) Run(ctx *gin.Context) kit.Code {
 	}
 
 	alr := repo.NewAuditLogRepo()
-	err = alr.CreateAuditLog(ctx, adminID, enum.AuditLogTypeUpdate, "", req.PostID, post.Status, enum.PostStatusSolved)
-	if err != nil {
-		nlog.Pick().WithContext(ctx).WithError(err).Warn("记录审计日志失败")
-		return comm.CodeServerError
+	if err = alr.CreateAuditLog(ctx, adminID, enum.AuditLogTypeUpdate, "", req.PostID, post.Status, enum.PostStatusSolved); err != nil {
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("记录审计日志失败，不影响主业务")
 	}
 
 	a.Response = ClaimPostApiResponse{Success: true}
@@ -164,6 +162,9 @@ func (a *ArchivePostApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeServerError
 	}
 
+	if post.ProcessedAt == nil {
+		return comm.CodePostStatusInvalid
+	}
 	expiredTime := post.ProcessedAt.AddDate(0, 0, claimValidityDays)
 	if time.Now().Before(expiredTime) {
 		return comm.CodeArchiveNotExpired
@@ -176,10 +177,8 @@ func (a *ArchivePostApi) Run(ctx *gin.Context) kit.Code {
 	}
 
 	alr := repo.NewAuditLogRepo()
-	err = alr.CreateAuditLog(ctx, adminID, enum.AuditLogTypeUpdate, req.ArchiveMethod, req.PostID, post.Status, enum.PostStatusArchived)
-	if err != nil {
-		nlog.Pick().WithContext(ctx).WithError(err).Warn("记录审计日志失败")
-		return comm.CodeServerError
+	if err = alr.CreateAuditLog(ctx, adminID, enum.AuditLogTypeUpdate, req.ArchiveMethod, req.PostID, post.Status, enum.PostStatusArchived); err != nil {
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("记录审计日志失败，不影响主业务")
 	}
 
 	a.Response = ArchivePostApiResponse{Success: true}

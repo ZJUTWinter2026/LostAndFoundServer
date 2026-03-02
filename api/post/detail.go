@@ -125,7 +125,7 @@ func (d *DetailApi) Run(ctx *gin.Context) kit.Code {
 		RejectReason:      record.RejectReason,
 		ClaimCount:        record.ClaimCount,
 		ArchiveMethod:     record.ArchiveMethod,
-		ProcessedAt:       record.ProcessedAt,
+		ProcessedAt:       *record.ProcessedAt,
 		CreatedAt:         record.CreatedAt,
 	}
 

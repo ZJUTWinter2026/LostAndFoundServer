@@ -113,7 +113,6 @@ func (p *PublishApi) Run(ctx *gin.Context) kit.Code {
 		RewardDescription: request.RewardDescription,
 		Images:            imagesJSON,
 		Status:            enum.PostStatusPending,
-		ProcessedAt:       time.Now(),
 	}
 
 	err = prp.Create(ctx, record)

@@ -18,10 +18,10 @@ type Feedback struct {
 	PostID      int64                 `gorm:"column:post_id;not null;comment:物品ID" json:"post_id"`                                    // 物品ID
 	ReporterID  int64                 `gorm:"column:reporter_id;not null;comment:投诉者ID" json:"reporter_id"`                           // 投诉者ID
 	Type        string                `gorm:"column:type;not null;comment:投诉类型" json:"type"`                                          // 投诉类型
-	Description string                `gorm:"column:description;comment:详细说明" json:"description"`                                     // 详细说明
+	Description string                `gorm:"column:description;not null;comment:详细说明" json:"description"`                            // 详细说明
 	Processed   bool                  `gorm:"column:processed;not null;comment:是否已处理" json:"processed"`                               // 是否已处理
-	ProcessedBy int64                 `gorm:"column:processed_by;comment:处理人ID" json:"processed_by"`                                  // 处理人ID
-	ProcessedAt time.Time             `gorm:"column:processed_at;comment:处理时间" json:"processed_at"`                                   // 处理时间
+	ProcessedBy int64                 `gorm:"column:processed_by;not null;comment:处理人ID" json:"processed_by"`                         // 处理人ID
+	ProcessedAt *time.Time            `gorm:"column:processed_at;comment:处理时间" json:"processed_at"`                                   // 处理时间
 	CreatedAt   time.Time             `gorm:"column:created_at;not null;default:CURRENT_TIMESTAMP(3);comment:创建时间" json:"created_at"` // 创建时间
 	UpdatedAt   time.Time             `gorm:"column:updated_at;not null;default:CURRENT_TIMESTAMP(3);comment:更新时间" json:"updated_at"` // 更新时间
 	DeletedAt   soft_delete.DeletedAt `gorm:"column:deleted_at;not null;comment:删除时间 (软删除);softDelete:milli" json:"-"`                // 删除时间 (软删除)

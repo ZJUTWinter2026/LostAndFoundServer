@@ -64,6 +64,11 @@ func (c *CancelApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeServerError
 	}
 
+	prp := repo.NewPostRepo()
+	if err = prp.DecrementClaimCount(ctx, claimRecord.PostID); err != nil {
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("更新认领人数失败")
+	}
+
 	c.Response = CancelApiResponse{Success: true}
 	return comm.CodeOK
 }

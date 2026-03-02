@@ -130,6 +130,14 @@ func setCell(f *excelize.File, sheet string, col, row int, value interface{}) {
 	_ = f.SetCellValue(sheet, cell, value)
 }
 
+// safeFormatTime 安全格式化可空 *time.Time，nil 时返回空字符串
+func safeFormatTime(t *time.Time) string {
+	if t == nil {
+		return ""
+	}
+	return t.Format("2006-01-02 15:04:05")
+}
+
 func (e *ExportDataApi) writeUserSheet(ctx context.Context, f *excelize.File) error {
 	sheet := "用户表"
 	_, err := f.NewSheet(sheet)
@@ -157,7 +165,7 @@ func (e *ExportDataApi) writeUserSheet(ctx context.Context, f *excelize.File) er
 		setCell(f, sheet, 5, row, user.Usertype)
 		setCell(f, sheet, 6, row, user.Campus)
 		setCell(f, sheet, 7, row, user.FirstLogin)
-		setCell(f, sheet, 8, row, user.DisabledUntil.Format("2006-01-02 15:04:05"))
+		setCell(f, sheet, 8, row, safeFormatTime(user.DisabledUntil))
 		setCell(f, sheet, 9, row, user.CreatedAt.Format("2006-01-02 15:04:05"))
 		setCell(f, sheet, 10, row, user.UpdatedAt.Format("2006-01-02 15:04:05"))
 	}
@@ -204,7 +212,7 @@ func (e *ExportDataApi) writePostSheet(ctx context.Context, f *excelize.File) er
 		setCell(f, sheet, 17, row, post.RejectReason)
 		setCell(f, sheet, 18, row, post.ClaimCount)
 		setCell(f, sheet, 19, row, post.ArchiveMethod)
-		setCell(f, sheet, 20, row, post.ProcessedAt.Format("2006-01-02 15:04:05"))
+		setCell(f, sheet, 20, row, safeFormatTime(post.ProcessedAt))
 		setCell(f, sheet, 21, row, post.CreatedAt.Format("2006-01-02 15:04:05"))
 		setCell(f, sheet, 22, row, post.UpdatedAt.Format("2006-01-02 15:04:05"))
 	}
@@ -238,7 +246,7 @@ func (e *ExportDataApi) writeClaimSheet(ctx context.Context, f *excelize.File) e
 		setCell(f, sheet, 4, row, claim.Description)
 		setCell(f, sheet, 5, row, claim.Status)
 		setCell(f, sheet, 6, row, claim.ReviewedBy)
-		setCell(f, sheet, 7, row, claim.ReviewedAt.Format("2006-01-02 15:04:05"))
+		setCell(f, sheet, 7, row, safeFormatTime(claim.ReviewedAt))
 		setCell(f, sheet, 8, row, claim.CreatedAt.Format("2006-01-02 15:04:05"))
 		setCell(f, sheet, 9, row, claim.UpdatedAt.Format("2006-01-02 15:04:05"))
 	}
@@ -273,7 +281,7 @@ func (e *ExportDataApi) writeFeedbackSheet(ctx context.Context, f *excelize.File
 		setCell(f, sheet, 5, row, feedback.Description)
 		setCell(f, sheet, 6, row, feedback.Processed)
 		setCell(f, sheet, 7, row, feedback.ProcessedBy)
-		setCell(f, sheet, 8, row, feedback.ProcessedAt.Format("2006-01-02 15:04:05"))
+		setCell(f, sheet, 8, row, safeFormatTime(feedback.ProcessedAt))
 		setCell(f, sheet, 9, row, feedback.CreatedAt.Format("2006-01-02 15:04:05"))
 		setCell(f, sheet, 10, row, feedback.UpdatedAt.Format("2006-01-02 15:04:05"))
 	}
@@ -310,7 +318,7 @@ func (e *ExportDataApi) writeAnnouncementSheet(ctx context.Context, f *excelize.
 		setCell(f, sheet, 7, row, ann.PublisherID)
 		setCell(f, sheet, 8, row, ann.TargetUserID)
 		setCell(f, sheet, 9, row, ann.ReviewedBy)
-		setCell(f, sheet, 10, row, ann.ReviewedAt.Format("2006-01-02 15:04:05"))
+		setCell(f, sheet, 10, row, safeFormatTime(ann.ReviewedAt))
 		setCell(f, sheet, 11, row, ann.CreatedAt.Format("2006-01-02 15:04:05"))
 		setCell(f, sheet, 12, row, ann.UpdatedAt.Format("2006-01-02 15:04:05"))
 	}

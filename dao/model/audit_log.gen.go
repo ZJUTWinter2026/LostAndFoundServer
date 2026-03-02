@@ -17,7 +17,7 @@ type AuditLog struct {
 	ID         int64                 `gorm:"column:id;primaryKey;autoIncrement:true;comment:自增ID" json:"id"`                         // 自增ID
 	AdminID    int64                 `gorm:"column:admin_id;not null;comment:管理员ID" json:"admin_id"`                                 // 管理员ID
 	ActionType string                `gorm:"column:action_type;not null;comment:操作类型 LOGIN/CREATE/UPDATE/DELETE" json:"action_type"` // 操作类型 LOGIN/CREATE/UPDATE/DELETE
-	Reason     string                `gorm:"column:reason;comment:理由" json:"reason"`                                                 // 理由
+	Reason     string                `gorm:"column:reason;not null;comment:理由" json:"reason"`                                        // 理由
 	PostID     int64                 `gorm:"column:post_id;not null;comment:发布信息ID" json:"post_id"`                                  // 发布信息ID
 	OldStatus  string                `gorm:"column:old_status;not null;comment:旧状态" json:"old_status"`                               // 旧状态
 	NewStatus  string                `gorm:"column:new_status;not null;comment:新状态" json:"new_status"`                               // 新状态

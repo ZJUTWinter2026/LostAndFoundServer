@@ -10,7 +10,6 @@ import (
 	"app/register/generate"
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/zjutjh/mygo/config"
 	"github.com/zjutjh/mygo/feishu"
@@ -56,8 +55,8 @@ func BizConfBoot() func() error {
 func initDefaultAdmin() error {
 	db := ndb.Pick()
 	var count int64
-	if err := db.Model(&model.User{}).Count(&count).Error; err != nil {
-		return fmt.Errorf("查询用户数量失败: %w", err)
+	if err := db.Model(&model.User{}).Where("usertype = ?", enum.UserTypeSystemAdmin).Count(&count).Error; err != nil {
+		return fmt.Errorf("查询管理员数量失败: %w", err)
 	}
 
 	if count > 0 {
@@ -70,13 +69,12 @@ func initDefaultAdmin() error {
 	}
 
 	admin := &model.User{
-		Username:      "root",
-		Name:          "系统管理员",
-		IDCard:        "",
-		Password:      string(hashedPwd),
-		Usertype:      enum.UserTypeSystemAdmin,
-		FirstLogin:    false,
-		DisabledUntil: time.Now(),
+		Username:   "root",
+		Name:       "系统管理员",
+		IDCard:     "",
+		Password:   string(hashedPwd),
+		Usertype:   enum.UserTypeSystemAdmin,
+		FirstLogin: false,
 	}
 
 	if err := db.Create(admin).Error; err != nil {

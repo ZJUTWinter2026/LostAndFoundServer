@@ -113,7 +113,7 @@ func (l *ListApi) Run(ctx *gin.Context) kit.Code {
 			Description: fb.Description,
 			Processed:   fb.Processed,
 			ProcessedBy: fb.ProcessedBy,
-			ProcessedAt: fb.ProcessedAt,
+			ProcessedAt: *fb.ProcessedAt,
 			CreatedAt:   fb.CreatedAt,
 		}
 		items = append(items, item)

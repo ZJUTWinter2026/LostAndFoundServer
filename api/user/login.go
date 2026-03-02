@@ -57,7 +57,7 @@ func (l *LoginApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeUserNotExist
 	}
 
-	if !user.DisabledUntil.IsZero() && user.DisabledUntil.After(time.Now()) {
+	if user.DisabledUntil != nil && user.DisabledUntil.After(time.Now()) {
 		return comm.CodeUserDisabled
 	}
 

@@ -96,8 +96,8 @@ func (a *ListApi) Run(ctx *gin.Context) kit.Code {
 			FirstLogin: u.FirstLogin,
 			CreatedAt:  u.CreatedAt,
 		}
-		if !u.DisabledUntil.IsZero() {
-			item.DisabledUntil = &u.DisabledUntil
+		if u.DisabledUntil != nil {
+			item.DisabledUntil = u.DisabledUntil
 		}
 		list = append(list, item)
 	}

@@ -102,6 +102,7 @@ func (q *QueryApi) Run(ctx *gin.Context) kit.Code {
 			PublishType:       record.PublishType,
 			ItemName:          record.ItemName,
 			ItemType:          record.ItemType,
+			Campus:            record.Campus,
 			Location:          record.Location,
 			EventTime:         record.EventTime,
 			Features:          record.Features,

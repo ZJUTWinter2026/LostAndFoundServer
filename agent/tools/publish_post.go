@@ -72,7 +72,6 @@ func publishPostFunc(ctx context.Context, input *PublishPostInput) (*PublishPost
 		RewardDescription: input.RewardDescription,
 		Images:            imagesJSON,
 		Status:            enum.PostStatusPending,
-		ProcessedAt:       time.Now(),
 	}
 
 	err = postRepo.Create(ctx, record)

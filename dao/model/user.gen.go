@@ -12,17 +12,17 @@ const TableNameUser = "user"
 
 // User 用户表
 type User struct {
-	ID            int64     `gorm:"column:id;primaryKey;autoIncrement:true;comment:自增ID" json:"id"`                                      // 自增ID
-	Username      string    `gorm:"column:username;not null;comment:用户名(学号/工号)" json:"username"`                                         // 用户名(学号/工号)
-	Name          string    `gorm:"column:name;comment:姓名" json:"name"`                                                                  // 姓名
-	IDCard        string    `gorm:"column:id_card;comment:身份证号" json:"id_card"`                                                          // 身份证号
-	Password      string    `gorm:"column:password;not null;comment:密码" json:"password"`                                                 // 密码
-	Usertype      string    `gorm:"column:usertype;not null;default:STUDENT;comment:用户类型: STUDENT, ADMIN, SYSTEM_ADMIN" json:"usertype"` // 用户类型: STUDENT, ADMIN, SYSTEM_ADMIN
-	Campus        string    `gorm:"column:campus;not null;comment:所属校区: ZHAO_HUI, PING_FENG, MO_GAN_SHAN, 仅管理员有效" json:"campus"`         // 所属校区: ZHAO_HUI, PING_FENG, MO_GAN_SHAN, 仅管理员有效
-	FirstLogin    bool      `gorm:"column:first_login;not null;default:1;comment:首次登陆" json:"first_login"`                               // 首次登陆
-	DisabledUntil time.Time `gorm:"column:disabled_until;not null;default:CURRENT_TIMESTAMP(3);comment:禁用截止时间" json:"disabled_until"`    // 禁用截止时间
-	CreatedAt     time.Time `gorm:"column:created_at;not null;default:CURRENT_TIMESTAMP(3);comment:创建时间" json:"created_at"`              // 创建时间
-	UpdatedAt     time.Time `gorm:"column:updated_at;not null;default:CURRENT_TIMESTAMP(3);comment:更新时间" json:"updated_at"`              // 更新时间
+	ID            int64      `gorm:"column:id;primaryKey;autoIncrement:true;comment:自增ID" json:"id"`                                      // 自增ID
+	Username      string     `gorm:"column:username;not null;comment:用户名(学号/工号)" json:"username"`                                         // 用户名(学号/工号)
+	Name          string     `gorm:"column:name;not null;comment:姓名" json:"name"`                                                         // 姓名
+	IDCard        string     `gorm:"column:id_card;not null;comment:身份证号" json:"id_card"`                                                 // 身份证号
+	Password      string     `gorm:"column:password;not null;comment:密码" json:"password"`                                                 // 密码
+	Usertype      string     `gorm:"column:usertype;not null;default:STUDENT;comment:用户类型: STUDENT, ADMIN, SYSTEM_ADMIN" json:"usertype"` // 用户类型: STUDENT, ADMIN, SYSTEM_ADMIN
+	Campus        string     `gorm:"column:campus;not null;comment:所属校区: ZHAO_HUI, PING_FENG, MO_GAN_SHAN, 仅管理员有效" json:"campus"`         // 所属校区: ZHAO_HUI, PING_FENG, MO_GAN_SHAN, 仅管理员有效
+	FirstLogin    bool       `gorm:"column:first_login;not null;default:1;comment:首次登陆" json:"first_login"`                               // 首次登陆
+	DisabledUntil *time.Time `gorm:"column:disabled_until;comment:禁用截止时间" json:"disabled_until"`                                          // 禁用截止时间
+	CreatedAt     time.Time  `gorm:"column:created_at;not null;default:CURRENT_TIMESTAMP(3);comment:创建时间" json:"created_at"`              // 创建时间
+	UpdatedAt     time.Time  `gorm:"column:updated_at;not null;default:CURRENT_TIMESTAMP(3);comment:更新时间" json:"updated_at"`              // 更新时间
 }
 
 // TableName User's table name

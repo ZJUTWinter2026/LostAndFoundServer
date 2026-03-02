@@ -28,14 +28,14 @@ type Post struct {
 	ContactPhone      string                `gorm:"column:contact_phone;not null;comment:联系电话" json:"contact_phone"`                                                           // 联系电话
 	HasReward         bool                  `gorm:"column:has_reward;not null;comment:是否有悬赏" json:"has_reward"`                                                                // 是否有悬赏
 	RewardDescription string                `gorm:"column:reward_description;not null;comment:悬赏说明(仅has_reward为true时有效)" json:"reward_description"`                            // 悬赏说明(仅has_reward为true时有效)
-	Images            string                `gorm:"column:images;comment:图片列表(JSON数组)" json:"images"`                                                                          // 图片列表(JSON数组)
-	Summary           string                `gorm:"column:summary;comment:AI生成的总结文本(用于向量化)" json:"summary"`                                                                    // AI生成的总结文本(用于向量化)
+	Images            string                `gorm:"column:images;not null;comment:图片列表(JSON数组)" json:"images"`                                                                 // 图片列表(JSON数组)
+	Summary           string                `gorm:"column:summary;not null;comment:AI生成的总结文本(用于向量化)" json:"summary"`                                                           // AI生成的总结文本(用于向量化)
 	Status            string                `gorm:"column:status;not null;default:PENDING;comment:状态: PENDING, APPROVED, SOLVED, CANCELLED, REJECTED, ARCHIVED" json:"status"` // 状态: PENDING, APPROVED, SOLVED, CANCELLED, REJECTED, ARCHIVED
 	CancelReason      string                `gorm:"column:cancel_reason;not null;comment:取消原因" json:"cancel_reason"`                                                           // 取消原因
 	RejectReason      string                `gorm:"column:reject_reason;not null;comment:驳回原因" json:"reject_reason"`                                                           // 驳回原因
 	ClaimCount        int32                 `gorm:"column:claim_count;not null;comment:认领人数" json:"claim_count"`                                                               // 认领人数
 	ArchiveMethod     string                `gorm:"column:archive_method;not null;comment:物品处理方式(归档时填写)" json:"archive_method"`                                                // 物品处理方式(归档时填写)
-	ProcessedAt       time.Time             `gorm:"column:processed_at;not null;default:CURRENT_TIMESTAMP(3);comment:处理时间" json:"processed_at"`                                // 处理时间
+	ProcessedAt       *time.Time            `gorm:"column:processed_at;comment:处理时间" json:"processed_at"`                                                                      // 处理时间
 	CreatedAt         time.Time             `gorm:"column:created_at;not null;default:CURRENT_TIMESTAMP(3);comment:创建时间" json:"created_at"`                                    // 创建时间
 	UpdatedAt         time.Time             `gorm:"column:updated_at;not null;default:CURRENT_TIMESTAMP(3);comment:更新时间" json:"updated_at"`                                    // 更新时间
 	DeletedAt         soft_delete.DeletedAt `gorm:"column:deleted_at;comment:删除时间 (软删除);softDelete:milli" json:"-"`                                                            // 删除时间 (软删除)

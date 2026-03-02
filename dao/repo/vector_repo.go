@@ -84,13 +84,10 @@ func (r *VectorRepo) Delete(ctx context.Context, postID int64) error {
 }
 
 func (r *VectorRepo) Update(ctx context.Context, postID int64, vector []float64) error {
-	// 先 Insert 再 Delete：若 Insert 失败则旧数据仍在，避免向量永久丢失
-	if err := r.Insert(ctx, postID, vector); err != nil {
-		return err
-	}
-	// 删除旧条目（忽略删除失败，数据库中顶多有一条重复记录，不影响搜索正确性）
+	// 先删除旧记录再插入新记录（Upsert 语义）
+	// 忽略删除错误（记录可能不存在，属正常情况）
 	_ = r.Delete(ctx, postID)
-	return nil
+	return r.Insert(ctx, postID, vector)
 }
 
 type VectorSearchResult struct {

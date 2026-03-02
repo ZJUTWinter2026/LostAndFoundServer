@@ -25,7 +25,7 @@ func CheckUserDisabled() gin.HandlerFunc {
 			return
 		}
 
-		if !user.DisabledUntil.IsZero() && user.DisabledUntil.After(time.Now()) {
+		if user.DisabledUntil != nil && user.DisabledUntil.After(time.Now()) {
 			reply.Fail(ctx, comm.CodeUserDisabled)
 			ctx.Abort()
 			return

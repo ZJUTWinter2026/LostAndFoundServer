@@ -109,6 +109,10 @@ func (a *ApplyApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeServerError
 	}
 
+	if err = prp.IncrementClaimCount(ctx, request.PostID); err != nil {
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("更新认领人数失败")
+	}
+
 	a.Response = ApplyApiResponse{ClaimID: claimRecord.ID}
 	return comm.CodeOK
 }

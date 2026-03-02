@@ -87,7 +87,9 @@ func applyClaimFunc(ctx context.Context, input *ApplyClaimInput) (*ApplyClaimOut
 		return &ApplyClaimOutput{Success: false, Message: "创建认领申请失败"}, nil
 	}
 
-	_ = postRepo.IncrementClaimCount(ctx, input.PostID)
+	if err = postRepo.IncrementClaimCount(ctx, input.PostID); err != nil {
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("[Tool:apply_claim] 更新认领人数失败")
+	}
 
 	nlog.Pick().WithContext(ctx).Infof("[Tool:apply_claim] 认领申请提交成功: claim_id=%d, post_id=%d, user_id=%d", claim.ID, input.PostID, tc.UserID)
 	return &ApplyClaimOutput{

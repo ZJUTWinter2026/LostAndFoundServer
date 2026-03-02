@@ -12,6 +12,7 @@ import (
 	"github.com/zjutjh/mygo/kit"
 	"github.com/zjutjh/mygo/ndb"
 	"github.com/zjutjh/mygo/nlog"
+	"github.com/zjutjh/mygo/session"
 	"github.com/zjutjh/mygo/swagger"
 )
 
@@ -40,6 +41,16 @@ func (a *DisableApi) Run(ctx *gin.Context) kit.Code {
 	}
 
 	req := a.Request.Body
+
+	// 防止管理员禁用自身账号
+	adminID, err := session.GetIdentity[int64](ctx)
+	if err != nil {
+		return comm.CodeNotLoggedIn
+	}
+	if req.ID == adminID {
+		return comm.CodeParameterInvalid
+	}
+
 	db := ndb.Pick().WithContext(ctx)
 
 	var user model.User
@@ -47,16 +58,18 @@ func (a *DisableApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeDataNotFound
 	}
 
+	var dis time.Time
 	switch req.Duration {
 	case "7days":
-		user.DisabledUntil = time.Now().AddDate(0, 0, 7)
+		dis = time.Now().AddDate(0, 0, 7)
 	case "1month":
-		user.DisabledUntil = time.Now().AddDate(0, 1, 0)
+		dis = time.Now().AddDate(0, 1, 0)
 	case "6months":
-		user.DisabledUntil = time.Now().AddDate(0, 6, 0)
+		dis = time.Now().AddDate(0, 6, 0)
 	case "1year":
-		user.DisabledUntil = time.Now().AddDate(1, 0, 0)
+		dis = time.Now().AddDate(1, 0, 0)
 	}
+	user.DisabledUntil = &dis
 
 	if err := db.Save(&user).Error; err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("禁用用户失败")

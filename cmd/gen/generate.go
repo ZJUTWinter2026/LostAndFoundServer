@@ -31,8 +31,9 @@ func main() {
 	)
 
 	g := gen.NewGenerator(gen.Config{
-		OutPath: "./dao/query",
-		Mode:    gen.WithDefaultQuery | gen.WithQueryInterface,
+		OutPath:       "./dao/query",
+		Mode:          gen.WithDefaultQuery | gen.WithQueryInterface,
+		FieldNullable: true,
 	})
 	g.UseDB(ndb.Pick())
 

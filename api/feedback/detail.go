@@ -93,7 +93,7 @@ func (d *DetailApi) Run(ctx *gin.Context) kit.Code {
 		Description: feedback.Description,
 		Processed:   feedback.Processed,
 		ProcessedBy: feedback.ProcessedBy,
-		ProcessedAt: feedback.ProcessedAt,
+		ProcessedAt: *feedback.ProcessedAt,
 		CreatedAt:   feedback.CreatedAt,
 	}
 

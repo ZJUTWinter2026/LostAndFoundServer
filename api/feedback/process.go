@@ -67,7 +67,7 @@ func (p *ProcessApi) Run(ctx *gin.Context) kit.Code {
 	}
 
 	if feedback.Processed {
-		return comm.CodeParameterInvalid
+		return comm.CodeDataConflict
 	}
 
 	err = frp.MarkAsProcessed(ctx, request.FeedbackID, processorID)

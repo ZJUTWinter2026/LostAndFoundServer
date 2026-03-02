@@ -5,7 +5,6 @@ import (
 	"app/dao/model"
 	"reflect"
 	"runtime"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/zjutjh/mygo/foundation/reply"
@@ -46,9 +45,8 @@ func (a *EnableApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeDataNotFound
 	}
 
-	user.DisabledUntil = time.Now()
-
-	if err := db.Save(&user).Error; err != nil {
+	if err := db.Model(&user).
+		Update("disabled_until", nil).Error; err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("恢复用户失败")
 		return comm.CodeServerError
 	}

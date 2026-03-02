@@ -90,10 +90,8 @@ func (r *RejectApi) Run(ctx *gin.Context) kit.Code {
 	}
 
 	alr := repo.NewAuditLogRepo()
-	err = alr.CreateAuditLog(ctx, adminID, enum.AuditLogTypeUpdate, request.Reason, request.PostID, post.Status, enum.PostStatusRejected)
-	if err != nil {
-		nlog.Pick().WithContext(ctx).WithError(err).Warn("记录审计日志失败")
-		return comm.CodeServerError
+	if err = alr.CreateAuditLog(ctx, adminID, enum.AuditLogTypeUpdate, request.Reason, request.PostID, post.Status, enum.PostStatusRejected); err != nil {
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("记录审计日志失败，不影响主业务")
 	}
 
 	r.Response = RejectApiResponse{Success: true}

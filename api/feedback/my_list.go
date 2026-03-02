@@ -98,7 +98,7 @@ func (m *MyListApi) Run(ctx *gin.Context) kit.Code {
 			Type:        fb.Type,
 			Description: fb.Description,
 			Processed:   fb.Processed,
-			ProcessedAt: fb.ProcessedAt,
+			ProcessedAt: *fb.ProcessedAt,
 			CreatedAt:   fb.CreatedAt,
 		}
 		items = append(items, item)
