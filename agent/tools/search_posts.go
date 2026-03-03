@@ -15,8 +15,8 @@ import (
 
 type SearchPostsInput struct {
 	Query       string `json:"query" jsonschema:"description=搜索内容，使用自然语言描述,required"`
-	PublishType string `json:"publish_type" jsonschema:"description=筛选发布类型: LOST(寻物), FOUND(招领),enum=LOST,enum=FOUND"`
-	Campus      string `json:"campus" jsonschema:"description=校区筛选,enum=ZHAO_HUI,enum=PING_FENG,enum=MO_GAN_SHAN"`
+	PublishType string `json:"publish_type" jsonschema:"description=筛选发布类型（可选）: LOST(寻物), FOUND(招领),enum=,enum=LOST,enum=FOUND"`
+	Campus      string `json:"campus" jsonschema:"description=校区筛选（可选）,enum=,enum=ZHAO_HUI,enum=PING_FENG,enum=MO_GAN_SHAN"`
 	Limit       int    `json:"limit" jsonschema:"description=返回结果数量限制，默认10"`
 }
 

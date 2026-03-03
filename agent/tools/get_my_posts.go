@@ -10,8 +10,8 @@ import (
 )
 
 type GetMyPostsInput struct {
-	PublishType string `json:"publish_type" jsonschema:"description=发布类型筛选: LOST(寻物), FOUND(招领),enum=LOST,enum=FOUND"`
-	Status      string `json:"status" jsonschema:"description=状态筛选,enum=PENDING,enum=APPROVED,enum=SOLVED,enum=CANCELLED,enum=REJECTED"`
+	PublishType string `json:"publish_type" jsonschema:"description=发布类型筛选（可选）: LOST(寻物), FOUND(招领),enum=,enum=LOST,enum=FOUND"`
+	Status      string `json:"status" jsonschema:"description=状态筛选（可选）,enum=,enum=PENDING,enum=APPROVED,enum=SOLVED,enum=CANCELLED,enum=REJECTED"`
 	Page        int    `json:"page" jsonschema:"description=页码，默认1"`
 	PageSize    int    `json:"page_size" jsonschema:"description=每页数量，默认10"`
 }

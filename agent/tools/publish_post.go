@@ -21,7 +21,7 @@ type PublishPostInput struct {
 	ItemType          string   `json:"item_type" jsonschema:"description=物品类型,required"`
 	Campus            string   `json:"campus" jsonschema:"description=校区,required,enum=ZHAO_HUI,enum=PING_FENG,enum=MO_GAN_SHAN"`
 	Location          string   `json:"location" jsonschema:"description=地点,required"`
-	StorageLocation   string   `json:"storage_location" jsonschema:"description=存放地点（仅招领有效）"`
+	StorageLocation   string   `json:"storage_location" jsonschema:"description=存放地点（仅招领类型需要）"`
 	EventTime         string   `json:"event_time" jsonschema:"description=事件时间，格式: 2006-01-02 15:04:05,required"`
 	Features          string   `json:"features" jsonschema:"description=物品特征描述,required"`
 	ContactName       string   `json:"contact_name" jsonschema:"description=联系人姓名,required"`
