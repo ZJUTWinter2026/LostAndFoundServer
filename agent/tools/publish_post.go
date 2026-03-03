@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"app/api/admin/system"
 	"app/comm/enum"
 	daomodel "app/dao/model"
 	"app/dao/repo"
@@ -54,8 +55,29 @@ func publishPostFunc(ctx context.Context, input *PublishPostInput) (*PublishPost
 		return &PublishPostOutput{Success: false, Message: "事件时间格式错误"}, nil
 	}
 
-	imagesJSON, _ := sonic.MarshalString(input.Images)
+	prp := repo.NewPostRepo()
+	scr := repo.NewSystemConfigRepo()
 
+	publishLimit, err := scr.GetPublishLimit(ctx)
+	if err != nil {
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("获取发布限制失败")
+		return &PublishPostOutput{Success: false, Message: "获取发布限制失败"}, nil
+	}
+
+	todayCount, err := prp.CountTodayByPublisher(ctx, tc.UserID)
+	if err != nil {
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("统计今日发布数量失败")
+		return &PublishPostOutput{Success: false, Message: "统计今日发布数量失败"}, nil
+	}
+	if int(todayCount) >= publishLimit {
+		return &PublishPostOutput{Success: false, Message: "今日发布数量已达到上限"}, nil
+	}
+
+	if !system.IsValidItemType(ctx, input.ItemType) {
+		return &PublishPostOutput{Success: false, Message: "物品类型无效"}, nil
+	}
+
+	imagesJSON, _ := sonic.MarshalString(input.Images)
 	record := &daomodel.Post{
 		PublisherID:       tc.UserID,
 		PublishType:       input.PublishType,
@@ -83,7 +105,6 @@ func publishPostFunc(ctx context.Context, input *PublishPostInput) (*PublishPost
 	vectorSvc := vector.NewService()
 	if err := vectorSvc.UpdatePostVector(ctx, record); err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("[Tool:publish_post] 更新向量失败")
-		return &PublishPostOutput{Success: false, Message: "更新向量失败"}, nil
 	}
 
 	nlog.Pick().WithContext(ctx).Infof("[Tool:publish_post] 发布成功: post_id=%d", record.ID)

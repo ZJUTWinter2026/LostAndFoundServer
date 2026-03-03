@@ -79,7 +79,7 @@ func CreateCollectionIfNotExist(ctx context.Context, collectionName string, dime
 		return fmt.Errorf("创建Collection失败: %w", err)
 	}
 
-	idx, err := entity.NewIndexAUTOINDEX(entity.MetricType(entity.L2))
+	idx, err := entity.NewIndexAUTOINDEX(entity.COSINE)
 	if err != nil {
 		return fmt.Errorf("创建索引配置失败: %w", err)
 	}

@@ -22,7 +22,7 @@ func DeleteHandler() gin.HandlerFunc {
 }
 
 type DeleteApi struct {
-	Info     struct{}          `name:"删除我的发布信息" desc:"删除我的发布信息"`
+	Info     struct{} `name:"删除我的发布信息" desc:"删除我的发布信息（仅待审核状态可删除）"`
 	Request  DeleteApiRequest
 	Response DeleteApiResponse
 }
@@ -33,9 +33,7 @@ type DeleteApiRequest struct {
 	}
 }
 
-type DeleteApiResponse struct {
-	Success bool `json:"success" desc:"是否成功"`
-}
+type DeleteApiResponse struct{}
 
 func (d *DeleteApi) Run(ctx *gin.Context) kit.Code {
 	request := d.Request.Body
@@ -69,7 +67,12 @@ func (d *DeleteApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeServerError
 	}
 
-	d.Response = DeleteApiResponse{Success: true}
+	vectorRepo := repo.NewVectorRepo()
+	err = vectorRepo.Delete(ctx, request.PostID)
+	if err != nil {
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("删除向量索引失败")
+	}
+
 	return comm.CodeOK
 }
 

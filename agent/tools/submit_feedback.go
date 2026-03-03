@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"app/api/admin/system"
 	"app/dao/model"
 	"app/dao/repo"
 	"context"
@@ -43,6 +44,10 @@ func submitFeedbackFunc(ctx context.Context, input *SubmitFeedbackInput) (*Submi
 	if post == nil {
 		nlog.Pick().WithContext(ctx).Infof("[Tool:submit_feedback] 发布记录不存在: post_id=%d", input.PostID)
 		return &SubmitFeedbackOutput{Success: false, Message: "发布记录不存在"}, nil
+	}
+
+	if !system.IsValidFeedbackType(ctx, input.Type) {
+		return &SubmitFeedbackOutput{Success: false, Message: "反馈类型无效"}, nil
 	}
 
 	feedback := &model.Feedback{

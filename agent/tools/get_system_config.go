@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"app/api/admin/system"
 	"app/dao/repo"
 	"context"
 
@@ -29,6 +30,7 @@ func getSystemConfigFunc(ctx context.Context, input *GetSystemConfigInput) (*Get
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("[Tool:get_system_config] 获取反馈类型失败")
 		return &GetSystemConfigOutput{Success: false, Message: "获取反馈类型失败"}, nil
 	}
+	feedbackTypes = append(feedbackTypes, system.OtherType)
 	result["feedback_types"] = feedbackTypes
 
 	itemTypes, err := configRepo.GetItemTypes(ctx)
@@ -36,6 +38,7 @@ func getSystemConfigFunc(ctx context.Context, input *GetSystemConfigInput) (*Get
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("[Tool:get_system_config] 获取物品类型失败")
 		return &GetSystemConfigOutput{Success: false, Message: "获取物品类型失败"}, nil
 	}
+	itemTypes = append(itemTypes, system.OtherType)
 	result["item_types"] = itemTypes
 
 	claimValidityDays, err := configRepo.GetClaimValidityDays(ctx)
@@ -62,7 +65,7 @@ func getSystemConfigFunc(ctx context.Context, input *GetSystemConfigInput) (*Get
 func NewGetSystemConfigTool() (tool.InvokableTool, error) {
 	return utils.InferTool(
 		"get_system_config",
-		"获取系统配置，包括feedback_types(反馈类型列表)、item_types(物品类型列表)、claim_validity_days(认领有效期天数)、publish_limit(每日发布限制)。发布物品或提交反馈前应先调用此工具获取可选值",
+		"获取动态系统配置，包括feedback_types(反馈类型列表)、item_types(物品类型列表)、claim_validity_days(认领有效期天数)、publish_limit(每日发布限制)。发布物品或提交反馈前应先调用此工具获取可选值",
 		getSystemConfigFunc,
 	)
 }

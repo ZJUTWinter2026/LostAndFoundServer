@@ -86,12 +86,6 @@ func (p *PublishApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeParameterInvalid
 	}
 
-	if request.PublishType == enum.PostTypeFound {
-		if len(request.Images) == 0 {
-			return comm.CodeParameterInvalid
-		}
-	}
-
 	imagesJSON, err := sonic.MarshalString(request.Images)
 	if err != nil {
 		return comm.CodeParameterInvalid

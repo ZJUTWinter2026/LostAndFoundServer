@@ -84,10 +84,20 @@ func (r *VectorRepo) Delete(ctx context.Context, postID int64) error {
 }
 
 func (r *VectorRepo) Update(ctx context.Context, postID int64, vector []float64) error {
-	// 先删除旧记录再插入新记录（Upsert 语义）
-	// 忽略删除错误（记录可能不存在，属正常情况）
-	_ = r.Delete(ctx, postID)
-	return r.Insert(ctx, postID, vector)
+	getClient := r.getClient()
+	if getClient == nil {
+		return fmt.Errorf("Milvus客户端未初始化")
+	}
+
+	postIDColumn := entity.NewColumnInt64("post_id", []int64{postID})
+	vectorColumn := entity.NewColumnFloatVector("vector", len(vector), [][]float32{float64ToFloat32(vector)})
+
+	_, err := getClient.Upsert(ctx, r.getCollectionName(), "", postIDColumn, vectorColumn)
+	if err != nil {
+		return fmt.Errorf("更新向量失败: %w", err)
+	}
+
+	return nil
 }
 
 type VectorSearchResult struct {
@@ -114,7 +124,7 @@ func (r *VectorRepo) Search(ctx context.Context, vector []float64, topK int) ([]
 		[]string{"post_id"},
 		[]entity.Vector{entity.FloatVector(float64ToFloat32(vector))},
 		"vector",
-		entity.L2,
+		entity.COSINE,
 		topK,
 		sp,
 	)

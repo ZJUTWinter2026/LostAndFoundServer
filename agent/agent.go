@@ -236,8 +236,10 @@ func buildSystemPrompt(toolCtx *tools.ToolContext) string {
 	sb.WriteString("- cancel_post: 取消发布\n")
 	sb.WriteString("- get_system_config: 获取系统配置（物品类型、反馈类型等）\n\n")
 
-	sb.WriteString("## 当前用户信息\n")
-	sb.WriteString(fmt.Sprintf("用户ID: %d\n", toolCtx.UserID))
+	if toolCtx != nil {
+		sb.WriteString("## 当前用户信息\n")
+		sb.WriteString(fmt.Sprintf("用户ID: %d\n", toolCtx.UserID))
+	}
 
 	return sb.String()
 }

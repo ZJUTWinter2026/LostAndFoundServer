@@ -22,7 +22,7 @@ func CancelHandler() gin.HandlerFunc {
 }
 
 type CancelApi struct {
-	Info     struct{}          `name:"取消发布信息" desc:"取消发布信息"`
+	Info     struct{} `name:"取消发布信息" desc:"取消发布信息（仅已通过状态可取消）"`
 	Request  CancelApiRequest
 	Response CancelApiResponse
 }
@@ -34,9 +34,7 @@ type CancelApiRequest struct {
 	}
 }
 
-type CancelApiResponse struct {
-	Success bool `json:"success" desc:"是否成功"`
-}
+type CancelApiResponse struct{}
 
 func (c *CancelApi) Run(ctx *gin.Context) kit.Code {
 	request := c.Request.Body
@@ -70,7 +68,12 @@ func (c *CancelApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeServerError
 	}
 
-	c.Response = CancelApiResponse{Success: true}
+	vectorRepo := repo.NewVectorRepo()
+	err = vectorRepo.Delete(ctx, request.PostID)
+	if err != nil {
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("删除向量索引失败")
+	}
+
 	return comm.CodeOK
 }
 

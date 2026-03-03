@@ -12,7 +12,7 @@ import (
 
 type CancelPostInput struct {
 	PostID int64  `json:"post_id" jsonschema:"description=发布ID,required"`
-	Reason string `json:"reason" jsonschema:"description=取消原因"`
+	Reason string `json:"reason" jsonschema:"description=取消原因（仅帖子是APPROVED状态才需要填）"`
 }
 
 type CancelPostOutput struct {
@@ -38,11 +38,6 @@ func cancelPostFunc(ctx context.Context, input *CancelPostInput) (*CancelPostOut
 		return &CancelPostOutput{Success: false, Message: "查询发布记录失败"}, nil
 	}
 
-	if post == nil {
-		nlog.Pick().WithContext(ctx).Infof("[Tool:cancel_post] 发布记录不存在: post_id=%d", input.PostID)
-		return &CancelPostOutput{Success: false, Message: "发布记录不存在"}, nil
-	}
-
 	if post.PublisherID != tc.UserID {
 		nlog.Pick().WithContext(ctx).Infof("[Tool:cancel_post] 用户没有权限取消该发布记录: user_id=%d, post_id=%d, publisher_id=%d", tc.UserID, input.PostID, post.PublisherID)
 		return &CancelPostOutput{Success: false, Message: "您没有权限取消该发布记录"}, nil
@@ -53,13 +48,20 @@ func cancelPostFunc(ctx context.Context, input *CancelPostInput) (*CancelPostOut
 		return &CancelPostOutput{Success: false, Message: "该发布记录当前状态不允许取消"}, nil
 	}
 
-	err = postRepo.CancelPost(ctx, input.PostID, tc.UserID, input.Reason)
+	if post.Status == enum.PostStatusApproved {
+		err = postRepo.CancelPost(ctx, input.PostID, tc.UserID, input.Reason)
+	} else {
+		err = postRepo.DeletePost(ctx, input.PostID, tc.UserID)
+	}
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("[Tool:cancel_post] 取消发布失败")
 		return &CancelPostOutput{Success: false, Message: "取消发布失败"}, nil
 	}
 
-	_ = vectorRepo.Delete(ctx, input.PostID)
+	err = vectorRepo.Delete(ctx, input.PostID)
+	if err != nil {
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("[Tool:cancel_post] 删除向量索引失败")
+	}
 
 	nlog.Pick().WithContext(ctx).Infof("[Tool:cancel_post] 发布已取消: post_id=%d, user_id=%d", input.PostID, tc.UserID)
 	return &CancelPostOutput{

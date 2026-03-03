@@ -90,7 +90,7 @@ func (r *ReviewApi) Run(ctx *gin.Context) kit.Code {
 	if !isPublisher {
 		urp := repo.NewUserRepo()
 		user, err := urp.FindById(ctx, reviewerID)
-		if err == nil && user != nil && user.Usertype == enum.UserTypeAdmin {
+		if err == nil && user != nil && (user.Usertype == enum.UserTypeAdmin || user.Usertype == enum.UserTypeSystemAdmin) {
 			isAdmin = true
 		}
 	}
