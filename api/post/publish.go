@@ -1,7 +1,6 @@
 package post
 
 import (
-	"app/api/admin/system"
 	"app/comm"
 	"app/comm/enum"
 	"app/dao/model"
@@ -82,7 +81,7 @@ func (p *PublishApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodePublishLimitExceeded
 	}
 
-	if !system.IsValidItemType(ctx, request.ItemType) {
+	if !scr.IsValidItemType(ctx, request.ItemType) {
 		return comm.CodeParameterInvalid
 	}
 

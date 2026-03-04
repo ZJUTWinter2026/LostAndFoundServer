@@ -1,8 +1,8 @@
 package agent
 
 import (
+	coreagent "app/agent"
 	"app/comm"
-	"app/service"
 	"reflect"
 	"runtime"
 
@@ -44,7 +44,7 @@ func (a *SessionApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeNotLoggedIn
 	}
 
-	agentService := service.GetAgentService()
+	agentService := coreagent.GetAgentService()
 	sess, err := agentService.CreateSession(ctx, userID, request.Title)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("创建会话失败")
@@ -110,7 +110,7 @@ func (a *SessionListApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeNotLoggedIn
 	}
 
-	agentService := service.GetAgentService()
+	agentService := coreagent.GetAgentService()
 	sessions, err := agentService.ListSessions(ctx, userID)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("获取会话列表失败")

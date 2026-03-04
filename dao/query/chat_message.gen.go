@@ -33,6 +33,7 @@ func newChatMessage(db *gorm.DB, opts ...gen.DOOption) chatMessage {
 	_chatMessage.Content = field.NewString(tableName, "content")
 	_chatMessage.Images = field.NewString(tableName, "images")
 	_chatMessage.ImageDescriptions = field.NewString(tableName, "image_descriptions")
+	_chatMessage.ToolData = field.NewString(tableName, "tool_data")
 	_chatMessage.CreatedAt = field.NewTime(tableName, "created_at")
 	_chatMessage.DeletedAt = field.NewField(tableName, "deleted_at")
 
@@ -48,10 +49,11 @@ type chatMessage struct {
 	ALL               field.Asterisk
 	ID                field.Int64  // 自增ID
 	SessionID         field.String // 会话ID
-	Role              field.String // 角色: user, assistant, system
+	Role              field.String // 角色: user, assistant, system, tool
 	Content           field.String // 消息内容
 	Images            field.String // 图片URL列表(JSON数组)
 	ImageDescriptions field.String // 图片描述列表(JSON数组)
+	ToolData          field.String // 工具调用元数据(JSON)
 	CreatedAt         field.Time   // 创建时间
 	DeletedAt         field.Field  // 删除时间 (软删除)
 
@@ -76,6 +78,7 @@ func (c *chatMessage) updateTableName(table string) *chatMessage {
 	c.Content = field.NewString(table, "content")
 	c.Images = field.NewString(table, "images")
 	c.ImageDescriptions = field.NewString(table, "image_descriptions")
+	c.ToolData = field.NewString(table, "tool_data")
 	c.CreatedAt = field.NewTime(table, "created_at")
 	c.DeletedAt = field.NewField(table, "deleted_at")
 
@@ -104,13 +107,14 @@ func (c *chatMessage) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (c *chatMessage) fillFieldMap() {
-	c.fieldMap = make(map[string]field.Expr, 8)
+	c.fieldMap = make(map[string]field.Expr, 9)
 	c.fieldMap["id"] = c.ID
 	c.fieldMap["session_id"] = c.SessionID
 	c.fieldMap["role"] = c.Role
 	c.fieldMap["content"] = c.Content
 	c.fieldMap["images"] = c.Images
 	c.fieldMap["image_descriptions"] = c.ImageDescriptions
+	c.fieldMap["tool_data"] = c.ToolData
 	c.fieldMap["created_at"] = c.CreatedAt
 	c.fieldMap["deleted_at"] = c.DeletedAt
 }

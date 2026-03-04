@@ -4,7 +4,9 @@ import (
 	"app/agent/tools"
 	"app/pkg/llm"
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"strings"
 	"sync"
 
@@ -12,14 +14,23 @@ import (
 	"github.com/cloudwego/eino/compose"
 	"github.com/cloudwego/eino/flow/agent/react"
 	"github.com/cloudwego/eino/schema"
+	"github.com/zjutjh/mygo/nlog"
 )
 
 type ChatMessage struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
+	// ToolCalls 对应 role=assistant 的工具调用请求（当 Content 为空时）
+	ToolCalls []ToolCallInfo `json:"tool_calls,omitempty"`
+	// ToolCallID / ToolName 对应 role=tool 的工具执行结果
+	ToolCallID string `json:"tool_call_id,omitempty"`
+	ToolName   string `json:"tool_name,omitempty"`
 }
 
 type StreamEvent struct {
+	EventID string      `json:"event_id,omitempty"`
+	Seq     int         `json:"seq,omitempty"`
+	TS      int64       `json:"ts,omitempty"`
 	Type    string      `json:"type"`
 	Content string      `json:"content,omitempty"`
 	Data    interface{} `json:"data,omitempty"`
@@ -43,43 +54,29 @@ type Agent struct {
 	tools      []tool.BaseTool
 }
 
+// NewAgent 创建 Agent 实例并注册可用工具。
 func NewAgent() *Agent {
 	toolList := make([]tool.BaseTool, 0, 12)
+	toolFuncList := []func() (tool.InvokableTool, error){
+		tools.NewGetPostDetailTool,
+		tools.NewSearchPostsTool,
+		tools.NewGetMyPostsTool,
+		tools.NewGetMyClaimsTool,
+		tools.NewGetMyFeedbacksTool,
+		tools.NewPublishPostTool,
+		tools.NewApplyClaimTool,
+		tools.NewCancelClaimTool,
+		tools.NewReviewClaimTool,
+		tools.NewSubmitFeedbackTool,
+		tools.NewCancelPostTool,
+	}
 
-	if t, err := tools.NewGetPostDetailTool(); err == nil {
-		toolList = append(toolList, t)
-	}
-	if t, err := tools.NewSearchPostsTool(); err == nil {
-		toolList = append(toolList, t)
-	}
-	if t, err := tools.NewGetMyPostsTool(); err == nil {
-		toolList = append(toolList, t)
-	}
-	if t, err := tools.NewGetMyClaimsTool(); err == nil {
-		toolList = append(toolList, t)
-	}
-	if t, err := tools.NewGetMyFeedbacksTool(); err == nil {
-		toolList = append(toolList, t)
-	}
-	if t, err := tools.NewPublishPostTool(); err == nil {
-		toolList = append(toolList, t)
-	}
-	if t, err := tools.NewApplyClaimTool(); err == nil {
-		toolList = append(toolList, t)
-	}
-	if t, err := tools.NewCancelClaimTool(); err == nil {
-		toolList = append(toolList, t)
-	}
-	if t, err := tools.NewReviewClaimTool(); err == nil {
-		toolList = append(toolList, t)
-	}
-	if t, err := tools.NewSubmitFeedbackTool(); err == nil {
-		toolList = append(toolList, t)
-	}
-	if t, err := tools.NewCancelPostTool(); err == nil {
-		toolList = append(toolList, t)
-	}
-	if t, err := tools.NewGetSystemConfigTool(); err == nil {
+	for _, tf := range toolFuncList {
+		t, err := tf()
+		if err != nil {
+			nlog.Pick().WithError(err).Warn("注册工具失败")
+			continue
+		}
 		toolList = append(toolList, t)
 	}
 
@@ -88,6 +85,7 @@ func NewAgent() *Agent {
 	}
 }
 
+// getOrCreateReactAgent 懒加载并复用底层 ReAct Agent。
 func (a *Agent) getOrCreateReactAgent(ctx context.Context) (*react.Agent, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -98,21 +96,52 @@ func (a *Agent) getOrCreateReactAgent(ctx context.Context) (*react.Agent, error)
 
 	chatModel := llm.GetChatModel()
 
+	// 每次 LLM 调用前，统一注入完整 system prompt（静态守则 + 动态配置）
+	messageModifier := func(ctx context.Context, messages []*schema.Message) []*schema.Message {
+		toolCtx := tools.GetToolContext(ctx)
+		dynamicPart := buildDynamicPrompt(toolCtx)
+		staticPart := buildStaticPrompt()
+		fullPrompt := staticPart + "\n\n" + dynamicPart
+
+		result := make([]*schema.Message, len(messages))
+		copy(result, messages)
+
+		// 找到第一条 system 消息并更新为完整提示（静态+动态）
+		for i, msg := range result {
+			if msg.Role == schema.System {
+				result[i] = schema.SystemMessage(fullPrompt)
+				return result
+			}
+		}
+		// 若历史中没有 system 消息则在最前面插入
+		return append([]*schema.Message{schema.SystemMessage(fullPrompt)}, result...)
+	}
+
+	// 全程扫描流以检测工具调用
+	// 默认实现仅检查第一个 chunk，对先输出文字再输出工具调用的模型（如 Claude、DeepSeek-R1）不适用
+	streamToolCallChecker := func(ctx context.Context, sr *schema.StreamReader[*schema.Message]) (bool, error) {
+		defer sr.Close()
+		for {
+			msg, err := sr.Recv()
+			if err != nil {
+				if errors.Is(err, io.EOF) {
+					break
+				}
+				return false, err
+			}
+			if len(msg.ToolCalls) > 0 {
+				return true, nil
+			}
+		}
+		return false, nil
+	}
+
 	agent, err := react.NewAgent(ctx, &react.AgentConfig{
-		ToolCallingModel: chatModel,
-		ToolsConfig: compose.ToolsNodeConfig{
-			Tools: a.tools,
-		},
-		MessageModifier: func(ctx context.Context, input []*schema.Message) []*schema.Message {
-			// 每次请求从 ctx 动态取 toolCtx，避免首次创建时的用户ID被永久锁定
-			tc := tools.GetToolContext(ctx)
-			systemPrompt := buildSystemPrompt(tc)
-			result := make([]*schema.Message, 0, len(input)+1)
-			result = append(result, schema.SystemMessage(systemPrompt))
-			result = append(result, input...)
-			return result
-		},
-		MaxStep: 10,
+		ToolCallingModel:      chatModel,
+		ToolsConfig:           compose.ToolsNodeConfig{Tools: a.tools},
+		MaxStep:               10,
+		MessageModifier:       messageModifier,
+		StreamToolCallChecker: streamToolCallChecker,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("创建ReAct Agent失败: %w", err)
@@ -122,6 +151,7 @@ func (a *Agent) getOrCreateReactAgent(ctx context.Context) (*react.Agent, error)
 	return agent, nil
 }
 
+// Stream 发起流式对话并注入工具上下文。
 func (a *Agent) Stream(ctx context.Context, messages []ChatMessage, toolCtx *tools.ToolContext) (*schema.StreamReader[*schema.Message], error) {
 	ctx = tools.WithToolContext(ctx, toolCtx)
 
@@ -131,7 +161,6 @@ func (a *Agent) Stream(ctx context.Context, messages []ChatMessage, toolCtx *too
 	}
 
 	schemaMessages := convertMessages(messages)
-
 	stream, err := agent.Stream(ctx, schemaMessages)
 	if err != nil {
 		return nil, fmt.Errorf("AI对话失败: %w", err)
@@ -140,6 +169,7 @@ func (a *Agent) Stream(ctx context.Context, messages []ChatMessage, toolCtx *too
 	return stream, nil
 }
 
+// convertMessages 批量将内部消息转换为 Eino 消息格式。
 func convertMessages(messages []ChatMessage) []*schema.Message {
 	var schemaMessages []*schema.Message
 	for _, msg := range messages {
@@ -148,14 +178,42 @@ func convertMessages(messages []ChatMessage) []*schema.Message {
 	return schemaMessages
 }
 
+// convertMessage 将单条内部消息转换为 Eino 消息。
 func convertMessage(msg ChatMessage) *schema.Message {
 	switch msg.Role {
 	case "user":
 		return schema.UserMessage(msg.Content)
 	case "assistant":
+		// 如果有工具调用，构造含 ToolCalls 的 assistant 消息（内容可能为空）
+		if len(msg.ToolCalls) > 0 {
+			toolCalls := make([]schema.ToolCall, 0, len(msg.ToolCalls))
+			for _, tc := range msg.ToolCalls {
+				toolCalls = append(toolCalls, schema.ToolCall{
+					ID:   tc.ID,
+					Type: "function",
+					Function: schema.FunctionCall{
+						Name:      tc.Name,
+						Arguments: tc.Arguments,
+					},
+				})
+			}
+			return &schema.Message{
+				Role:      schema.Assistant,
+				Content:   msg.Content,
+				ToolCalls: toolCalls,
+			}
+		}
 		return &schema.Message{
 			Role:    schema.Assistant,
 			Content: msg.Content,
+		}
+	case "tool":
+		// 工具执行结果消息
+		return &schema.Message{
+			Role:       schema.Tool,
+			Content:    msg.Content,
+			ToolCallID: msg.ToolCallID,
+			ToolName:   msg.ToolName,
 		}
 	case "system":
 		return schema.SystemMessage(msg.Content)
@@ -167,42 +225,9 @@ func convertMessage(msg ChatMessage) *schema.Message {
 	}
 }
 
-func ParseStreamMessage(msg *schema.Message) StreamEvent {
-	switch msg.Role {
-	case schema.Assistant:
-		if len(msg.ToolCalls) > 0 {
-			tc := msg.ToolCalls[0]
-			return StreamEvent{
-				Type: "tool_call",
-				Data: ToolCallInfo{
-					ID:        tc.ID,
-					Name:      tc.Function.Name,
-					Arguments: tc.Function.Arguments,
-				},
-			}
-		}
-		return StreamEvent{
-			Type:    "content",
-			Content: msg.Content,
-		}
-	case schema.Tool:
-		return StreamEvent{
-			Type: "tool_result",
-			Data: ToolResultInfo{
-				ToolCallID: msg.ToolCallID,
-				ToolName:   msg.ToolName,
-				Result:     msg.Content,
-			},
-		}
-	default:
-		return StreamEvent{
-			Type:    "content",
-			Content: msg.Content,
-		}
-	}
-}
-
-func buildSystemPrompt(toolCtx *tools.ToolContext) string {
+// buildStaticPrompt 返回固定不变的系统守则。
+// 实际注入由 MessageModifier 统一处理。
+func buildStaticPrompt() string {
 	var sb strings.Builder
 
 	sb.WriteString("你是校园失物招领系统的AI助手，帮助用户处理失物招领相关事务。\n")
@@ -234,11 +259,36 @@ func buildSystemPrompt(toolCtx *tools.ToolContext) string {
 	sb.WriteString("- review_claim: 审核认领申请\n")
 	sb.WriteString("- submit_feedback: 提交投诉反馈\n")
 	sb.WriteString("- cancel_post: 取消发布\n")
-	sb.WriteString("- get_system_config: 获取系统配置（物品类型、反馈类型等）\n\n")
 
-	if toolCtx != nil {
-		sb.WriteString("## 当前用户信息\n")
-		sb.WriteString(fmt.Sprintf("用户ID: %d\n", toolCtx.UserID))
+	return sb.String()
+}
+
+// buildDynamicPrompt 返回每次 LLM 调用时需要更新的动态内容：
+// 当前用户信息和从数据库读取的实时系统配置。
+func buildDynamicPrompt(toolCtx *tools.ToolContext) string {
+	if toolCtx == nil {
+		return ""
+	}
+
+	var sb strings.Builder
+
+	sb.WriteString("## 当前用户信息\n")
+	sb.WriteString(fmt.Sprintf("用户ID: %d\n\n", toolCtx.UserID))
+
+	if cfg := toolCtx.SystemConfig; cfg != nil {
+		sb.WriteString("## 系统当前配置\n")
+		if len(cfg.ItemTypes) > 0 {
+			sb.WriteString(fmt.Sprintf("- 物品类型（发布或搜索时使用）：%s\n", strings.Join(cfg.ItemTypes, "、")))
+		}
+		if len(cfg.FeedbackTypes) > 0 {
+			sb.WriteString(fmt.Sprintf("- 反馈类型（提交反馈时使用）：%s\n", strings.Join(cfg.FeedbackTypes, "、")))
+		}
+		if cfg.ClaimValidityDays > 0 {
+			sb.WriteString(fmt.Sprintf("- 认领申请有效期：%d 天\n", cfg.ClaimValidityDays))
+		}
+		if cfg.PublishLimit > 0 {
+			sb.WriteString(fmt.Sprintf("- 每日发布上限：%d 条\n", cfg.PublishLimit))
+		}
 	}
 
 	return sb.String()

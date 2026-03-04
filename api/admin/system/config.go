@@ -3,7 +3,6 @@ package system
 import (
 	"app/comm"
 	"app/dao/repo"
-	"context"
 	"reflect"
 	"runtime"
 
@@ -366,38 +365,4 @@ func filterOutOtherType(types []string) []string {
 		}
 	}
 	return filtered
-}
-
-func IsValidItemType(ctx context.Context, itemType string) bool {
-	if itemType == OtherType {
-		return true
-	}
-	scr := repo.NewSystemConfigRepo()
-	itemTypes, err := scr.GetItemTypes(ctx)
-	if err != nil {
-		return false
-	}
-	for _, t := range itemTypes {
-		if t == itemType {
-			return true
-		}
-	}
-	return false
-}
-
-func IsValidFeedbackType(ctx context.Context, feedbackType string) bool {
-	if feedbackType == OtherType {
-		return true
-	}
-	scr := repo.NewSystemConfigRepo()
-	feedbackTypes, err := scr.GetFeedbackTypes(ctx)
-	if err != nil {
-		return false
-	}
-	for _, t := range feedbackTypes {
-		if t == feedbackType {
-			return true
-		}
-	}
-	return false
 }

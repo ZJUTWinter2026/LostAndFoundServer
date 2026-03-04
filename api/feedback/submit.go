@@ -1,7 +1,6 @@
 package feedback
 
 import (
-	"app/api/admin/system"
 	"app/comm"
 	"app/dao/model"
 	"app/dao/repo"
@@ -48,7 +47,8 @@ func (s *SubmitApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeNotLoggedIn
 	}
 
-	if !system.IsValidFeedbackType(ctx, request.Type) {
+	scr := repo.NewSystemConfigRepo()
+	if !scr.IsValidFeedbackType(ctx, request.Type) {
 		return comm.CodeFeedbackTypeInvalid
 	}
 

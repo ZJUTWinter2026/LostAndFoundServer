@@ -1,7 +1,6 @@
 package post
 
 import (
-	"app/api/admin/system"
 	"app/comm"
 	"app/comm/enum"
 	"app/dao/repo"
@@ -80,7 +79,8 @@ func (u *UpdateApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodePostCannotModify
 	}
 
-	if !system.IsValidItemType(ctx, request.ItemType) {
+	scr := repo.NewSystemConfigRepo()
+	if !scr.IsValidItemType(ctx, request.ItemType) {
 		return comm.CodeParameterInvalid
 	}
 

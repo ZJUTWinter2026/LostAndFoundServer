@@ -16,6 +16,7 @@ const (
 	ConfigKeyItemTypes         = "item_types"
 	ConfigKeyClaimValidityDays = "claim_validity_days"
 	ConfigKeyPublishLimit      = "publish_limit"
+	ConfigOtherType            = "其它类型"
 )
 
 type SystemConfigRepo struct{}
@@ -142,6 +143,40 @@ func (r *SystemConfigRepo) GetPublishLimit(ctx context.Context) (int, error) {
 
 func (r *SystemConfigRepo) UpdatePublishLimit(ctx context.Context, limit int) error {
 	return r.UpdateValue(ctx, ConfigKeyPublishLimit, strconv.Itoa(limit))
+}
+
+// IsValidItemType 校验物品类型是否在系统配置列表中。
+func (r *SystemConfigRepo) IsValidItemType(ctx context.Context, itemType string) bool {
+	if itemType == ConfigOtherType {
+		return true
+	}
+	itemTypes, err := r.GetItemTypes(ctx)
+	if err != nil {
+		return false
+	}
+	for _, t := range itemTypes {
+		if t == itemType {
+			return true
+		}
+	}
+	return false
+}
+
+// IsValidFeedbackType 校验反馈类型是否在系统配置列表中。
+func (r *SystemConfigRepo) IsValidFeedbackType(ctx context.Context, feedbackType string) bool {
+	if feedbackType == ConfigOtherType {
+		return true
+	}
+	feedbackTypes, err := r.GetFeedbackTypes(ctx)
+	if err != nil {
+		return false
+	}
+	for _, t := range feedbackTypes {
+		if t == feedbackType {
+			return true
+		}
+	}
+	return false
 }
 
 func (r *SystemConfigRepo) ListAll(ctx context.Context) ([]*model.SystemConfig, error) {

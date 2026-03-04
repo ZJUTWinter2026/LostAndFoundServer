@@ -1,28 +1,41 @@
 # Agent API 接口文档
 
-本文档描述了校园失物招领系统的AI助手相关接口，供前端工程师对接使用。
+本文档面向前端开发，目标是让你不看后端代码也能完整接入当前 Agent 对话能力。
 
-## 基础信息
+## 基础约定
 
-- 所有接口需要用户登录认证
-- 基础路径: `/api/agent`
-- 响应格式: JSON
+- 基础路径：`/api/agent`
+- 鉴权方式：登录态（依赖服务端 Session/Cookie）
+- 非流式接口响应格式：
 
-**注意：** Agent功能需要后端配置启用。如果功能禁用，所有agent接口将返回错误码`30108`。
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {}
+}
+```
+
+- `code=0` 表示成功，其他 code 视为失败
+- Agent 功能受配置开关控制，关闭时返回 `30108`
+
+## 目录
+
+1. 创建会话 `POST /session`
+2. 会话列表 `GET /sessions`
+3. 流式对话 `POST /stream` (SSE)
+4. 对话历史 `GET /history`
+5. 前端完整参考代码（TypeScript）
 
 ---
 
 ## 1. 创建会话
 
-创建一个新的对话会话。
-
 ### 请求
 
-- **方法**: POST
-- **路径**: `/session`
-- **Content-Type**: application/json
-
-### 请求参数
+- 方法：`POST`
+- 路径：`/api/agent/session`
+- `Content-Type: application/json`
 
 ```json
 {
@@ -30,11 +43,13 @@
 }
 ```
 
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| title | string | 否 | 会话标题，如果不提供会自动使用第一条消息作为标题 |
+### 字段
 
-### 响应
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `title` | `string` | 否 | 会话标题。可不传，后端会在首轮对话后自动生成 |
+
+### 成功响应
 
 ```json
 {
@@ -50,14 +65,12 @@
 
 ## 2. 获取会话列表
 
-获取当前用户的所有对话会话，按最后更新时间倒序排列。
-
 ### 请求
 
-- **方法**: GET
-- **路径**: `/sessions`
+- 方法：`GET`
+- 路径：`/api/agent/sessions`
 
-### 响应
+### 成功响应
 
 ```json
 {
@@ -76,19 +89,22 @@
 }
 ```
 
+### 前端建议
+
+- 按 `updated_at` 做列表排序展示（后端已降序返回）
+- 首次进入页面先拉会话列表，若为空可自动创建会话
+
 ---
 
 ## 3. 发送消息（流式）
 
-使用SSE（Server-Sent Events）进行流式对话，实时显示AI回复和工具调用过程。
+该接口是 SSE 响应，不是标准 JSON 一次性返回。
 
 ### 请求
 
-- **方法**: POST
-- **路径**: `/stream`
-- **Content-Type**: application/json
-
-### 请求参数
+- 方法：`POST`
+- 路径：`/api/agent/stream`
+- `Content-Type: application/json`
 
 ```json
 {
@@ -98,97 +114,68 @@
 }
 ```
 
-| 参数 | 类型 | 必填 | 说明 |
+### 字段
+
+| 字段 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| session_id | string | 是 | 会话ID |
-| message | string | 是 | 用户消息内容 |
-| images | []string | 否 | 图片URL列表，支持多图 |
+| `session_id` | `string` | 是 | 会话ID |
+| `message` | `string` | 是 | 用户文本输入 |
+| `images` | `string[]` | 否 | 图片 URL 列表 |
 
-### 响应
+### SSE 事件格式
 
-响应为SSE流，Content-Type为`text/event-stream`。
+服务端按 `data: ...\n\n` 推送事件，最终以 `data: [DONE]` 结束。
 
-#### 事件类型
-
-**内容事件 (content)** - AI生成的文本内容片段
+#### 3.1 `content`
 
 ```json
-data: {"type":"content","content":"我帮您搜索一下"}
+data: {"event_id":"550e8400-e29b-41d4-a716-446655440000-1","seq":1,"ts":1741248000123,"type":"content","content":"我帮您搜索一下"}
 ```
 
-**工具调用事件 (tool_call)** - AI调用工具
+#### 3.2 `tool_call`
 
 ```json
-data: {"type":"tool_call","data":{"id":"call_123","name":"search_posts","arguments":"{\"query\":\"黑色雨伞\"}"}}
+data: {"event_id":"550e8400-e29b-41d4-a716-446655440000-2","seq":2,"ts":1741248000456,"type":"tool_call","data":{"id":"call_123","name":"search_posts","arguments":"{\"query\":\"黑色雨伞\"}"}}
 ```
 
-**工具结果事件 (tool_result)** - 工具执行结果
+#### 3.3 `tool_result`
 
 ```json
-data: {"type":"tool_result","data":{"tool_call_id":"call_123","tool_name":"search_posts","result":"找到2条相关记录..."}}
+data: {"event_id":"550e8400-e29b-41d4-a716-446655440000-3","seq":3,"ts":1741248000789,"type":"tool_result","data":{"tool_call_id":"call_123","tool_name":"search_posts","result":"找到2条相关记录..."}}
 ```
 
-**结束事件**
+#### 3.4 结束标记
 
-```
+```text
 data: [DONE]
 ```
 
-### 前端处理示例
+### 事件字段说明
 
-```javascript
-async function sendMessage(sessionId, message, images = []) {
-  const response = await fetch('/api/agent/stream', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ session_id: sessionId, message, images })
-  });
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `event_id` | `string` | 事件唯一标识，当前格式为 `session_id-seq` |
+| `seq` | `number` | 会话内递增序号（从 1 开始） |
+| `ts` | `number` | 服务端事件时间戳（Unix 毫秒） |
+| `type` | `"content" \| "tool_call" \| "tool_result"` | 事件类型 |
+| `content` | `string` | 当 `type=content` 时存在 |
+| `data` | `object` | 当 `type=tool_call/tool_result` 时存在 |
 
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
+### 流式接口错误语义
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-
-    const text = decoder.decode(value);
-    const lines = text.split('\n');
-
-    for (const line of lines) {
-      if (line.startsWith('data: ')) {
-        const data = line.slice(6);
-        if (data === '[DONE]') return;
-
-        const event = JSON.parse(data);
-        switch (event.type) {
-          case 'content':
-            appendContent(event.content);
-            break;
-          case 'tool_call':
-            showToolCall(event.data.name, event.data.arguments);
-            break;
-          case 'tool_result':
-            showToolResult(event.data.tool_name, event.data.result);
-            break;
-        }
-      }
-    }
-  }
-}
-```
+- 如果请求在“进入 SSE 前”失败（如未登录、参数错误、会话处理中），返回普通 JSON 错误，不会进入流
+- 如果已进入 SSE 过程中发生异常，连接可能提前结束，前端应处理“未收到 `[DONE]`”的场景
 
 ---
 
 ## 4. 获取对话历史
 
-获取指定会话的聊天记录。
-
 ### 请求
 
-- **方法**: GET
-- **路径**: `/history?session_id={session_id}`
+- 方法：`GET`
+- 路径：`/api/agent/history?session_id={session_id}`
 
-### 响应
+### 成功响应
 
 ```json
 {
@@ -204,7 +191,24 @@ async function sendMessage(sessionId, message, images = []) {
       },
       {
         "role": "assistant",
-        "content": "我理解您丢失了一把黑色雨伞。请问您是在哪个校区丢失的？",
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_123",
+            "name": "search_posts",
+            "arguments": "{\"query\":\"黑色雨伞\"}"
+          }
+        ],
+        "created_at": "2024-01-15 10:30:05"
+      },
+      {
+        "role": "tool",
+        "content": "找到2条相关记录...",
+        "tool_result": {
+          "tool_call_id": "call_123",
+          "tool_name": "search_posts",
+          "result": "找到2条相关记录..."
+        },
         "created_at": "2024-01-15 10:30:05"
       }
     ]
@@ -212,12 +216,23 @@ async function sendMessage(sessionId, message, images = []) {
 }
 ```
 
+### 历史消息字段
+
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| messages[].role | string | 角色：user 或 assistant |
-| messages[].content | string | 消息内容 |
-| messages[].images | []string | 图片URL列表（仅用户消息） |
-| messages[].created_at | string | 创建时间 |
+| `messages[].role` | `"user" \| "assistant" \| "tool"` | 消息角色 |
+| `messages[].content` | `string` | 原始消息内容 |
+| `messages[].images` | `string[]` | 用户消息中的图片 URL（仅 user 常见） |
+| `messages[].tool_calls` | `{id,name,arguments}[]` | assistant 的工具调用计划 |
+| `messages[].tool_result` | `{tool_call_id,tool_name,result}` | tool 消息的执行结果 |
+| `messages[].created_at` | `string` | 时间字符串，格式 `yyyy-MM-dd HH:mm:ss` |
+
+### 前端渲染建议
+
+- `role=user`：按普通用户气泡渲染
+- `role=assistant` 且 `tool_calls` 非空：渲染“工具调用卡片”，可展开 `arguments`
+- `role=assistant` 且 `content` 非空：渲染助手文本
+- `role=tool`：渲染工具结果卡片，优先显示 `tool_result.tool_name` 和 `tool_result.result`
 
 ---
 
@@ -225,16 +240,244 @@ async function sendMessage(sessionId, message, images = []) {
 
 | 错误码 | 说明 |
 |--------|------|
-| 0 | 成功 |
-| 10001 | 参数无效 |
-| 10002 | 未登录 |
-| 30108 | AI助手功能已禁用 |
-| 50001 | 服务器内部错误 |
+| `0` | 成功 |
+| `10001` | 参数无效 |
+| `10002` | 未登录 |
+| `30108` | AI 助手功能已禁用 |
+| `30109` | 会话正在处理中，请稍后再试 |
+| `50001` | 服务端内部错误 |
 
 ---
 
-## 注意事项
+## 5. 前端完整参考代码（TypeScript）
 
-1. **图片支持**: 用户消息可以包含多张图片URL，系统会自动识别图片内容
-2. **工具调用展示**: 建议前端展示工具调用过程，让用户了解AI正在执行的操作
-3. **数据持久化**: 会话数据存储在数据库中，服务重启后历史对话不丢失
+下面示例可直接作为前端 SDK 雏形，包含：
+
+- 基础请求封装
+- 会话管理
+- 流式 SSE 解析
+- 历史与流式统一消息模型
+
+```ts
+// agent-api.ts
+
+type ApiResp<T> = {
+  code: number;
+  message: string;
+  data: T;
+};
+
+export type SessionInfo = {
+  session_id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ToolCall = {
+  id: string;
+  name: string;
+  arguments: string;
+};
+
+export type ToolResult = {
+  tool_call_id: string;
+  tool_name: string;
+  result: string;
+};
+
+export type HistoryMessage = {
+  role: "user" | "assistant" | "tool";
+  content: string;
+  images?: string[];
+  tool_calls?: ToolCall[];
+  tool_result?: ToolResult;
+  created_at: string;
+};
+
+export type StreamEvent = {
+  event_id: string;
+  seq: number;
+  ts: number;
+  type: "content" | "tool_call" | "tool_result";
+  content?: string;
+  data?: any;
+};
+
+async function requestJSON<T>(url: string, init?: RequestInit): Promise<T> {
+  const resp = await fetch(url, {
+    credentials: "include",
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      ...(init?.headers || {})
+    }
+  });
+
+  const body = (await resp.json()) as ApiResp<T>;
+  if (!resp.ok || body.code !== 0) {
+    throw new Error(`Agent API error: code=${body.code}, message=${body.message}`);
+  }
+  return body.data;
+}
+
+export async function createSession(title = "") {
+  return requestJSON<{ session_id: string }>("/api/agent/session", {
+    method: "POST",
+    body: JSON.stringify({ title })
+  });
+}
+
+export async function listSessions() {
+  return requestJSON<{ sessions: SessionInfo[] }>("/api/agent/sessions");
+}
+
+export async function getHistory(sessionId: string) {
+  const q = new URLSearchParams({ session_id: sessionId });
+  return requestJSON<{ messages: HistoryMessage[] }>(`/api/agent/history?${q.toString()}`);
+}
+
+export async function streamChat(
+  payload: { session_id: string; message: string; images?: string[] },
+  onEvent: (ev: StreamEvent) => void,
+  onDone: () => void,
+  onError: (err: Error) => void
+) {
+  try {
+    const resp = await fetch("/api/agent/stream", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    // 进入流之前失败时，后端返回 JSON 错误
+    const ct = resp.headers.get("content-type") || "";
+    if (!resp.ok || !ct.includes("text/event-stream")) {
+      const fallback = await resp.text();
+      throw new Error(`Stream init failed: ${resp.status} ${fallback}`);
+    }
+
+    if (!resp.body) {
+      throw new Error("Stream body is empty");
+    }
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+
+      // 按 SSE 空行分帧
+      const frames = buffer.split("\n\n");
+      buffer = frames.pop() || "";
+
+      for (const frame of frames) {
+        const lines = frame.split("\n");
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const raw = line.slice(6).trim();
+
+          if (raw === "[DONE]") {
+            onDone();
+            return;
+          }
+
+          try {
+            const event = JSON.parse(raw) as StreamEvent;
+            onEvent(event);
+          } catch (e) {
+            console.warn("Skip non-JSON SSE line:", raw, e);
+          }
+        }
+      }
+    }
+
+    // 正常读完但没收到 DONE，也视为结束（例如网络中断）
+    onDone();
+  } catch (e) {
+    onError(e as Error);
+  }
+}
+```
+
+### 可直接使用的渲染映射示例
+
+```ts
+// message-mapper.ts
+
+import type { HistoryMessage, StreamEvent } from "./agent-api";
+
+export type UINode =
+  | { kind: "text"; role: "user" | "assistant"; text: string }
+  | { kind: "toolCall"; toolName: string; args: string; eventId?: string; seq?: number }
+  | { kind: "toolResult"; toolName: string; result: string; eventId?: string; seq?: number };
+
+export function historyToUINodes(msgs: HistoryMessage[]): UINode[] {
+  const nodes: UINode[] = [];
+  for (const m of msgs) {
+    if (m.role === "assistant" && m.tool_calls?.length) {
+      for (const tc of m.tool_calls) {
+        nodes.push({ kind: "toolCall", toolName: tc.name, args: tc.arguments });
+      }
+    }
+
+    if (m.role === "tool" && m.tool_result) {
+      nodes.push({
+        kind: "toolResult",
+        toolName: m.tool_result.tool_name,
+        result: m.tool_result.result
+      });
+      continue;
+    }
+
+    if (m.content) {
+      const role = m.role === "user" ? "user" : "assistant";
+      nodes.push({ kind: "text", role, text: m.content });
+    }
+  }
+  return nodes;
+}
+
+export function streamEventToUINode(ev: StreamEvent): UINode | null {
+  if (ev.type === "content") {
+    return { kind: "text", role: "assistant", text: ev.content || "" };
+  }
+
+  if (ev.type === "tool_call" && ev.data) {
+    return {
+      kind: "toolCall",
+      toolName: ev.data.name,
+      args: ev.data.arguments,
+      eventId: ev.event_id,
+      seq: ev.seq
+    };
+  }
+
+  if (ev.type === "tool_result" && ev.data) {
+    return {
+      kind: "toolResult",
+      toolName: ev.data.tool_name,
+      result: ev.data.result,
+      eventId: ev.event_id,
+      seq: ev.seq
+    };
+  }
+
+  return null;
+}
+```
+
+---
+
+## 6. 接入建议与排错
+
+- 建议每次发送前禁用输入框，收到 `[DONE]` 或错误后恢复，避免并发触发 `30109`
+- 建议在客户端维护 `lastSeq`，如果收到更小 `seq` 可忽略，防止重复渲染
+- 图片 URL 建议前端先校验可访问性，减少模型侧空图描述
+- 如果流式请求返回非 `text/event-stream`，优先按 JSON 错误处理

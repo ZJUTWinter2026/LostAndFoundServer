@@ -1,14 +1,17 @@
 package agent
 
 import (
-	"app/agent"
+	coreagent "app/agent"
 	"app/comm"
 	"app/dao/repo"
-	"app/service"
-	"io"
+	"context"
+	"errors"
+	"fmt"
 	"net/http"
 	"reflect"
 	"runtime"
+	"sync"
+	"time"
 
 	"github.com/bytedance/sonic"
 	"github.com/cloudwego/eino/schema"
@@ -42,6 +45,7 @@ type StreamApiRequest struct {
 
 type StreamApiResponse struct{}
 
+// Run 执行流式对话请求并返回 SSE 响应。
 func (a *StreamApi) Run(ctx *gin.Context) kit.Code {
 	request := a.Request.Body
 
@@ -56,12 +60,12 @@ func (a *StreamApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeServerError
 	}
 
-	agentService := service.GetAgentService()
+	agentService := coreagent.GetAgentService()
 
-	stream, err := agentService.Stream(ctx, request.SessionID, userID, user.Usertype, request.Message, request.Images)
+	stream, err := agentService.Stream(ctx, request.SessionID, userID, request.Message, request.Images)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("Agent流式对话失败")
-		if err.Error() == "会话正在处理中" {
+		if errors.Is(err, coreagent.ErrSessionProcessing) {
 			return comm.CodeSessionProcessing
 		}
 		return comm.CodeServerError
@@ -71,7 +75,16 @@ func (a *StreamApi) Run(ctx *gin.Context) kit.Code {
 	return comm.CodeOK
 }
 
-func (a *StreamApi) handleStream(ctx *gin.Context, agentService *service.AgentService, sessionID string, userID int64, stream *schema.StreamReader[*schema.Message]) {
+// handleStream 负责 SSE 推送、流聚合和消息持久化。
+func (a *StreamApi) handleStream(ctx *gin.Context, agentService *coreagent.AgentService, sessionID string, userID int64, stream *schema.StreamReader[*schema.Message]) {
+	closeStreamOnce := sync.Once{}
+	closeStream := func() {
+		closeStreamOnce.Do(func() {
+			stream.Close()
+		})
+	}
+	defer closeStream()
+
 	ctx.Header("Content-Type", "text/event-stream")
 	ctx.Header("Cache-Control", "no-cache")
 	ctx.Header("Connection", "keep-alive")
@@ -80,11 +93,17 @@ func (a *StreamApi) handleStream(ctx *gin.Context, agentService *service.AgentSe
 	flusher, ok := ctx.Writer.(http.Flusher)
 	if !ok {
 		nlog.Pick().WithContext(ctx).Warn("不支持SSE")
+		agentService.ResetProcessing(sessionID, userID)
 		reply.Fail(ctx, comm.CodeServerError)
 		return
 	}
 
-	sendEvent := func(event agent.StreamEvent) {
+	seq := 0
+	sendEvent := func(event coreagent.StreamEvent) {
+		seq++
+		event.Seq = seq
+		event.EventID = fmt.Sprintf("%s-%d", sessionID, seq)
+		event.TS = time.Now().UnixMilli()
 		eventBytes, err := sonic.Marshal(event)
 		if err != nil {
 			return
@@ -95,91 +114,42 @@ func (a *StreamApi) handleStream(ctx *gin.Context, agentService *service.AgentSe
 		flusher.Flush()
 	}
 
-	var fullContent string
-	// pendingToolCall 用于缓冲分片的 tool_call，待参数完整后再统一发送
-	var pendingToolCall *agent.ToolCallInfo
-
-	flushPendingToolCall := func() {
-		if pendingToolCall != nil {
-			sendEvent(agent.StreamEvent{
-				Type: "tool_call",
-				Data: *pendingToolCall,
-			})
-			pendingToolCall = nil
+	// 监听客户端断开：立即关闭 stream 解除 Recv 阻塞，后续统一走收尾逻辑重置状态
+	streamCompleted := make(chan struct{})
+	defer close(streamCompleted)
+	go func() {
+		select {
+		case <-ctx.Request.Context().Done():
+			closeStream()
+			nlog.Pick().WithContext(ctx).Info("客户端断开SSE连接，已停止推理")
+		case <-streamCompleted:
 		}
+	}()
+
+	collectedMsgs, collectErr := agentService.CollectStreamMessages(stream, sendEvent)
+	if collectErr != nil {
+		nlog.Pick().WithContext(ctx).WithError(collectErr).Warn("流式读取错误")
 	}
 
-	for {
-		msg, err := stream.Recv()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			nlog.Pick().WithContext(ctx).WithError(err).Warn("流式读取错误")
-			break
-		}
-
-		nlog.Pick().WithContext(ctx).WithField("msg", msg).Info("[eino stream] raw chunk")
-
-		switch msg.Role {
-		case schema.Assistant:
-			if len(msg.ToolCalls) > 0 {
-				tc := msg.ToolCalls[0]
-				if tc.ID != "" {
-					// 新的 tool_call 开始（第一个分片带有 ID 和 Name）
-					// 先把上一个未发送的 tool_call 刷出去
-					flushPendingToolCall()
-					pendingToolCall = &agent.ToolCallInfo{
-						ID:        tc.ID,
-						Name:      tc.Function.Name,
-						Arguments: tc.Function.Arguments,
-					}
-				} else if pendingToolCall != nil {
-					// 后续分片只携带 Arguments 片段，累加
-					pendingToolCall.Arguments += tc.Function.Arguments
-				}
-			} else {
-				// 普通 content 消息：先把积压的 tool_call 发出去
-				flushPendingToolCall()
-				if msg.Content != "" {
-					sendEvent(agent.StreamEvent{
-						Type:    "content",
-						Content: msg.Content,
-					})
-					fullContent += msg.Content
-				}
-			}
-		case schema.Tool:
-			// 工具调用结果到来：先把积压的 tool_call 发出去，再发 tool_result
-			flushPendingToolCall()
-			sendEvent(agent.StreamEvent{
-				Type: "tool_result",
-				Data: agent.ToolResultInfo{
-					ToolCallID: msg.ToolCallID,
-					ToolName:   msg.ToolName,
-					Result:     msg.Content,
-				},
-			})
-		default:
-			if msg.Content != "" {
-				flushPendingToolCall()
-				sendEvent(agent.StreamEvent{
-					Type:    "content",
-					Content: msg.Content,
-				})
-			}
-		}
+	// 批量落库（使用独立超时 context，防止 request ctx 取消导致保存失败）
+	saveCtx, saveCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer saveCancel()
+	if err := agentService.SaveConversationMessages(saveCtx, sessionID, userID, collectedMsgs); err != nil {
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("保存Agent会话消息失败")
+		agentService.ResetProcessing(sessionID, userID)
 	}
 
-	// 流结束后，将残留的 tool_call（若有）发出去
-	flushPendingToolCall()
-
-	agentService.SaveAssistantMessage(ctx, sessionID, userID, fullContent)
-
-	ctx.Writer.WriteString("data: [DONE]\n\n")
-	flusher.Flush()
+	// 仅在连接仍然有效时发送结束标记
+	select {
+	case <-ctx.Request.Context().Done():
+		// 连接已断开，不再写入
+	default:
+		ctx.Writer.WriteString("data: [DONE]\n\n")
+		flusher.Flush()
+	}
 }
 
+// Init 绑定并校验请求参数。
 func (a *StreamApi) Init(ctx *gin.Context) (err error) {
 	err = ctx.ShouldBindJSON(&a.Request.Body)
 	if err != nil {
@@ -188,6 +158,7 @@ func (a *StreamApi) Init(ctx *gin.Context) (err error) {
 	return err
 }
 
+// hfStream 为 gin 入口函数，统一处理初始化与返回。
 func hfStream(ctx *gin.Context) {
 	api := &StreamApi{}
 	err := api.Init(ctx)

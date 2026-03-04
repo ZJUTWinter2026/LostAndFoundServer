@@ -1,7 +1,6 @@
 package tools
 
 import (
-	"app/api/admin/system"
 	"app/comm/enum"
 	daomodel "app/dao/model"
 	"app/dao/repo"
@@ -73,7 +72,7 @@ func publishPostFunc(ctx context.Context, input *PublishPostInput) (*PublishPost
 		return &PublishPostOutput{Success: false, Message: "今日发布数量已达到上限"}, nil
 	}
 
-	if !system.IsValidItemType(ctx, input.ItemType) {
+	if !scr.IsValidItemType(ctx, input.ItemType) {
 		return &PublishPostOutput{Success: false, Message: "物品类型无效"}, nil
 	}
 
