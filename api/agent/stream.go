@@ -119,6 +119,8 @@ func (a *StreamApi) handleStream(ctx *gin.Context, agentService *service.AgentSe
 			break
 		}
 
+		nlog.Pick().WithContext(ctx).WithField("msg", msg).Info("[eino stream] raw chunk")
+
 		switch msg.Role {
 		case schema.Assistant:
 			if len(msg.ToolCalls) > 0 {
