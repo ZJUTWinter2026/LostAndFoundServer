@@ -84,7 +84,31 @@ func (a *StreamApi) handleStream(ctx *gin.Context, agentService *service.AgentSe
 		return
 	}
 
+	sendEvent := func(event agent.StreamEvent) {
+		eventBytes, err := sonic.Marshal(event)
+		if err != nil {
+			return
+		}
+		ctx.Writer.WriteString("data: ")
+		ctx.Writer.Write(eventBytes)
+		ctx.Writer.WriteString("\n\n")
+		flusher.Flush()
+	}
+
 	var fullContent string
+	// pendingToolCall 用于缓冲分片的 tool_call，待参数完整后再统一发送
+	var pendingToolCall *agent.ToolCallInfo
+
+	flushPendingToolCall := func() {
+		if pendingToolCall != nil {
+			sendEvent(agent.StreamEvent{
+				Type: "tool_call",
+				Data: *pendingToolCall,
+			})
+			pendingToolCall = nil
+		}
+	}
+
 	for {
 		msg, err := stream.Recv()
 		if err == io.EOF {
@@ -95,21 +119,58 @@ func (a *StreamApi) handleStream(ctx *gin.Context, agentService *service.AgentSe
 			break
 		}
 
-		event := agent.ParseStreamMessage(msg)
-		eventBytes, err := sonic.Marshal(event)
-		if err != nil {
-			continue
-		}
-
-		ctx.Writer.WriteString("data: ")
-		ctx.Writer.Write(eventBytes)
-		ctx.Writer.WriteString("\n\n")
-		flusher.Flush()
-
-		if msg.Role == "assistant" && len(msg.ToolCalls) == 0 {
-			fullContent += msg.Content
+		switch msg.Role {
+		case schema.Assistant:
+			if len(msg.ToolCalls) > 0 {
+				tc := msg.ToolCalls[0]
+				if tc.ID != "" {
+					// 新的 tool_call 开始（第一个分片带有 ID 和 Name）
+					// 先把上一个未发送的 tool_call 刷出去
+					flushPendingToolCall()
+					pendingToolCall = &agent.ToolCallInfo{
+						ID:        tc.ID,
+						Name:      tc.Function.Name,
+						Arguments: tc.Function.Arguments,
+					}
+				} else if pendingToolCall != nil {
+					// 后续分片只携带 Arguments 片段，累加
+					pendingToolCall.Arguments += tc.Function.Arguments
+				}
+			} else {
+				// 普通 content 消息：先把积压的 tool_call 发出去
+				flushPendingToolCall()
+				if msg.Content != "" {
+					sendEvent(agent.StreamEvent{
+						Type:    "content",
+						Content: msg.Content,
+					})
+					fullContent += msg.Content
+				}
+			}
+		case schema.Tool:
+			// 工具调用结果到来：先把积压的 tool_call 发出去，再发 tool_result
+			flushPendingToolCall()
+			sendEvent(agent.StreamEvent{
+				Type: "tool_result",
+				Data: agent.ToolResultInfo{
+					ToolCallID: msg.ToolCallID,
+					ToolName:   msg.ToolName,
+					Result:     msg.Content,
+				},
+			})
+		default:
+			if msg.Content != "" {
+				flushPendingToolCall()
+				sendEvent(agent.StreamEvent{
+					Type:    "content",
+					Content: msg.Content,
+				})
+			}
 		}
 	}
+
+	// 流结束后，将残留的 tool_call（若有）发出去
+	flushPendingToolCall()
 
 	agentService.SaveAssistantMessage(ctx, sessionID, userID, fullContent)
 
