@@ -4,9 +4,7 @@ import (
 	"app/agent/tools"
 	"app/pkg/llm"
 	"context"
-	"errors"
 	"fmt"
-	"io"
 	"strings"
 	"sync"
 
@@ -20,32 +18,13 @@ import (
 type ChatMessage struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
-	// ToolCalls 对应 role=assistant 的工具调用请求（当 Content 为空时）
-	ToolCalls []ToolCallInfo `json:"tool_calls,omitempty"`
-	// ToolCallID / ToolName 对应 role=tool 的工具执行结果
-	ToolCallID string `json:"tool_call_id,omitempty"`
-	ToolName   string `json:"tool_name,omitempty"`
 }
 
 type StreamEvent struct {
-	EventID string      `json:"event_id,omitempty"`
-	Seq     int         `json:"seq,omitempty"`
-	TS      int64       `json:"ts,omitempty"`
-	Type    string      `json:"type"`
-	Content string      `json:"content,omitempty"`
-	Data    interface{} `json:"data,omitempty"`
-}
-
-type ToolCallInfo struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	Arguments string `json:"arguments"`
-}
-
-type ToolResultInfo struct {
-	ToolCallID string `json:"tool_call_id"`
-	ToolName   string `json:"tool_name"`
-	Result     string `json:"result"`
+	EventID string `json:"event_id,omitempty"`
+	Seq     int    `json:"seq,omitempty"`
+	TS      int64  `json:"ts,omitempty"`
+	Content string `json:"content,omitempty"`
 }
 
 type Agent struct {
@@ -117,31 +96,11 @@ func (a *Agent) getOrCreateReactAgent(ctx context.Context) (*react.Agent, error)
 		return append([]*schema.Message{schema.SystemMessage(fullPrompt)}, result...)
 	}
 
-	// 全程扫描流以检测工具调用
-	// 默认实现仅检查第一个 chunk，对先输出文字再输出工具调用的模型（如 Claude、DeepSeek-R1）不适用
-	streamToolCallChecker := func(ctx context.Context, sr *schema.StreamReader[*schema.Message]) (bool, error) {
-		defer sr.Close()
-		for {
-			msg, err := sr.Recv()
-			if err != nil {
-				if errors.Is(err, io.EOF) {
-					break
-				}
-				return false, err
-			}
-			if len(msg.ToolCalls) > 0 {
-				return true, nil
-			}
-		}
-		return false, nil
-	}
-
 	agent, err := react.NewAgent(ctx, &react.AgentConfig{
-		ToolCallingModel:      chatModel,
-		ToolsConfig:           compose.ToolsNodeConfig{Tools: a.tools},
-		MaxStep:               10,
-		MessageModifier:       messageModifier,
-		StreamToolCallChecker: streamToolCallChecker,
+		ToolCallingModel: chatModel,
+		ToolsConfig:      compose.ToolsNodeConfig{Tools: a.tools},
+		MaxStep:          10,
+		MessageModifier:  messageModifier,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("创建ReAct Agent失败: %w", err)
@@ -184,36 +143,9 @@ func convertMessage(msg ChatMessage) *schema.Message {
 	case "user":
 		return schema.UserMessage(msg.Content)
 	case "assistant":
-		// 如果有工具调用，构造含 ToolCalls 的 assistant 消息（内容可能为空）
-		if len(msg.ToolCalls) > 0 {
-			toolCalls := make([]schema.ToolCall, 0, len(msg.ToolCalls))
-			for _, tc := range msg.ToolCalls {
-				toolCalls = append(toolCalls, schema.ToolCall{
-					ID:   tc.ID,
-					Type: "function",
-					Function: schema.FunctionCall{
-						Name:      tc.Name,
-						Arguments: tc.Arguments,
-					},
-				})
-			}
-			return &schema.Message{
-				Role:      schema.Assistant,
-				Content:   msg.Content,
-				ToolCalls: toolCalls,
-			}
-		}
 		return &schema.Message{
 			Role:    schema.Assistant,
 			Content: msg.Content,
-		}
-	case "tool":
-		// 工具执行结果消息
-		return &schema.Message{
-			Role:       schema.Tool,
-			Content:    msg.Content,
-			ToolCallID: msg.ToolCallID,
-			ToolName:   msg.ToolName,
 		}
 	case "system":
 		return schema.SystemMessage(msg.Content)
@@ -231,7 +163,8 @@ func buildStaticPrompt() string {
 	var sb strings.Builder
 
 	sb.WriteString("你是校园失物招领系统的AI助手，帮助用户处理失物招领相关事务。\n")
-	sb.WriteString("你的服务对象是校园里的学生和教师，即普通用户，而不是管理员。\n\n")
+	sb.WriteString("你的服务对象是浙江工业大学校园里的学生和教师，即普通用户，而不是管理员。\n")
+	sb.WriteString("该大学有三个校区：朝晖、屏峰、莫干山。\n\n")
 
 	sb.WriteString("## 能力边界说明（重要）\n")
 	sb.WriteString("1. 你只能在系统已提供的功能范围内协助用户，不得虚构系统能力。\n")
@@ -245,7 +178,8 @@ func buildStaticPrompt() string {
 	sb.WriteString("1. **参数完整性检查**：仔细检查工具所需的所有参数是否已经由用户提供。如果缺少必要信息，主动向用户询问，不要猜测或编造参数值。\n")
 	sb.WriteString("2. **明确告知用户**：在调用工具前，用中文功能名称和字段名称，清楚说明即将进行的操作及对应填写内容。\n")
 	sb.WriteString("3. **征求用户同意**：对于非查询类工具，在用户确认同意后再执行操作，不得在用户不知情的情况下直接调用。\n")
-	sb.WriteString("4. **安全优先**：对于涉及数据修改的操作（如发布、认领、审核等），必须确保用户已提供完整且准确的信息。\n\n")
+	sb.WriteString("4. **安全优先**：对于涉及数据修改的操作（如发布、认领、审核等），必须确保用户已提供完整且准确的信息。\n")
+	sb.WriteString("5. **保证兼容**：为了保证后端系统能够正常工作，在工具调用时严禁生成额外文本，且应该先调用工具再进行文字回答。\n\n")
 
 	sb.WriteString("## 可用工具\n")
 	sb.WriteString("- get_post_detail: 获取发布详情\n")

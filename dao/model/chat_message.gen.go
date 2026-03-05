@@ -16,11 +16,10 @@ const TableNameChatMessage = "chat_message"
 type ChatMessage struct {
 	ID                int64                 `gorm:"column:id;primaryKey;autoIncrement:true;comment:自增ID" json:"id"`                         // 自增ID
 	SessionID         string                `gorm:"column:session_id;not null;comment:会话ID" json:"session_id"`                              // 会话ID
-	Role              string                `gorm:"column:role;not null;comment:角色: user, assistant, system, tool" json:"role"`             // 角色: user, assistant, system, tool
+	Role              string                `gorm:"column:role;not null;comment:角色: user, assistant, system" json:"role"`                   // 角色: user, assistant, system
 	Content           string                `gorm:"column:content;not null;comment:消息内容" json:"content"`                                    // 消息内容
 	Images            string                `gorm:"column:images;not null;comment:图片URL列表(JSON数组)" json:"images"`                           // 图片URL列表(JSON数组)
 	ImageDescriptions string                `gorm:"column:image_descriptions;not null;comment:图片描述列表(JSON数组)" json:"image_descriptions"`    // 图片描述列表(JSON数组)
-	ToolData          string                `gorm:"column:tool_data;not null;comment:工具调用元数据(JSON)" json:"tool_data"`                       // 工具调用元数据(JSON)
 	CreatedAt         time.Time             `gorm:"column:created_at;not null;default:CURRENT_TIMESTAMP(3);comment:创建时间" json:"created_at"` // 创建时间
 	DeletedAt         soft_delete.DeletedAt `gorm:"column:deleted_at;comment:删除时间 (软删除);softDelete:milli" json:"-"`                         // 删除时间 (软删除)
 }

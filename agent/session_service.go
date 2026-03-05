@@ -33,12 +33,7 @@ type ChatMessageRecord struct {
 	Content           string
 	Images            []string
 	ImageDescriptions []string
-	// ToolCalls 对应 role=assistant 有工具调用时的工具列表
-	ToolCalls []ToolCallInfo
-	// ToolCallID / ToolName 对应 role=tool 的工具执行结果
-	ToolCallID string
-	ToolName   string
-	CreatedAt  time.Time
+	CreatedAt         time.Time
 }
 
 type AgentService struct {
@@ -313,24 +308,12 @@ func (s *AgentService) SaveConversationMessages(ctx context.Context, sessionID s
 func toChatMessageRecords(messages []*repo.ChatMessageData) []ChatMessageRecord {
 	msgRecords := make([]ChatMessageRecord, 0, len(messages))
 	for _, m := range messages {
-		toolCalls := make([]ToolCallInfo, 0, len(m.ToolCalls))
-		for _, tc := range m.ToolCalls {
-			toolCalls = append(toolCalls, ToolCallInfo{
-				ID:        tc.ID,
-				Name:      tc.Name,
-				Arguments: tc.Arguments,
-			})
-		}
-
 		rec := ChatMessageRecord{
 			SessionID:         m.SessionID,
 			Role:              m.Role,
 			Content:           m.Content,
 			Images:            m.Images,
 			ImageDescriptions: m.ImageDescriptions,
-			ToolCalls:         toolCalls,
-			ToolCallID:        m.ToolCallID,
-			ToolName:          m.ToolName,
 			CreatedAt:         m.CreatedAt,
 		}
 		msgRecords = append(msgRecords, rec)
@@ -347,11 +330,8 @@ func toAgentMessages(messages []ChatMessageRecord) []ChatMessage {
 			msgContent += llm.BuildImageContext(msg.Images, msg.ImageDescriptions)
 		}
 		agentMessages = append(agentMessages, ChatMessage{
-			Role:       msg.Role,
-			Content:    msgContent,
-			ToolCalls:  append([]ToolCallInfo(nil), msg.ToolCalls...),
-			ToolCallID: msg.ToolCallID,
-			ToolName:   msg.ToolName,
+			Role:    msg.Role,
+			Content: msgContent,
 		})
 	}
 	return agentMessages
@@ -359,23 +339,11 @@ func toAgentMessages(messages []ChatMessageRecord) []ChatMessage {
 
 // toRepoMessageData 将会话消息转换为仓储写入结构。
 func toRepoMessageData(sessionID string, msg ChatMessageRecord) *repo.ChatMessageData {
-	toolCalls := make([]repo.ToolCallEntry, 0, len(msg.ToolCalls))
-	for _, tc := range msg.ToolCalls {
-		toolCalls = append(toolCalls, repo.ToolCallEntry{
-			ID:        tc.ID,
-			Name:      tc.Name,
-			Arguments: tc.Arguments,
-		})
-	}
-
 	return &repo.ChatMessageData{
-		SessionID:  sessionID,
-		Role:       msg.Role,
-		Content:    msg.Content,
-		ToolCalls:  toolCalls,
-		ToolCallID: msg.ToolCallID,
-		ToolName:   msg.ToolName,
-		CreatedAt:  msg.CreatedAt,
+		SessionID: sessionID,
+		Role:      msg.Role,
+		Content:   msg.Content,
+		CreatedAt: msg.CreatedAt,
 	}
 }
 

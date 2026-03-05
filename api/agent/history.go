@@ -37,18 +37,10 @@ type HistoryApiResponse struct {
 }
 
 type MessageInfo struct {
-	Role       string                   `json:"role" desc:"角色: user, assistant, tool"`
-	Content    string                   `json:"content" desc:"消息内容（原始内容）"`
-	Images     []string                 `json:"images,omitempty" desc:"图片URL列表"`
-	ToolCalls  []coreagent.ToolCallInfo `json:"tool_calls,omitempty" desc:"工具调用列表（assistant 工具请求）"`
-	ToolResult *ToolResultInfo          `json:"tool_result,omitempty" desc:"工具执行结果（tool 角色）"`
-	CreatedAt  string                   `json:"created_at" desc:"创建时间"`
-}
-
-type ToolResultInfo struct {
-	ToolCallID string `json:"tool_call_id" desc:"工具调用ID"`
-	ToolName   string `json:"tool_name" desc:"工具名称"`
-	Result     string `json:"result" desc:"工具执行结果"`
+	Role      string   `json:"role" desc:"角色: user, assistant"`
+	Content   string   `json:"content" desc:"消息内容（原始内容）"`
+	Images    []string `json:"images,omitempty" desc:"图片URL列表"`
+	CreatedAt string   `json:"created_at" desc:"创建时间"`
 }
 
 func (a *HistoryApi) Run(ctx *gin.Context) kit.Code {
@@ -68,28 +60,15 @@ func (a *HistoryApi) Run(ctx *gin.Context) kit.Code {
 
 	var messageInfos []MessageInfo
 	for _, m := range messages {
-		var toolCalls []coreagent.ToolCallInfo
-		var toolResult *ToolResultInfo
-
-		if m.Role == "assistant" && len(m.ToolCalls) > 0 {
-			toolCalls = append([]coreagent.ToolCallInfo(nil), m.ToolCalls...)
-		}
-
-		if m.Role == "tool" {
-			toolResult = &ToolResultInfo{
-				ToolCallID: m.ToolCallID,
-				ToolName:   m.ToolName,
-				Result:     m.Content,
-			}
+		if m.Role != "user" && m.Role != "assistant" {
+			continue
 		}
 
 		messageInfos = append(messageInfos, MessageInfo{
-			Role:       m.Role,
-			Content:    m.Content,
-			Images:     m.Images,
-			ToolCalls:  toolCalls,
-			ToolResult: toolResult,
-			CreatedAt:  m.CreatedAt.Format("2006-01-02 15:04:05"),
+			Role:      m.Role,
+			Content:   m.Content,
+			Images:    m.Images,
+			CreatedAt: m.CreatedAt.Format("2006-01-02 15:04:05"),
 		})
 	}
 

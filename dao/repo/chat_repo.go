@@ -12,33 +12,13 @@ import (
 	"gorm.io/gorm"
 )
 
-// ToolCallEntry 存储单条工具调用的参数信息（存入 tool_data 列）
-type ToolCallEntry struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	Arguments string `json:"arguments"`
-}
-
-// toolDataRecord 是 tool_data 列的 JSON 结构：
-//   - role=assistant with tool_calls: ToolCalls 非空
-//   - role=tool: ToolCallID / ToolName 非空
-type toolDataRecord struct {
-	ToolCalls  []ToolCallEntry `json:"tool_calls,omitempty"`
-	ToolCallID string          `json:"tool_call_id,omitempty"`
-	ToolName   string          `json:"tool_name,omitempty"`
-}
-
 type ChatMessageData struct {
 	SessionID         string
 	Role              string
 	Content           string
 	Images            []string
 	ImageDescriptions []string
-	// 工具调用元数据：role=assistant 存 ToolCalls，role=tool 存 ToolCallID/ToolName
-	ToolCalls  []ToolCallEntry
-	ToolCallID string
-	ToolName   string
-	CreatedAt  time.Time
+	CreatedAt         time.Time
 }
 
 type ChatRepo struct{}
@@ -89,21 +69,10 @@ func (r *ChatRepo) ListSessionsByUserID(ctx context.Context, userID int64) ([]*m
 	return sessions, err
 }
 
-// CreateMessage 创建聊天消息，并在 tool_data 中保存工具调用元数据。
+// CreateMessage 创建聊天消息。
 func (r *ChatRepo) CreateMessage(ctx context.Context, data *ChatMessageData) error {
 	imagesJSON, _ := sonic.MarshalString(data.Images)
 	descJSON, _ := sonic.MarshalString(data.ImageDescriptions)
-
-	// 编码工具调用元数据
-	toolDataStr := ""
-	if len(data.ToolCalls) > 0 || data.ToolCallID != "" {
-		tdr := toolDataRecord{
-			ToolCalls:  data.ToolCalls,
-			ToolCallID: data.ToolCallID,
-			ToolName:   data.ToolName,
-		}
-		toolDataStr, _ = sonic.MarshalString(tdr)
-	}
 
 	row := model.ChatMessage{
 		SessionID:         data.SessionID,
@@ -111,7 +80,6 @@ func (r *ChatRepo) CreateMessage(ctx context.Context, data *ChatMessageData) err
 		Content:           data.Content,
 		Images:            imagesJSON,
 		ImageDescriptions: descJSON,
-		ToolData:          toolDataStr,
 		CreatedAt:         data.CreatedAt,
 	}
 	return ndb.Pick().WithContext(ctx).Create(&row).Error
@@ -145,15 +113,6 @@ func (r *ChatRepo) ListMessagesBySessionID(ctx context.Context, sessionID string
 			Images:            images,
 			ImageDescriptions: descs,
 			CreatedAt:         row.CreatedAt,
-		}
-		// 解码工具调用元数据
-		if row.ToolData != "" && row.ToolData != "null" {
-			var tdr toolDataRecord
-			if sonic.UnmarshalString(row.ToolData, &tdr) == nil {
-				d.ToolCalls = tdr.ToolCalls
-				d.ToolCallID = tdr.ToolCallID
-				d.ToolName = tdr.ToolName
-			}
 		}
 		result = append(result, d)
 	}
