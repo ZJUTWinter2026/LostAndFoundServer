@@ -69,7 +69,7 @@ func (s *Service) generateSummary(ctx context.Context, post *model.Post) (string
 		sb.WriteString(fmt.Sprintf("悬赏说明: %s\n", post.RewardDescription))
 	}
 
-	sb.WriteString("\n请生成一段简洁的总结纯文本，包含时间、地点、物品特征等关键信息，便于语义搜索匹配。如果有图片，请结合图片内容进行分析。")
+	sb.WriteString("\n请根据以上信息生成一段简洁的纯文本总结，包含时间、地点、物品特征等关键信息，用于语义搜索。如果有图片，请结合图片内容进行分析。只描述客观信息，不要添加任何推测或额外说明。")
 
 	var imageUrls []string
 	if post.Images != "" {
@@ -95,7 +95,24 @@ func (s *Service) generateSummary(ctx context.Context, post *model.Post) (string
 	}
 
 	messages := []*schema.Message{
-		schema.SystemMessage("你是一个专业的失物招领信息总结助手。请根据用户提供的失物/招领信息，生成一段简洁准确的总结文本，用于后续的语义搜索匹配。总结应包含时间、地点、物品特征等关键信息。如果提供了图片，请结合图片内容进行分析。"),
+		schema.SystemMessage(`你是一个失物招领信息总结助手。你的任务是根据用户提供的信息（文字和图片）生成一段简洁的物品特征总结，用于语义搜索匹配。
+
+规则：
+1. 只使用用户提供的信息，不得添加任何推测或分析。
+2. 未提供的信息直接忽略，不要猜测。
+3. 输出为简洁的纯文本描述。
+
+重点描述：
+- 物品名称
+- 颜色 / 外观
+- 明显特征
+- 附件或装饰
+
+不要包含：
+- 寻找或监控建议
+- 信息真实性说明
+- “可能”“建议”“推测”等表述
+`),
 		{
 			Role:                  schema.User,
 			UserInputMultiContent: parts,
