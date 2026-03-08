@@ -2,7 +2,6 @@ package post
 
 import (
 	"app/comm"
-	"app/comm/enum"
 	"app/dao/repo"
 	"reflect"
 	"runtime"
@@ -46,17 +45,19 @@ type MyListApiResponse struct {
 }
 
 type MyPostListItem struct {
-	ID           int64     `json:"id" desc:"发布ID"`
-	PublishType  string    `json:"publish_type" desc:"发布类型 LOST/FOUND"`
-	ItemName     string    `json:"item_name" desc:"物品名称"`
-	ItemType     string    `json:"item_type" desc:"物品类型"`
-	Location     string    `json:"location" desc:"地点"`
-	EventTime    time.Time `json:"event_time" desc:"事件时间"`
-	Status       string    `json:"status" desc:"状态"`
-	StatusText   string    `json:"status_text" desc:"状态文本"`
-	CancelReason string    `json:"cancel_reason,omitempty" desc:"取消原因"`
-	RejectReason string    `json:"reject_reason,omitempty" desc:"驳回原因"`
-	CreatedAt    time.Time `json:"created_at" desc:"创建时间"`
+	ID                int64     `json:"id" desc:"发布ID"`
+	PublishType       string    `json:"publish_type" desc:"发布类型 LOST/FOUND"`
+	ItemName          string    `json:"item_name" desc:"物品名称"`
+	ItemType          string    `json:"item_type" desc:"物品类型"`
+	Location          string    `json:"location" desc:"地点"`
+	EventTime         time.Time `json:"event_time" desc:"事件时间"`
+	Status            string    `json:"status" desc:"状态"`
+	Features          string    `json:"features" desc:"物品特征"`
+	HasReward         bool      `json:"has_reward" desc:"是否有悬赏"`
+	RewardDescription string    `json:"reward_description" desc:"悬赏说明"`
+	CancelReason      string    `json:"cancel_reason,omitempty" desc:"取消原因"`
+	RejectReason      string    `json:"reject_reason,omitempty" desc:"驳回原因"`
+	CreatedAt         time.Time `json:"created_at" desc:"创建时间"`
 }
 
 // Run Api业务逻辑执行点
@@ -93,17 +94,19 @@ func (m *MyListApi) Run(ctx *gin.Context) kit.Code {
 	items := make([]MyPostListItem, 0, len(records))
 	for _, post := range records {
 		items = append(items, MyPostListItem{
-			ID:           post.ID,
-			PublishType:  post.PublishType,
-			ItemName:     post.ItemName,
-			ItemType:     post.ItemType,
-			Location:     post.Location,
-			EventTime:    post.EventTime,
-			Status:       post.Status,
-			StatusText:   getStatusText(post.Status),
-			CancelReason: post.CancelReason,
-			RejectReason: post.RejectReason,
-			CreatedAt:    post.CreatedAt,
+			ID:                post.ID,
+			PublishType:       post.PublishType,
+			ItemName:          post.ItemName,
+			ItemType:          post.ItemType,
+			Location:          post.Location,
+			EventTime:         post.EventTime,
+			Status:            post.Status,
+			CancelReason:      post.CancelReason,
+			RejectReason:      post.RejectReason,
+			Features:          post.Features,
+			HasReward:         post.HasReward,
+			RewardDescription: post.RewardDescription,
+			CreatedAt:         post.CreatedAt,
 		})
 	}
 
@@ -138,19 +141,4 @@ func hfMyList(ctx *gin.Context) {
 			reply.Fail(ctx, code)
 		}
 	}
-}
-
-// getStatusText 获取状态文本
-func getStatusText(status string) string {
-	statusMap := map[string]string{
-		enum.PostStatusPending:   "待审核",
-		enum.PostStatusApproved:  "已通过",
-		enum.PostStatusSolved:    "已解决",
-		enum.PostStatusCancelled: "已取消",
-		enum.PostStatusRejected:  "已驳回",
-	}
-	if text, ok := statusMap[status]; ok {
-		return text
-	}
-	return "未知"
 }
