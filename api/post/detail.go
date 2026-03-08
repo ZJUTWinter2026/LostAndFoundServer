@@ -95,8 +95,17 @@ func (d *DetailApi) Run(ctx *gin.Context) kit.Code {
 
 	isAdmin := user.Usertype == enum.UserTypeAdmin || user.Usertype == enum.UserTypeSystemAdmin
 	isOwner := userID == record.PublisherID
+	isMatchedClaimant := false
+	if !isAdmin && !isOwner {
+		crp := repo.NewClaimRepo()
+		isMatchedClaimant, err = crp.HasMatchedClaimByUser(ctx, record.ID, userID)
+		if err != nil {
+			nlog.Pick().WithContext(ctx).WithError(err).Warn("查询认领匹配关系失败")
+			return comm.CodeServerError
+		}
+	}
 
-	if !isAdmin && !isOwner && record.Status != enum.PostStatusApproved {
+	if !isAdmin && !isOwner && !isMatchedClaimant && record.Status != enum.PostStatusApproved {
 		return comm.CodeDataNotFound
 	}
 
@@ -108,6 +117,13 @@ func (d *DetailApi) Run(ctx *gin.Context) kit.Code {
 			return comm.CodeServerError
 		}
 	}
+
+	contactName := ""
+	contactPhone := ""
+	if isAdmin || isOwner || isMatchedClaimant {
+		contactName = record.ContactName
+		contactPhone = record.ContactPhone
+	}
 	resp := DetailApiResponse{
 		ID:                record.ID,
 		PublishType:       record.PublishType,
@@ -118,8 +134,8 @@ func (d *DetailApi) Run(ctx *gin.Context) kit.Code {
 		StorageLocation:   record.StorageLocation,
 		EventTime:         record.EventTime,
 		Features:          record.Features,
-		ContactName:       record.ContactName,
-		ContactPhone:      record.ContactPhone,
+		ContactName:       contactName,
+		ContactPhone:      contactPhone,
 		HasReward:         record.HasReward,
 		RewardDescription: record.RewardDescription,
 		Images:            images,
@@ -130,14 +146,6 @@ func (d *DetailApi) Run(ctx *gin.Context) kit.Code {
 		ArchiveMethod:     record.ArchiveMethod,
 		ProcessedAt:       record.ProcessedAt,
 		CreatedAt:         record.CreatedAt,
-	}
-
-	if isOwner || isAdmin {
-		resp.ContactName = record.ContactName
-		resp.ContactPhone = record.ContactPhone
-	} else {
-		resp.ContactName = ""
-		resp.ContactPhone = ""
 	}
 
 	d.Response = resp

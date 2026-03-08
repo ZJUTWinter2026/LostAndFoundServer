@@ -55,6 +55,18 @@ func (r *ClaimRepo) HasMatchedClaim(ctx context.Context, postID int64) (bool, er
 	return count > 0, nil
 }
 
+// HasMatchedClaimByUser 检查当前用户是否对该物品存在已匹配的认领
+func (r *ClaimRepo) HasMatchedClaimByUser(ctx context.Context, postID int64, claimantID int64) (bool, error) {
+	var count int64
+	err := ndb.Pick().WithContext(ctx).Model(&model.Claim{}).
+		Where("post_id = ? AND claimant_id = ? AND status = ?", postID, claimantID, enum.ClaimStatusMatched).
+		Count(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
 // ListByPostID 根据发布ID查询认领申请列表
 func (r *ClaimRepo) ListByPostID(ctx context.Context, postID int64) ([]*model.Claim, error) {
 	var claims []*model.Claim
