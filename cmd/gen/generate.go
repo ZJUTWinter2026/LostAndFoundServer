@@ -16,7 +16,6 @@ var tables = []string{
 	"post",
 	"claim",
 	"feedback",
-	"audit_log",
 	"announcement",
 	"system_config",
 	"chat_session",

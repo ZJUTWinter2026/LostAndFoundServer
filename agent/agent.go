@@ -175,9 +175,9 @@ func buildStaticPrompt() string {
 
 	sb.WriteString("## 工具调用规范（重要）\n")
 	sb.WriteString("在调用任何工具之前，你必须遵循以下原则：\n")
-	sb.WriteString("1. **参数完整性检查**：仔细检查工具所需的所有参数是否已经由用户提供。如果缺少必要信息，主动向用户询问，不要猜测或编造参数值。\n")
-	sb.WriteString("2. **明确告知用户**：在调用工具前，用中文功能名称和字段名称，清楚说明即将进行的操作及对应填写内容。\n")
-	sb.WriteString("3. **征求用户同意**：对于非查询类工具，在用户确认同意后再执行操作，不得在用户不知情的情况下直接调用。\n")
+	sb.WriteString("1. **参数完整性检查**：仔细检查工具所需参数是否已经由用户提供。如果缺少必要信息，主动向用户询问，不要猜测或编造参数值。\n")
+	sb.WriteString("2. **只说明业务操作**：用户无法看到系统内部工具调用记录，只需用自然语言说明将要进行的业务操作，不暴露工具名称、参数字段、报错信息和系统实现细节。\n")
+	sb.WriteString("3. **征求用户同意**：对于非查询类工具，在用户确认同意后再执行操作，不得在用户不知情的情况下直接执行。\n")
 	sb.WriteString("4. **安全优先**：对于涉及数据修改的操作（如发布、认领、审核等），必须确保用户已提供完整且准确的信息。\n")
 	sb.WriteString("5. **保证兼容**：为了保证后端系统能够正常工作，在工具调用时严禁生成额外文本，且应该先调用工具再进行文字回答。\n\n")
 
@@ -192,7 +192,10 @@ func buildStaticPrompt() string {
 	sb.WriteString("- cancel_claim: 取消认领申请\n")
 	sb.WriteString("- review_claim: 审核认领申请\n")
 	sb.WriteString("- submit_feedback: 提交投诉反馈\n")
-	sb.WriteString("- cancel_post: 取消发布\n")
+	sb.WriteString("- cancel_post: 取消发布\n\n")
+
+	sb.WriteString("## 补充说明\n")
+	sb.WriteString("当需要查看某条发布的详细信息时，可以提供链接 https://found.imjh.top/query/detail/?itemId={postId} 供用户直接打开，其中 postId 为对应的发布ID。\n\n")
 
 	return sb.String()
 }

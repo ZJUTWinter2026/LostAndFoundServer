@@ -74,11 +74,6 @@ func (e *ExportDataApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeServerError
 	}
 
-	if err := e.writeAuditLogSheet(ctx, f); err != nil {
-		nlog.Pick().WithContext(ctx).WithError(err).Warn("写入审计日志Sheet失败")
-		return comm.CodeServerError
-	}
-
 	if err := e.writeSystemConfigSheet(ctx, f); err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("写入系统配置Sheet失败")
 		return comm.CodeServerError
@@ -321,40 +316,6 @@ func (e *ExportDataApi) writeAnnouncementSheet(ctx context.Context, f *excelize.
 		setCell(f, sheet, 10, row, safeFormatTime(ann.ReviewedAt))
 		setCell(f, sheet, 11, row, ann.CreatedAt.Format("2006-01-02 15:04:05"))
 		setCell(f, sheet, 12, row, ann.UpdatedAt.Format("2006-01-02 15:04:05"))
-	}
-
-	return nil
-}
-
-func (e *ExportDataApi) writeAuditLogSheet(ctx context.Context, f *excelize.File) error {
-	sheet := "审计日志"
-	_, err := f.NewSheet(sheet)
-	if err != nil {
-		return err
-	}
-
-	headers := []string{"ID", "管理员ID", "操作类型", "理由", "发布信息ID", "旧状态", "新状态", "创建时间", "更新时间"}
-	for i, header := range headers {
-		setCell(f, sheet, i+1, 1, header)
-	}
-
-	alr := repo.NewAuditLogRepo()
-	logs, err := alr.ListAll(ctx)
-	if err != nil {
-		return err
-	}
-
-	for i, log := range logs {
-		row := i + 2
-		setCell(f, sheet, 1, row, log.ID)
-		setCell(f, sheet, 2, row, log.AdminID)
-		setCell(f, sheet, 3, row, log.ActionType)
-		setCell(f, sheet, 4, row, log.Reason)
-		setCell(f, sheet, 5, row, log.PostID)
-		setCell(f, sheet, 6, row, log.OldStatus)
-		setCell(f, sheet, 7, row, log.NewStatus)
-		setCell(f, sheet, 8, row, log.CreatedAt.Format("2006-01-02 15:04:05"))
-		setCell(f, sheet, 9, row, log.UpdatedAt.Format("2006-01-02 15:04:05"))
 	}
 
 	return nil

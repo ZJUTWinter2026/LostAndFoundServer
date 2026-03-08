@@ -23,7 +23,7 @@ func DeletePostHandler() gin.HandlerFunc {
 }
 
 type DeletePostApi struct {
-	Info     struct{}            `name:"删除发布信息" desc:"系统管理员删除违规、虚假的发布信息"`
+	Info     struct{} `name:"删除发布信息" desc:"系统管理员删除违规、虚假的发布信息"`
 	Request  DeletePostApiRequest
 	Response DeletePostApiResponse
 }
@@ -68,12 +68,6 @@ func (a *DeletePostApi) Run(ctx *gin.Context) kit.Code {
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("删除发布信息失败")
 		return comm.CodeServerError
-	}
-
-	alr := repo.NewAuditLogRepo()
-	err = alr.CreateAuditLog(ctx, adminID, enum.AuditLogTypeDelete, "系统管理员删除", a.Request.Body.PostID, post.Status, "DELETED")
-	if err != nil {
-		nlog.Pick().WithContext(ctx).WithError(err).Warn("记录审计日志失败")
 	}
 
 	a.Response = DeletePostApiResponse{Success: true}

@@ -24,7 +24,7 @@ func RejectHandler() gin.HandlerFunc {
 }
 
 type RejectApi struct {
-	Info     struct{}          `name:"审核驳回发布" desc:"审核驳回发布"`
+	Info     struct{} `name:"审核驳回发布" desc:"审核驳回发布"`
 	Request  RejectApiRequest
 	Response RejectApiResponse
 }
@@ -87,11 +87,6 @@ func (r *RejectApi) Run(ctx *gin.Context) kit.Code {
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("审核驳回失败")
 		return comm.CodeServerError
-	}
-
-	alr := repo.NewAuditLogRepo()
-	if err = alr.CreateAuditLog(ctx, adminID, enum.AuditLogTypeUpdate, request.Reason, request.PostID, post.Status, enum.PostStatusRejected); err != nil {
-		nlog.Pick().WithContext(ctx).WithError(err).Warn("记录审计日志失败，不影响主业务")
 	}
 
 	r.Response = RejectApiResponse{Success: true}

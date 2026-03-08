@@ -25,13 +25,17 @@ func ResetPasswordHandler() gin.HandlerFunc {
 type ResetPasswordApi struct {
 	Info     struct{} `name:"重置密码" desc:"系统管理员重置用户密码"`
 	Request  ResetPasswordApiRequest
-	Response struct{}
+	Response ResetPasswordApiResponse
 }
 
 type ResetPasswordApiRequest struct {
 	Body struct {
 		ID int64 `json:"id" binding:"required" desc:"用户ID"`
 	}
+}
+
+type ResetPasswordApiResponse struct {
+	Result string `json:"result" desc:"重置的密码"`
 }
 
 func (a *ResetPasswordApi) Run(ctx *gin.Context) kit.Code {
@@ -66,6 +70,9 @@ func (a *ResetPasswordApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeServerError
 	}
 
+	a.Response = ResetPasswordApiResponse{
+		Result: password,
+	}
 	return comm.CodeOK
 }
 

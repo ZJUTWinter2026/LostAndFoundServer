@@ -14,7 +14,6 @@ import (
 	"github.com/zjutjh/mygo/foundation/reply"
 	"github.com/zjutjh/mygo/kit"
 	"github.com/zjutjh/mygo/nlog"
-	"github.com/zjutjh/mygo/session"
 	"github.com/zjutjh/mygo/swagger"
 )
 
@@ -25,7 +24,7 @@ func ClaimPostHandler() gin.HandlerFunc {
 }
 
 type ClaimPostApi struct {
-	Info     struct{}            `name:"标记已解决" desc:"管理员标记物品为已解决"`
+	Info     struct{} `name:"标记已解决" desc:"管理员标记物品为已解决"`
 	Request  ClaimPostApiRequest
 	Response ClaimPostApiResponse
 }
@@ -42,13 +41,7 @@ type ClaimPostApiResponse struct {
 
 func (a *ClaimPostApi) Run(ctx *gin.Context) kit.Code {
 	req := a.Request.Body
-
-	adminID, err := session.GetIdentity[int64](ctx)
-	if err != nil {
-		return comm.CodeNotLoggedIn
-	}
-
-	if code := comm.CheckAdminPermission(ctx, adminID); code != comm.CodeOK {
+	if code := comm.CheckAdminPermission(ctx); code != comm.CodeOK {
 		return code
 	}
 
@@ -70,11 +63,6 @@ func (a *ClaimPostApi) Run(ctx *gin.Context) kit.Code {
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("标记已解决失败")
 		return comm.CodeServerError
-	}
-
-	alr := repo.NewAuditLogRepo()
-	if err = alr.CreateAuditLog(ctx, adminID, enum.AuditLogTypeUpdate, "", req.PostID, post.Status, enum.PostStatusSolved); err != nil {
-		nlog.Pick().WithContext(ctx).WithError(err).Warn("记录审计日志失败，不影响主业务")
 	}
 
 	a.Response = ClaimPostApiResponse{Success: true}
@@ -106,7 +94,7 @@ func ArchivePostHandler() gin.HandlerFunc {
 }
 
 type ArchivePostApi struct {
-	Info     struct{}             `name:"归档物品" desc:"管理员归档物品"`
+	Info     struct{} `name:"归档物品" desc:"管理员归档物品"`
 	Request  ArchivePostApiRequest
 	Response ArchivePostApiResponse
 }
@@ -132,12 +120,7 @@ func (a *ArchivePostApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeParameterInvalid
 	}
 
-	adminID, err := session.GetIdentity[int64](ctx)
-	if err != nil {
-		return comm.CodeNotLoggedIn
-	}
-
-	if code := comm.CheckAdminPermission(ctx, adminID); code != comm.CodeOK {
+	if code := comm.CheckAdminPermission(ctx); code != comm.CodeOK {
 		return code
 	}
 
@@ -174,11 +157,6 @@ func (a *ArchivePostApi) Run(ctx *gin.Context) kit.Code {
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("归档失败")
 		return comm.CodeServerError
-	}
-
-	alr := repo.NewAuditLogRepo()
-	if err = alr.CreateAuditLog(ctx, adminID, enum.AuditLogTypeUpdate, req.ArchiveMethod, req.PostID, post.Status, enum.PostStatusArchived); err != nil {
-		nlog.Pick().WithContext(ctx).WithError(err).Warn("记录审计日志失败，不影响主业务")
 	}
 
 	a.Response = ArchivePostApiResponse{Success: true}

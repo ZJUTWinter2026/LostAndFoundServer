@@ -19,6 +19,7 @@ func CheckSysAdmin(ctx *gin.Context) kit.Code {
 	urp := repo.NewUserRepo()
 	user, err := urp.FindById(ctx, adminID)
 	if err != nil {
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询用户失败")
 		return CodeServerError
 	}
 	if user == nil || user.Usertype != enum.UserTypeSystemAdmin {
@@ -27,7 +28,12 @@ func CheckSysAdmin(ctx *gin.Context) kit.Code {
 	return CodeOK
 }
 
-func CheckAdminPermission(ctx *gin.Context, adminID int64) kit.Code {
+func CheckAdminPermission(ctx *gin.Context) kit.Code {
+	adminID, err := session.GetIdentity[int64](ctx)
+	if err != nil {
+		return CodeNotLoggedIn
+	}
+
 	urp := repo.NewUserRepo()
 	user, err := urp.FindById(ctx, adminID)
 	if err != nil {

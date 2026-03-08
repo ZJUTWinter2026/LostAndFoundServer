@@ -22,7 +22,7 @@ func ApproveHandler() gin.HandlerFunc {
 }
 
 type ApproveApi struct {
-	Info     struct{}           `name:"审核通过发布" desc:"审核通过发布"`
+	Info     struct{} `name:"审核通过发布" desc:"审核通过发布"`
 	Request  ApproveApiRequest
 	Response ApproveApiResponse
 }
@@ -77,11 +77,6 @@ func (a *ApproveApi) Run(ctx *gin.Context) kit.Code {
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("审核通过失败")
 		return comm.CodeServerError
-	}
-
-	alr := repo.NewAuditLogRepo()
-	if err = alr.CreateAuditLog(ctx, adminID, enum.AuditLogTypeUpdate, "", request.PostID, post.Status, enum.PostStatusApproved); err != nil {
-		nlog.Pick().WithContext(ctx).WithError(err).Warn("记录审计日志失败，不影响主业务")
 	}
 
 	a.Response = ApproveApiResponse{Success: true}

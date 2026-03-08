@@ -47,6 +47,7 @@ type AccountItem struct {
 	Username      string     `json:"username"`
 	Name          string     `json:"name"`
 	UserType      string     `json:"user_type"`
+	Campus        string     `json:"campus,omitempty" desc:"校区（仅普通管理有）"`
 	FirstLogin    bool       `json:"first_login"`
 	DisabledUntil *time.Time `json:"disabled_until,omitempty"`
 	CreatedAt     time.Time  `json:"created_at"`
@@ -93,6 +94,7 @@ func (a *ListApi) Run(ctx *gin.Context) kit.Code {
 			Username:   u.Username,
 			Name:       u.Name,
 			UserType:   u.Usertype,
+			Campus:     u.Campus,
 			FirstLogin: u.FirstLogin,
 			CreatedAt:  u.CreatedAt,
 		}

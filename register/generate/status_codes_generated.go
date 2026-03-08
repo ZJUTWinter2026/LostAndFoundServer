@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	// api/admin/approve.go:97
+	// api/admin/approve.go:90
 	{
 		statusCodes := []kit.Code{
 			comm.CodeOK,
@@ -22,7 +22,7 @@ func init() {
 		swagger.MustRegisterBusinessStatusCodes("app/api/admin.hfApprove", statusCodes)
 	}
 
-	// api/admin/post_manage.go:193
+	// api/admin/post_manage.go:170
 	{
 		statusCodes := []kit.Code{
 			comm.CodeOK,
@@ -34,7 +34,7 @@ func init() {
 		swagger.MustRegisterBusinessStatusCodes("app/api/admin.hfArchivePost", statusCodes)
 	}
 
-	// api/admin/post_manage.go:90
+	// api/admin/post_manage.go:76
 	{
 		statusCodes := []kit.Code{
 			comm.CodeOK,
@@ -44,7 +44,7 @@ func init() {
 		swagger.MustRegisterBusinessStatusCodes("app/api/admin.hfClaimPost", statusCodes)
 	}
 
-	// api/admin/delete_post.go:87
+	// api/admin/delete_post.go:81
 	{
 		statusCodes := []kit.Code{
 			comm.CodeOK,
@@ -71,7 +71,7 @@ func init() {
 		swagger.MustRegisterBusinessStatusCodes("app/api/admin.hfExpiredList", statusCodes)
 	}
 
-	// api/admin/export.go:113
+	// api/admin/export.go:108
 	{
 		statusCodes := []kit.Code{
 			comm.CodeOK,
@@ -89,7 +89,7 @@ func init() {
 		swagger.MustRegisterBusinessStatusCodes("app/api/admin.hfPostList", statusCodes)
 	}
 
-	// api/admin/reject.go:107
+	// api/admin/reject.go:100
 	{
 		statusCodes := []kit.Code{
 			comm.CodeOK,
@@ -128,7 +128,7 @@ func init() {
 		swagger.MustRegisterBusinessStatusCodes("app/api/admin.hfStatistics", statusCodes)
 	}
 
-	// api/admin/account/create.go:100
+	// api/admin/account/create.go:98
 	{
 		statusCodes := []kit.Code{
 			comm.CodeOK,
@@ -138,7 +138,7 @@ func init() {
 		swagger.MustRegisterBusinessStatusCodes("app/api/admin/account.hfCreate", statusCodes)
 	}
 
-	// api/admin/account/disable.go:72
+	// api/admin/account/disable.go:85
 	{
 		statusCodes := []kit.Code{
 			comm.CodeOK,
@@ -147,7 +147,7 @@ func init() {
 		swagger.MustRegisterBusinessStatusCodes("app/api/admin/account.hfDisable", statusCodes)
 	}
 
-	// api/admin/account/enable.go:63
+	// api/admin/account/enable.go:61
 	{
 		statusCodes := []kit.Code{
 			comm.CodeOK,
@@ -156,7 +156,7 @@ func init() {
 		swagger.MustRegisterBusinessStatusCodes("app/api/admin/account.hfEnable", statusCodes)
 	}
 
-	// api/admin/account/list.go:118
+	// api/admin/account/list.go:120
 	{
 		statusCodes := []kit.Code{
 			comm.CodeOK,
@@ -165,17 +165,17 @@ func init() {
 		swagger.MustRegisterBusinessStatusCodes("app/api/admin/account.hfList", statusCodes)
 	}
 
-	// api/admin/account/update.go:85
+	// api/admin/account/reset.go:76
 	{
 		statusCodes := []kit.Code{
 			comm.CodeOK,
 			comm.CodeHashError,
 			comm.CodeAdminPermissionDenied,
 		}
-		swagger.MustRegisterBusinessStatusCodes("app/api/admin/account.hfUpdate", statusCodes)
+		swagger.MustRegisterBusinessStatusCodes("app/api/admin/account.hfResetPassword", statusCodes)
 	}
 
-	// api/admin/system/config.go:84
+	// api/admin/system/config.go:83
 	{
 		statusCodes := []kit.Code{
 			comm.CodeOK,
@@ -183,7 +183,7 @@ func init() {
 		swagger.MustRegisterBusinessStatusCodes("app/api/admin/system.hfConfigList", statusCodes)
 	}
 
-	// api/admin/system/config.go:280
+	// api/admin/system/config.go:279
 	{
 		statusCodes := []kit.Code{
 			comm.CodeOK,
@@ -192,7 +192,7 @@ func init() {
 		swagger.MustRegisterBusinessStatusCodes("app/api/admin/system.hfUpdateClaimValidityDays", statusCodes)
 	}
 
-	// api/admin/system/config.go:154
+	// api/admin/system/config.go:153
 	{
 		statusCodes := []kit.Code{
 			comm.CodeOK,
@@ -201,7 +201,7 @@ func init() {
 		swagger.MustRegisterBusinessStatusCodes("app/api/admin/system.hfUpdateFeedbackTypes", statusCodes)
 	}
 
-	// api/admin/system/config.go:228
+	// api/admin/system/config.go:227
 	{
 		statusCodes := []kit.Code{
 			comm.CodeOK,
@@ -210,7 +210,7 @@ func init() {
 		swagger.MustRegisterBusinessStatusCodes("app/api/admin/system.hfUpdateItemTypes", statusCodes)
 	}
 
-	// api/admin/system/config.go:332
+	// api/admin/system/config.go:331
 	{
 		statusCodes := []kit.Code{
 			comm.CodeOK,
@@ -219,7 +219,7 @@ func init() {
 		swagger.MustRegisterBusinessStatusCodes("app/api/admin/system.hfUpdatePublishLimit", statusCodes)
 	}
 
-	// api/agent/history.go:83
+	// api/agent/history.go:87
 	{
 		statusCodes := []kit.Code{
 			comm.CodeOK,
@@ -243,7 +243,7 @@ func init() {
 		swagger.MustRegisterBusinessStatusCodes("app/api/agent.hfSessionList", statusCodes)
 	}
 
-	// api/agent/stream.go:128
+	// api/agent/stream.go:162
 	{
 		statusCodes := []kit.Code{
 			comm.CodeSessionProcessing,
@@ -287,7 +287,7 @@ func init() {
 		swagger.MustRegisterBusinessStatusCodes("app/api/announcement.hfList", statusCodes)
 	}
 
-	// api/announcement/publish.go:122
+	// api/announcement/publish.go:119
 	{
 		statusCodes := []kit.Code{
 			comm.CodeOK,
@@ -305,7 +305,7 @@ func init() {
 		swagger.MustRegisterBusinessStatusCodes("app/api/announcement.hfReviewList", statusCodes)
 	}
 
-	// api/claim/apply.go:122
+	// api/claim/apply.go:126
 	{
 		statusCodes := []kit.Code{
 			comm.CodeOK,
@@ -316,7 +316,7 @@ func init() {
 		swagger.MustRegisterBusinessStatusCodes("app/api/claim.hfApply", statusCodes)
 	}
 
-	// api/claim/cancel.go:75
+	// api/claim/cancel.go:80
 	{
 		statusCodes := []kit.Code{
 			comm.CodeOK,
@@ -341,7 +341,7 @@ func init() {
 		swagger.MustRegisterBusinessStatusCodes("app/api/claim.hfMyList", statusCodes)
 	}
 
-	// api/claim/review.go:144
+	// api/claim/review.go:159
 	{
 		statusCodes := []kit.Code{
 			comm.CodeOK,
@@ -386,7 +386,7 @@ func init() {
 		swagger.MustRegisterBusinessStatusCodes("app/api/feedback.hfProcess", statusCodes)
 	}
 
-	// api/feedback/submit.go:91
+	// api/feedback/submit.go:88
 	{
 		statusCodes := []kit.Code{
 			comm.CodeOK,
@@ -395,7 +395,7 @@ func init() {
 		swagger.MustRegisterBusinessStatusCodes("app/api/feedback.hfSubmit", statusCodes)
 	}
 
-	// api/post/cancel.go:81
+	// api/post/cancel.go:84
 	{
 		statusCodes := []kit.Code{
 			comm.CodeOK,
@@ -405,7 +405,7 @@ func init() {
 		swagger.MustRegisterBusinessStatusCodes("app/api/post.hfCancel", statusCodes)
 	}
 
-	// api/post/delete.go:80
+	// api/post/delete.go:83
 	{
 		statusCodes := []kit.Code{
 			comm.CodeOK,
@@ -431,7 +431,7 @@ func init() {
 		swagger.MustRegisterBusinessStatusCodes("app/api/post.hfMyList", statusCodes)
 	}
 
-	// api/post/publish.go:145
+	// api/post/publish.go:137
 	{
 		statusCodes := []kit.Code{
 			comm.CodeOK,
@@ -440,7 +440,7 @@ func init() {
 		swagger.MustRegisterBusinessStatusCodes("app/api/post.hfPublish", statusCodes)
 	}
 
-	// api/post/query.go:128
+	// api/post/query.go:129
 	{
 		statusCodes := []kit.Code{
 			comm.CodeOK,

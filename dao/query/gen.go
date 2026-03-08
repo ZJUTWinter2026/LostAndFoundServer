@@ -18,7 +18,6 @@ import (
 var (
 	Q            = new(Query)
 	Announcement *announcement
-	AuditLog     *auditLog
 	ChatMessage  *chatMessage
 	ChatSession  *chatSession
 	Claim        *claim
@@ -31,7 +30,6 @@ var (
 func SetDefault(db *gorm.DB, opts ...gen.DOOption) {
 	*Q = *Use(db, opts...)
 	Announcement = &Q.Announcement
-	AuditLog = &Q.AuditLog
 	ChatMessage = &Q.ChatMessage
 	ChatSession = &Q.ChatSession
 	Claim = &Q.Claim
@@ -45,7 +43,6 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 	return &Query{
 		db:           db,
 		Announcement: newAnnouncement(db, opts...),
-		AuditLog:     newAuditLog(db, opts...),
 		ChatMessage:  newChatMessage(db, opts...),
 		ChatSession:  newChatSession(db, opts...),
 		Claim:        newClaim(db, opts...),
@@ -60,7 +57,6 @@ type Query struct {
 	db *gorm.DB
 
 	Announcement announcement
-	AuditLog     auditLog
 	ChatMessage  chatMessage
 	ChatSession  chatSession
 	Claim        claim
@@ -76,7 +72,6 @@ func (q *Query) clone(db *gorm.DB) *Query {
 	return &Query{
 		db:           db,
 		Announcement: q.Announcement.clone(db),
-		AuditLog:     q.AuditLog.clone(db),
 		ChatMessage:  q.ChatMessage.clone(db),
 		ChatSession:  q.ChatSession.clone(db),
 		Claim:        q.Claim.clone(db),
@@ -99,7 +94,6 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 	return &Query{
 		db:           db,
 		Announcement: q.Announcement.replaceDB(db),
-		AuditLog:     q.AuditLog.replaceDB(db),
 		ChatMessage:  q.ChatMessage.replaceDB(db),
 		ChatSession:  q.ChatSession.replaceDB(db),
 		Claim:        q.Claim.replaceDB(db),
@@ -112,7 +106,6 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 
 type queryCtx struct {
 	Announcement IAnnouncementDo
-	AuditLog     IAuditLogDo
 	ChatMessage  IChatMessageDo
 	ChatSession  IChatSessionDo
 	Claim        IClaimDo
@@ -125,7 +118,6 @@ type queryCtx struct {
 func (q *Query) WithContext(ctx context.Context) *queryCtx {
 	return &queryCtx{
 		Announcement: q.Announcement.WithContext(ctx),
-		AuditLog:     q.AuditLog.WithContext(ctx),
 		ChatMessage:  q.ChatMessage.WithContext(ctx),
 		ChatSession:  q.ChatSession.WithContext(ctx),
 		Claim:        q.Claim.WithContext(ctx),

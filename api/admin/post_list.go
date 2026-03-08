@@ -23,7 +23,7 @@ func PostListHandler() gin.HandlerFunc {
 }
 
 type PostListApi struct {
-	Info     struct{}            `name:"管理员查询发布信息" desc:"管理员查询发布信息，支持按状态筛选"`
+	Info     struct{} `name:"管理员查询发布信息" desc:"管理员查询发布信息，支持按状态筛选"`
 	Request  PostListApiRequest
 	Response PostListApiResponse
 }
@@ -69,7 +69,7 @@ type AdminPostListItem struct {
 }
 
 func (p *PostListApi) Run(ctx *gin.Context) kit.Code {
-	if code := comm.CheckSysAdmin(ctx); code != comm.CodeOK {
+	if code := comm.CheckAdminPermission(ctx); code != comm.CodeOK {
 		return code
 	}
 
