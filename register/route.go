@@ -108,7 +108,7 @@ func Route(router *gin.Engine) {
 		{
 			accountGroup.GET("/list", account.ListHandler())
 			accountGroup.POST("/create", account.CreateHandler())
-			accountGroup.POST("/update", account.UpdateHandler())
+			accountGroup.POST("/reset-password", account.ResetPasswordHandler())
 			accountGroup.POST("/disable", account.DisableHandler())
 			accountGroup.POST("/enable", account.EnableHandler())
 		}

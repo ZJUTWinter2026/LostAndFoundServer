@@ -34,9 +34,9 @@ type CreateApiRequest struct {
 		Username string `json:"username" binding:"required,max=50" desc:"用户名(学号/工号)"`
 		Name     string `json:"name" binding:"required,max=10" desc:"姓名"`
 		IDCard   string `json:"id_card" binding:"required,len=18" desc:"身份证号"`
-		Password string `json:"password" binding:"omitempty,min=6,max=18" desc:"密码(可选,学生默认身份证后六位)"`
+		Password string `json:"password" binding:"omitempty,min=6,max=18" desc:"密码(可选,默认身份证后六位)"`
 		UserType string `json:"user_type" binding:"required,oneof=STUDENT ADMIN SYSTEM_ADMIN" desc:"用户类型"`
-		Campus   string `json:"campus" binding:"omitempty,oneof=ZHAO_HUI PING_FENG MO_GAN_SHAN" desc:"所属校区: ZHAO_HUI, PING_FENG, MO_GAN_SHAN, 仅管理员有效"`
+		Campus   string `json:"campus" binding:"omitempty,oneof=ZHAO_HUI PING_FENG MO_GAN_SHAN" desc:"所属校区: ZHAO_HUI, PING_FENG, MO_GAN_SHAN, 仅普通管理员有效"`
 	}
 }
 
