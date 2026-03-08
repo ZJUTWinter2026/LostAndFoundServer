@@ -3,10 +3,10 @@ package admin
 import (
 	"app/comm"
 	"app/comm/enum"
-	"app/dao/model"
 	"app/dao/repo"
 	"reflect"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -32,8 +32,9 @@ type ReviewListApi struct {
 
 type ReviewListApiRequest struct {
 	Body struct {
-		Page     int `form:"page" binding:"required,min=1" desc:"页码"`
-		PageSize int `form:"page_size" binding:"required,min=1,max=50" desc:"每页数量"`
+		Type     string `form:"type" binding:"required,oneof=LOST FOUND" desc:"发布类型"`
+		Page     int    `form:"page" binding:"required,min=1" desc:"页码"`
+		PageSize int    `form:"page_size" binding:"required,min=1,max=50" desc:"每页数量"`
 	}
 }
 
@@ -46,7 +47,6 @@ type ReviewListApiResponse struct {
 
 type ReviewListItem struct {
 	ID          int64     `json:"id" desc:"发布ID"`
-	PublishType string    `json:"publish_type" desc:"发布类型 LOST/FOUND"`
 	ItemName    string    `json:"item_name" desc:"物品名称"`
 	ItemType    string    `json:"item_type" desc:"物品类型"`
 	Location    string    `json:"location" desc:"地点"`
@@ -72,7 +72,7 @@ func (r *ReviewListApi) Run(ctx *gin.Context) kit.Code {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询用户失败")
 		return comm.CodeServerError
 	}
-	if user == nil || (user.Usertype != enum.UserTypeAdmin && user.Usertype != enum.UserTypeSystemAdmin) {
+	if user == nil || user.Usertype != enum.UserTypeAdmin {
 		return comm.CodeAdminPermissionDenied
 	}
 
@@ -91,16 +91,13 @@ func (r *ReviewListApi) Run(ctx *gin.Context) kit.Code {
 	offset := (page - 1) * pageSize
 	prp := repo.NewPostRepo()
 
-	var posts []*model.Post
-	var total int64
-
-	// 超管可查看所有校区的待审核列表，管理员只能查看自己校区的
-	if user.Usertype == enum.UserTypeSystemAdmin {
-		posts, total, err = prp.ListPendingReview(ctx, "", offset, pageSize)
-	} else {
-		posts, total, err = prp.ListPendingReview(ctx, user.Campus, offset, pageSize)
+	filter := repo.PostListFilter{
+		PublishType: strings.TrimSpace(request.Type),
+		Status:      enum.PostStatusPending,
+		Campus:      user.Campus,
 	}
 
+	posts, total, err := prp.ListByFilter(ctx, filter, offset, pageSize)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询待审核列表失败")
 		return comm.CodeServerError
@@ -110,7 +107,6 @@ func (r *ReviewListApi) Run(ctx *gin.Context) kit.Code {
 	for _, post := range posts {
 		items = append(items, ReviewListItem{
 			ID:          post.ID,
-			PublishType: post.PublishType,
 			ItemName:    post.ItemName,
 			ItemType:    post.ItemType,
 			Location:    post.Location,

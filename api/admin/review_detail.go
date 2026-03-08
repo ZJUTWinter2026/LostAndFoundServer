@@ -71,7 +71,7 @@ func (r *ReviewDetailApi) Run(ctx *gin.Context) kit.Code {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询用户失败")
 		return comm.CodeServerError
 	}
-	if user == nil || (user.Usertype != enum.UserTypeAdmin && user.Usertype != enum.UserTypeSystemAdmin) {
+	if user == nil || user.Usertype != enum.UserTypeAdmin {
 		return comm.CodeAdminPermissionDenied
 	}
 
@@ -87,7 +87,7 @@ func (r *ReviewDetailApi) Run(ctx *gin.Context) kit.Code {
 	}
 
 	// 管理员只能查看自己校区的发布详情
-	if user.Usertype == enum.UserTypeAdmin && post.Campus != user.Campus {
+	if post.Campus != user.Campus {
 		return comm.CodeAdminPermissionDenied
 	}
 

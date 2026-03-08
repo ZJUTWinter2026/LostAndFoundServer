@@ -89,6 +89,15 @@ func init() {
 		swagger.MustRegisterBusinessStatusCodes("app/api/admin.hfPostList", statusCodes)
 	}
 
+	// api/admin/published_list.go:120
+	{
+		statusCodes := []kit.Code{
+			comm.CodeOK,
+			comm.CodeAdminPermissionDenied,
+		}
+		swagger.MustRegisterBusinessStatusCodes("app/api/admin.hfPublishedList", statusCodes)
+	}
+
 	// api/admin/reject.go:100
 	{
 		statusCodes := []kit.Code{
@@ -110,7 +119,7 @@ func init() {
 		swagger.MustRegisterBusinessStatusCodes("app/api/admin.hfReviewDetail", statusCodes)
 	}
 
-	// api/admin/review_list.go:138
+	// api/admin/review_list.go:134
 	{
 		statusCodes := []kit.Code{
 			comm.CodeOK,

@@ -136,23 +136,6 @@ func (r *PostRepo) DeletePost(ctx context.Context, postID int64, publisherID int
 		Delete(&model.Post{}).Error
 }
 
-// ListPendingReview 查询待审核的发布列表
-func (r *PostRepo) ListPendingReview(ctx context.Context, campus string, offset int, limit int) ([]*model.Post, int64, error) {
-	var posts []*model.Post
-	db := ndb.Pick().WithContext(ctx).Model(&model.Post{}).Where("status = ?", enum.PostStatusPending)
-	if campus != "" {
-		db = db.Where("campus = ?", campus)
-	}
-
-	var total int64
-	if err := db.Count(&total).Error; err != nil {
-		return nil, 0, err
-	}
-
-	err := db.Order("created_at DESC").Offset(offset).Limit(limit).Find(&posts).Error
-	return posts, total, err
-}
-
 // ApprovePost 审核通过发布
 func (r *PostRepo) ApprovePost(ctx context.Context, postID int64, adminID int64) error {
 	return ndb.Pick().WithContext(ctx).Model(&model.Post{}).

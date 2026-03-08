@@ -66,6 +66,7 @@ func Route(router *gin.Engine) {
 			adminGroup.GET("/expired-list", admin.ExpiredListHandler())
 			adminGroup.DELETE("/expired-clean", admin.ExpiredCleanHandler())
 			adminGroup.GET("/post-list", admin.PostListHandler())
+			adminGroup.GET("/published-list", admin.PublishedListHandler())
 		}
 
 		claimGroup := r.Group("/claim")
