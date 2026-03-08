@@ -21,6 +21,7 @@ CREATE TABLE `post`
     `reject_reason`      varchar(255)    NOT NULL DEFAULT '' COMMENT '驳回原因',
     `claim_count`        int             NOT NULL DEFAULT 0 COMMENT '认领人数',
     `archive_method`     varchar(255)    NOT NULL DEFAULT '' COMMENT '物品处理方式(归档时填写)',
+    `reviewer_admin_id`  bigint          NOT NULL DEFAULT 0 COMMENT '审核管理员ID',
     `processed_at`       timestamp(3)    NULL COMMENT '处理时间',
     `created_at`         timestamp(3)    NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
     `updated_at`         timestamp(3)    NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT '更新时间',
@@ -30,6 +31,7 @@ CREATE TABLE `post`
     KEY `idx_status` (`status`),
     KEY `idx_publish_type` (`publish_type`),
     KEY `idx_campus` (`campus`),
+    KEY `idx_reviewer_admin_id` (`reviewer_admin_id`),
     KEY `idx_event_time` (`event_time`),
     KEY `idx_created_at` (`created_at`)
 ) ENGINE = InnoDB

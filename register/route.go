@@ -58,6 +58,7 @@ func Route(router *gin.Engine) {
 			adminGroup.GET("/detail", admin.ReviewDetailHandler())
 			adminGroup.POST("/approve", admin.ApproveHandler())
 			adminGroup.POST("/reject", admin.RejectHandler())
+			adminGroup.GET("/review-records", admin.ReviewRecordsHandler())
 			adminGroup.GET("/statistics", admin.StatisticsHandler())
 			adminGroup.POST("/claim", admin.ClaimPostHandler())
 			adminGroup.POST("/archive", admin.ArchivePostHandler())

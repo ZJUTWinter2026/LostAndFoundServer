@@ -15,7 +15,7 @@ import (
 type ApplyClaimInput struct {
 	PostID      int64    `json:"post_id" jsonschema:"description=发布ID,required"`
 	Description string   `json:"description" jsonschema:"description=认领说明,描述为什么这是你的物品,required"`
-	ProofImages []string `json:"proof_images" jsonschema:"description=证明图片URL列表"`
+	ProofImages []string `json:"proof_images" jsonschema:"description=证明图片URL列表（0-3张）"`
 }
 
 type ApplyClaimOutput struct {

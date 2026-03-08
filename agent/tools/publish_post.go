@@ -28,7 +28,7 @@ type PublishPostInput struct {
 	ContactPhone      string   `json:"contact_phone" jsonschema:"description=联系电话,required"`
 	HasReward         bool     `json:"has_reward" jsonschema:"description=是否有悬赏"`
 	RewardDescription string   `json:"reward_description" jsonschema:"description=悬赏说明(仅has_reward为true时有效)"`
-	Images            []string `json:"images" jsonschema:"description=图片URL列表"`
+	Images            []string `json:"images" jsonschema:"description=图片URL列表（0-3张）"`
 }
 
 type PublishPostOutput struct {

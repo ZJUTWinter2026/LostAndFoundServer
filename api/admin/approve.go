@@ -73,7 +73,7 @@ func (a *ApproveApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeAdminPermissionDenied
 	}
 
-	err = prp.ApprovePost(ctx, request.PostID)
+	err = prp.ApprovePost(ctx, request.PostID, adminID)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("审核通过失败")
 		return comm.CodeServerError

@@ -83,7 +83,7 @@ func (r *RejectApi) Run(ctx *gin.Context) kit.Code {
 		return comm.CodeAdminPermissionDenied
 	}
 
-	err = prp.RejectPost(ctx, request.PostID, request.Reason)
+	err = prp.RejectPost(ctx, request.PostID, request.Reason, adminID)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("审核驳回失败")
 		return comm.CodeServerError

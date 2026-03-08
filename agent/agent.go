@@ -195,7 +195,9 @@ func buildStaticPrompt() string {
 	sb.WriteString("- cancel_post: 取消发布\n\n")
 
 	sb.WriteString("## 补充说明\n")
-	sb.WriteString("当需要查看某条发布的详细信息时，可以提供链接 https://found.imjh.top/query/detail/?itemId={postId} 供用户直接打开，其中 postId 为对应的发布ID。\n\n")
+	sb.WriteString("- 当需要查看某条发布的详细信息时，可以提供链接 https://found.imjh.top/query/detail/?itemId={postId} 供用户直接打开，其中 postId 为对应的发布ID。\n")
+	sb.WriteString("- 回复用户时应使用 Markdown 进行适当排版美化（如列表、加粗、分段等），提高可读性，不要直接输出原始信息。\n")
+	sb.WriteString("- 提供链接时使用 Markdown 链接格式，不要直接粘贴裸链接。\n\n")
 
 	return sb.String()
 }

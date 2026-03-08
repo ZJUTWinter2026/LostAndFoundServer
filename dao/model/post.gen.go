@@ -35,6 +35,7 @@ type Post struct {
 	RejectReason      string                `gorm:"column:reject_reason;not null;comment:驳回原因" json:"reject_reason"`                                                           // 驳回原因
 	ClaimCount        int32                 `gorm:"column:claim_count;not null;comment:认领人数" json:"claim_count"`                                                               // 认领人数
 	ArchiveMethod     string                `gorm:"column:archive_method;not null;comment:物品处理方式(归档时填写)" json:"archive_method"`                                                // 物品处理方式(归档时填写)
+	ReviewerAdminID   int64                 `gorm:"column:reviewer_admin_id;not null;comment:审核管理员ID" json:"reviewer_admin_id"`                                                // 审核管理员ID
 	ProcessedAt       *time.Time            `gorm:"column:processed_at;comment:处理时间" json:"processed_at"`                                                                      // 处理时间
 	CreatedAt         time.Time             `gorm:"column:created_at;not null;default:CURRENT_TIMESTAMP(3);comment:创建时间" json:"created_at"`                                    // 创建时间
 	UpdatedAt         time.Time             `gorm:"column:updated_at;not null;default:CURRENT_TIMESTAMP(3);comment:更新时间" json:"updated_at"`                                    // 更新时间

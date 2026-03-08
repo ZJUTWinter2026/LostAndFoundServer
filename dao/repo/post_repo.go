@@ -41,6 +41,10 @@ type PostListFilter struct {
 	EndTime     time.Time
 }
 
+type AdminReviewRecordFilter struct {
+	ReviewerAdminID int64
+}
+
 // FindById 根据ID查询发布记录
 func (r *PostRepo) FindById(ctx context.Context, id int64) (*model.Post, error) {
 	p := r.query.Post
@@ -150,24 +154,40 @@ func (r *PostRepo) ListPendingReview(ctx context.Context, campus string, offset 
 }
 
 // ApprovePost 审核通过发布
-func (r *PostRepo) ApprovePost(ctx context.Context, postID int64) error {
+func (r *PostRepo) ApprovePost(ctx context.Context, postID int64, adminID int64) error {
 	return ndb.Pick().WithContext(ctx).Model(&model.Post{}).
 		Where("id = ? AND status = ?", postID, enum.PostStatusPending).
 		Updates(map[string]interface{}{
-			"status":       enum.PostStatusApproved,
-			"processed_at": time.Now(),
+			"status":            enum.PostStatusApproved,
+			"reviewer_admin_id": adminID,
+			"processed_at":      time.Now(),
 		}).Error
 }
 
 // RejectPost 审核驳回发布
-func (r *PostRepo) RejectPost(ctx context.Context, postID int64, reason string) error {
+func (r *PostRepo) RejectPost(ctx context.Context, postID int64, reason string, adminID int64) error {
 	return ndb.Pick().WithContext(ctx).Model(&model.Post{}).
 		Where("id = ? AND status = ?", postID, enum.PostStatusPending).
 		Updates(map[string]interface{}{
-			"status":        enum.PostStatusRejected,
-			"reject_reason": reason,
-			"processed_at":  time.Now(),
+			"status":            enum.PostStatusRejected,
+			"reject_reason":     reason,
+			"reviewer_admin_id": adminID,
+			"processed_at":      time.Now(),
 		}).Error
+}
+
+// ListReviewedByAdmin 查询管理员审核过的发布记录
+func (r *PostRepo) ListReviewedByAdmin(ctx context.Context, filter AdminReviewRecordFilter, offset int, limit int) (records []*model.Post, total int64, err error) {
+	db := ndb.Pick().WithContext(ctx).Model(&model.Post{}).
+		Where("reviewer_admin_id = ?", filter.ReviewerAdminID).
+		Where("status IN ?", []string{enum.PostStatusApproved, enum.PostStatusRejected})
+
+	if err = db.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	err = db.Order("processed_at DESC").Offset(offset).Limit(limit).Find(&records).Error
+	return records, total, err
 }
 
 // CountByStatus 按状态统计数量

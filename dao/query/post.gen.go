@@ -48,6 +48,7 @@ func newPost(db *gorm.DB, opts ...gen.DOOption) post {
 	_post.RejectReason = field.NewString(tableName, "reject_reason")
 	_post.ClaimCount = field.NewInt32(tableName, "claim_count")
 	_post.ArchiveMethod = field.NewString(tableName, "archive_method")
+	_post.ReviewerAdminID = field.NewInt64(tableName, "reviewer_admin_id")
 	_post.ProcessedAt = field.NewTime(tableName, "processed_at")
 	_post.CreatedAt = field.NewTime(tableName, "created_at")
 	_post.UpdatedAt = field.NewTime(tableName, "updated_at")
@@ -84,6 +85,7 @@ type post struct {
 	RejectReason      field.String // 驳回原因
 	ClaimCount        field.Int32  // 认领人数
 	ArchiveMethod     field.String // 物品处理方式(归档时填写)
+	ReviewerAdminID   field.Int64  // 审核管理员ID
 	ProcessedAt       field.Time   // 处理时间
 	CreatedAt         field.Time   // 创建时间
 	UpdatedAt         field.Time   // 更新时间
@@ -125,6 +127,7 @@ func (p *post) updateTableName(table string) *post {
 	p.RejectReason = field.NewString(table, "reject_reason")
 	p.ClaimCount = field.NewInt32(table, "claim_count")
 	p.ArchiveMethod = field.NewString(table, "archive_method")
+	p.ReviewerAdminID = field.NewInt64(table, "reviewer_admin_id")
 	p.ProcessedAt = field.NewTime(table, "processed_at")
 	p.CreatedAt = field.NewTime(table, "created_at")
 	p.UpdatedAt = field.NewTime(table, "updated_at")
@@ -153,7 +156,7 @@ func (p *post) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (p *post) fillFieldMap() {
-	p.fieldMap = make(map[string]field.Expr, 25)
+	p.fieldMap = make(map[string]field.Expr, 26)
 	p.fieldMap["id"] = p.ID
 	p.fieldMap["publisher_id"] = p.PublisherID
 	p.fieldMap["publish_type"] = p.PublishType
@@ -175,6 +178,7 @@ func (p *post) fillFieldMap() {
 	p.fieldMap["reject_reason"] = p.RejectReason
 	p.fieldMap["claim_count"] = p.ClaimCount
 	p.fieldMap["archive_method"] = p.ArchiveMethod
+	p.fieldMap["reviewer_admin_id"] = p.ReviewerAdminID
 	p.fieldMap["processed_at"] = p.ProcessedAt
 	p.fieldMap["created_at"] = p.CreatedAt
 	p.fieldMap["updated_at"] = p.UpdatedAt
