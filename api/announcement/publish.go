@@ -5,10 +5,13 @@ import (
 	"app/comm/enum"
 	"app/dao/model"
 	"app/dao/repo"
+	"errors"
 	"reflect"
 	"runtime"
 	"strings"
 	"unicode/utf8"
+
+	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 	"github.com/zjutjh/mygo/foundation/reply"
@@ -54,6 +57,9 @@ func (a *PublishApi) Run(ctx *gin.Context) kit.Code {
 
 	urp := repo.NewUserRepo()
 	user, err := urp.FindById(ctx, publisherID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return comm.CodeAdminPermissionDenied
+	}
 	if err != nil {
 		return comm.CodeServerError
 	}

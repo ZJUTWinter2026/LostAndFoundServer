@@ -2,11 +2,11 @@ package tools
 
 import (
 	"app/comm/enum"
-	"app/dao/model"
 	"app/dao/repo"
 	"app/pkg/llm"
 	"context"
 	"sort"
+	"time"
 
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/components/tool/utils"
@@ -25,6 +25,23 @@ type SearchPostsOutput struct {
 	Message string      `json:"message,omitempty"`
 	Data    interface{} `json:"data,omitempty"`
 	Total   int         `json:"total,omitempty"`
+}
+
+type SearchPostItem struct {
+	ID                int64     `json:"id"`
+	PublishType       string    `json:"publish_type"`
+	ItemName          string    `json:"item_name"`
+	ItemType          string    `json:"item_type"`
+	Campus            string    `json:"campus"`
+	Location          string    `json:"location"`
+	StorageLocation   string    `json:"storage_location"`
+	EventTime         time.Time `json:"event_time"`
+	Features          string    `json:"features"`
+	HasReward         bool      `json:"has_reward"`
+	RewardDescription string    `json:"reward_description"`
+	ClaimCount        int32     `json:"claim_count"`
+	Status            string    `json:"status"`
+	CreatedAt         time.Time `json:"created_at"`
 }
 
 func searchPostsFunc(ctx context.Context, input *SearchPostsInput) (*SearchPostsOutput, error) {
@@ -68,7 +85,7 @@ func searchPostsFunc(ctx context.Context, input *SearchPostsInput) (*SearchPosts
 		nlog.Pick().WithContext(ctx).Infof("[Tool:search_posts] 未找到匹配结果")
 		return &SearchPostsOutput{
 			Success: true,
-			Data:    []*model.Post{},
+			Data:    []SearchPostItem{},
 			Total:   0,
 		}, nil
 	}
@@ -79,7 +96,7 @@ func searchPostsFunc(ctx context.Context, input *SearchPostsInput) (*SearchPosts
 		return &SearchPostsOutput{Success: false, Message: "查询发布记录失败"}, nil
 	}
 
-	var filteredPosts []*model.Post
+	var filteredPosts []SearchPostItem
 	for _, post := range posts {
 		if input.PublishType != "" && post.PublishType != input.PublishType {
 			continue
@@ -90,7 +107,22 @@ func searchPostsFunc(ctx context.Context, input *SearchPostsInput) (*SearchPosts
 		if post.Status != enum.PostStatusApproved {
 			continue
 		}
-		filteredPosts = append(filteredPosts, post)
+		filteredPosts = append(filteredPosts, SearchPostItem{
+			ID:                post.ID,
+			PublishType:       post.PublishType,
+			ItemName:          post.ItemName,
+			ItemType:          post.ItemType,
+			Campus:            post.Campus,
+			Location:          post.Location,
+			StorageLocation:   post.StorageLocation,
+			EventTime:         post.EventTime,
+			Features:          post.Features,
+			HasReward:         post.HasReward,
+			RewardDescription: post.RewardDescription,
+			ClaimCount:        post.ClaimCount,
+			Status:            post.Status,
+			CreatedAt:         post.CreatedAt,
+		})
 	}
 
 	// 按向量相似度分数降序重排，保留语义搜索的顺序

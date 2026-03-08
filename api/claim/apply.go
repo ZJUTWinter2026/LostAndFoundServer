@@ -5,8 +5,11 @@ import (
 	"app/comm/enum"
 	"app/dao/model"
 	"app/dao/repo"
+	"errors"
 	"reflect"
 	"runtime"
+
+	"gorm.io/gorm"
 
 	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
@@ -55,12 +58,12 @@ func (a *ApplyApi) Run(ctx *gin.Context) kit.Code {
 	// 检查发布记录是否存在
 	prp := repo.NewPostRepo()
 	post, err := prp.FindById(ctx, request.PostID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return comm.CodeDataNotFound
+	}
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询发布记录失败")
 		return comm.CodeServerError
-	}
-	if post == nil {
-		return comm.CodeDataNotFound
 	}
 
 	// 只有已审核通过的发布才能认领

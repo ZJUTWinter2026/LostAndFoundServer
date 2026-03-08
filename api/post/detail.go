@@ -4,9 +4,12 @@ import (
 	"app/comm"
 	"app/comm/enum"
 	"app/dao/repo"
+	"errors"
 	"reflect"
 	"runtime"
 	"time"
+
+	"gorm.io/gorm"
 
 	"github.com/bytedance/sonic"
 	"github.com/zjutjh/mygo/session"
@@ -72,22 +75,22 @@ func (d *DetailApi) Run(ctx *gin.Context) kit.Code {
 
 	prp := repo.NewPostRepo()
 	record, err := prp.FindById(ctx, request.ID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return comm.CodeDataNotFound
+	}
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询发布详情失败")
 		return comm.CodeServerError
 	}
-	if record == nil {
-		return comm.CodeDataNotFound
-	}
 
 	urp := repo.NewUserRepo()
 	user, err := urp.FindById(ctx, userID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return comm.CodeNotLoggedIn
+	}
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询用户失败")
 		return comm.CodeServerError
-	}
-	if user == nil {
-		return comm.CodeNotLoggedIn
 	}
 
 	isAdmin := user.Usertype == enum.UserTypeAdmin || user.Usertype == enum.UserTypeSystemAdmin

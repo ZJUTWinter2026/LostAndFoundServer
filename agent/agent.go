@@ -35,12 +35,13 @@ type Agent struct {
 
 // NewAgent 创建 Agent 实例并注册可用工具。
 func NewAgent() *Agent {
-	toolList := make([]tool.BaseTool, 0, 12)
+	toolList := make([]tool.BaseTool, 0, 13)
 	toolFuncList := []func() (tool.InvokableTool, error){
 		tools.NewGetPostDetailTool,
 		tools.NewSearchPostsTool,
 		tools.NewGetMyPostsTool,
 		tools.NewGetMyClaimsTool,
+		tools.NewGetReceivedClaimsTool,
 		tools.NewGetMyFeedbacksTool,
 		tools.NewPublishPostTool,
 		tools.NewApplyClaimTool,
@@ -186,6 +187,7 @@ func buildStaticPrompt() string {
 	sb.WriteString("- search_posts: 搜索失物/招领信息\n")
 	sb.WriteString("- get_my_posts: 获取我的发布列表\n")
 	sb.WriteString("- get_my_claims: 获取我的认领申请\n")
+	sb.WriteString("- get_received_claims: 获取我收到的认领申请\n")
 	sb.WriteString("- get_my_feedbacks: 获取我的投诉反馈\n")
 	sb.WriteString("- publish_post: 发布失物/招领信息\n")
 	sb.WriteString("- apply_claim: 申请认领物品\n")

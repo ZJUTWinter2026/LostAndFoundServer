@@ -4,6 +4,9 @@ import (
 	"app/comm/enum"
 	"app/dao/repo"
 	"context"
+	"errors"
+
+	"gorm.io/gorm"
 
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/components/tool/utils"
@@ -31,14 +34,13 @@ func cancelClaimFunc(ctx context.Context, input *CancelClaimInput) (*CancelClaim
 	claimRepo := repo.NewClaimRepo()
 	postRepo := repo.NewPostRepo()
 	claim, err := claimRepo.FindById(ctx, input.ClaimID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		nlog.Pick().WithContext(ctx).Infof("[Tool:cancel_claim] 认领申请不存在: claim_id=%d", input.ClaimID)
+		return &CancelClaimOutput{Success: false, Message: "认领申请不存在"}, nil
+	}
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("[Tool:cancel_claim] 查询认领申请失败")
 		return &CancelClaimOutput{Success: false, Message: "查询认领申请失败"}, nil
-	}
-
-	if claim == nil {
-		nlog.Pick().WithContext(ctx).Infof("[Tool:cancel_claim] 认领申请不存在: claim_id=%d", input.ClaimID)
-		return &CancelClaimOutput{Success: false, Message: "认领申请不存在"}, nil
 	}
 
 	if claim.ClaimantID != tc.UserID {

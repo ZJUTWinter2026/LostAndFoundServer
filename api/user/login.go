@@ -4,9 +4,12 @@ import (
 	"app/comm"
 	"app/comm/enum"
 	"app/dao/repo"
+	"errors"
 	"reflect"
 	"runtime"
 	"time"
+
+	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 	"github.com/zjutjh/mygo/foundation/reply"
@@ -49,12 +52,12 @@ func (l *LoginApi) Run(ctx *gin.Context) kit.Code {
 	request := l.Request.Body
 
 	user, err := urp.FindByUsername(ctx, request.Username)
-	if err != nil {
-		return comm.CodeServerError
-	}
-	if user == nil {
-		nlog.Pick().WithContext(ctx).Warn("用户不存在")
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return comm.CodeUserNotExist
+	}
+	if err != nil {
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询用户失败")
+		return comm.CodeServerError
 	}
 
 	if user.DisabledUntil != nil && user.DisabledUntil.After(time.Now()) {

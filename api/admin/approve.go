@@ -4,8 +4,11 @@ import (
 	"app/comm"
 	"app/comm/enum"
 	"app/dao/repo"
+	"errors"
 	"reflect"
 	"runtime"
+
+	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 	"github.com/zjutjh/mygo/foundation/reply"
@@ -47,6 +50,9 @@ func (a *ApproveApi) Run(ctx *gin.Context) kit.Code {
 
 	urp := repo.NewUserRepo()
 	user, err := urp.FindById(ctx, adminID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return comm.CodeAdminPermissionDenied
+	}
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询用户失败")
 		return comm.CodeServerError
@@ -57,12 +63,12 @@ func (a *ApproveApi) Run(ctx *gin.Context) kit.Code {
 
 	prp := repo.NewPostRepo()
 	post, err := prp.FindById(ctx, request.PostID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return comm.CodeDataNotFound
+	}
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询发布记录失败")
 		return comm.CodeServerError
-	}
-	if post == nil {
-		return comm.CodeDataNotFound
 	}
 
 	if post.Status != enum.PostStatusPending {

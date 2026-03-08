@@ -4,9 +4,12 @@ import (
 	"app/comm"
 	"app/comm/enum"
 	"app/dao/repo"
+	"errors"
 	"reflect"
 	"runtime"
 	"time"
+
+	"gorm.io/gorm"
 
 	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
@@ -67,27 +70,30 @@ func (r *ReviewDetailApi) Run(ctx *gin.Context) kit.Code {
 	// 验证管理员权限
 	urp := repo.NewUserRepo()
 	user, err := urp.FindById(ctx, adminID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return comm.CodeAdminPermissionDenied
+	}
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询用户失败")
 		return comm.CodeServerError
 	}
-	if user == nil || user.Usertype != enum.UserTypeAdmin {
+	if user == nil || (user.Usertype != enum.UserTypeAdmin && user.Usertype != enum.UserTypeSystemAdmin) {
 		return comm.CodeAdminPermissionDenied
 	}
 
 	// 查询发布记录
 	prp := repo.NewPostRepo()
 	post, err := prp.FindById(ctx, request.PostID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return comm.CodeDataNotFound
+	}
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询发布记录失败")
 		return comm.CodeServerError
 	}
-	if post == nil {
-		return comm.CodeDataNotFound
-	}
 
 	// 管理员只能查看自己校区的发布详情
-	if post.Campus != user.Campus {
+	if user.Usertype != enum.UserTypeSystemAdmin && post.Campus != user.Campus {
 		return comm.CodeAdminPermissionDenied
 	}
 

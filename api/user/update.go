@@ -3,8 +3,11 @@ package user
 import (
 	"app/comm"
 	"app/dao/repo"
+	"errors"
 	"reflect"
 	"runtime"
+
+	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 	"github.com/zjutjh/mygo/foundation/reply"
@@ -48,12 +51,12 @@ func (u *UpdateApi) Run(ctx *gin.Context) kit.Code {
 	}
 
 	user, err := urp.FindById(ctx, uid)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return comm.CodeUserNotExist
+	}
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询用户失败")
 		return comm.CodeServerError
-	}
-	if user == nil {
-		return comm.CodeUserNotExist
 	}
 
 	if bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(request.OldPassword)) != nil {

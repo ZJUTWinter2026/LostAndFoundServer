@@ -4,10 +4,8 @@ import (
 	"app/dao/model"
 	"app/dao/query"
 	"context"
-	"errors"
 
 	"github.com/zjutjh/mygo/ndb"
-	"gorm.io/gorm"
 )
 
 type UserRepo struct {
@@ -24,9 +22,6 @@ func NewUserRepo() *UserRepo {
 func (r *UserRepo) FindById(ctx context.Context, id int64) (*model.User, error) {
 	u := r.query.User
 	record, err := u.WithContext(ctx).Where(u.ID.Eq(id)).First()
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -37,9 +32,6 @@ func (r *UserRepo) FindById(ctx context.Context, id int64) (*model.User, error) 
 func (r *UserRepo) FindByUsername(ctx context.Context, username string) (*model.User, error) {
 	u := r.query.User
 	record, err := u.WithContext(ctx).Where(u.Username.Eq(username)).First()
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -65,9 +57,6 @@ func (r *UserRepo) Save(ctx context.Context, user *model.User) error {
 func (r *UserRepo) FindByUsernameAndIDCard(ctx context.Context, username string, idCard string) (*model.User, error) {
 	u := r.query.User
 	record, err := u.WithContext(ctx).Where(u.Username.Eq(username), u.IDCard.Eq(idCard)).First()
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, nil
-	}
 	if err != nil {
 		return nil, err
 	}

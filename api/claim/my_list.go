@@ -23,7 +23,7 @@ func MyListHandler() gin.HandlerFunc {
 }
 
 type MyListApi struct {
-	Info     struct{}       `name:"我的认领申请列表" desc:"我的认领申请列表"`
+	Info     struct{} `name:"我的认领申请列表" desc:"我的认领申请列表"`
 	Request  MyListApiRequest
 	Response MyListApiResponse
 }
@@ -36,10 +36,10 @@ type MyListApiRequest struct {
 }
 
 type MyListApiResponse struct {
-	Total    int64            `json:"total" desc:"总数"`
-	Page     int              `json:"page" desc:"页码"`
-	PageSize int              `json:"page_size" desc:"每页数量"`
-	List     []MyClaimItem    `json:"list" desc:"认领申请列表"`
+	Total    int64         `json:"total" desc:"总数"`
+	Page     int           `json:"page" desc:"页码"`
+	PageSize int           `json:"page_size" desc:"每页数量"`
+	List     []MyClaimItem `json:"list" desc:"认领申请列表"`
 }
 
 type MyClaimItem struct {
@@ -94,19 +94,17 @@ func (m *MyListApi) Run(ctx *gin.Context) kit.Code {
 			}
 		}
 
-		post, _ := prp.FindById(ctx, claimRecord.PostID)
-		itemName := ""
-		publishType := ""
-		if post != nil {
-			itemName = post.ItemName
-			publishType = post.PublishType
+		post, err := prp.FindById(ctx, claimRecord.PostID)
+		if err != nil {
+			nlog.Pick().WithContext(ctx).WithError(err).Warn("查询认领关联发布失败")
+			continue
 		}
 
 		items = append(items, MyClaimItem{
 			ID:          claimRecord.ID,
 			PostID:      claimRecord.PostID,
-			ItemName:    itemName,
-			PublishType: publishType,
+			ItemName:    post.ItemName,
+			PublishType: post.PublishType,
 			Description: claimRecord.Description,
 			ProofImages: proofImages,
 			Status:      claimRecord.Status,

@@ -37,16 +37,7 @@ func (a *DeleteApi) Run(ctx *gin.Context) kit.Code {
 	}
 
 	arr := repo.NewAnnouncementRepo()
-	announcement, err := arr.FindById(ctx, a.Request.Body.ID)
-	if err != nil {
-		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询公告失败")
-		return comm.CodeServerError
-	}
-	if announcement == nil {
-		return comm.CodeDataNotFound
-	}
-
-	err = arr.Delete(ctx, a.Request.Body.ID)
+	err := arr.Delete(ctx, a.Request.Body.ID)
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("删除公告失败")
 		return comm.CodeServerError

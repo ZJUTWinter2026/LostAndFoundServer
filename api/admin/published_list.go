@@ -4,9 +4,12 @@ import (
 	"app/comm"
 	"app/comm/enum"
 	"app/dao/repo"
+	"errors"
 	"reflect"
 	"runtime"
 	"strings"
+
+	"gorm.io/gorm"
 
 	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
@@ -52,6 +55,9 @@ func (p *PublishedListApi) Run(ctx *gin.Context) kit.Code {
 
 	userRepo := repo.NewUserRepo()
 	user, err := userRepo.FindById(ctx, adminID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return comm.CodeAdminPermissionDenied
+	}
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询用户失败")
 		return comm.CodeServerError

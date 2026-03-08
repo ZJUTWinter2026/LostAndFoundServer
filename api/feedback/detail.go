@@ -1,9 +1,15 @@
 package feedback
 
 import (
+	"app/comm"
+	"app/comm/enum"
+	"app/dao/repo"
+	"errors"
 	"reflect"
 	"runtime"
 	"time"
+
+	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 	"github.com/zjutjh/mygo/foundation/reply"
@@ -11,10 +17,6 @@ import (
 	"github.com/zjutjh/mygo/nlog"
 	"github.com/zjutjh/mygo/session"
 	"github.com/zjutjh/mygo/swagger"
-
-	"app/comm"
-	"app/comm/enum"
-	"app/dao/repo"
 )
 
 func DetailHandler() gin.HandlerFunc {
@@ -67,6 +69,9 @@ func (d *DetailApi) Run(ctx *gin.Context) kit.Code {
 
 	urp := repo.NewUserRepo()
 	user, err := urp.FindById(ctx, adminID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return comm.CodeAdminPermissionDenied
+	}
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询用户失败")
 		return comm.CodeServerError
@@ -77,12 +82,12 @@ func (d *DetailApi) Run(ctx *gin.Context) kit.Code {
 
 	frp := repo.NewFeedbackRepo()
 	feedback, err := frp.FindById(ctx, d.Request.Query.ID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return comm.CodeDataNotFound
+	}
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询投诉反馈失败")
 		return comm.CodeServerError
-	}
-	if feedback == nil {
-		return comm.CodeDataNotFound
 	}
 
 	response := DetailApiResponse{
@@ -99,6 +104,10 @@ func (d *DetailApi) Run(ctx *gin.Context) kit.Code {
 
 	prp := repo.NewPostRepo()
 	post, err := prp.FindById(ctx, feedback.PostID)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询关联物品失败")
+		return comm.CodeServerError
+	}
 	if err == nil && post != nil {
 		response.Post = &PostDetailInFeedback{
 			ID:          post.ID,

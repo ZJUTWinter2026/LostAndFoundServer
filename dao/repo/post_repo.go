@@ -5,7 +5,6 @@ import (
 	"app/dao/model"
 	"app/dao/query"
 	"context"
-	"errors"
 	"time"
 
 	"github.com/zjutjh/mygo/ndb"
@@ -49,9 +48,6 @@ type AdminReviewRecordFilter struct {
 func (r *PostRepo) FindById(ctx context.Context, id int64) (*model.Post, error) {
 	p := r.query.Post
 	record, err := p.WithContext(ctx).Where(p.ID.Eq(id)).First()
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, nil
-	}
 	if err != nil {
 		return nil, err
 	}

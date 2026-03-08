@@ -3,6 +3,9 @@ package comm
 import (
 	"app/comm/enum"
 	"app/dao/repo"
+	"errors"
+
+	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 	"github.com/zjutjh/mygo/kit"
@@ -18,6 +21,9 @@ func CheckSysAdmin(ctx *gin.Context) kit.Code {
 
 	urp := repo.NewUserRepo()
 	user, err := urp.FindById(ctx, adminID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return CodeAdminPermissionDenied
+	}
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询用户失败")
 		return CodeServerError
@@ -36,6 +42,9 @@ func CheckAdminPermission(ctx *gin.Context) kit.Code {
 
 	urp := repo.NewUserRepo()
 	user, err := urp.FindById(ctx, adminID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return CodeAdminPermissionDenied
+	}
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询用户失败")
 		return CodeServerError

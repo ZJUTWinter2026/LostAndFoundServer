@@ -4,6 +4,9 @@ import (
 	"app/dao/model"
 	"app/dao/repo"
 	"context"
+	"errors"
+
+	"gorm.io/gorm"
 
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/components/tool/utils"
@@ -13,7 +16,7 @@ import (
 type SubmitFeedbackInput struct {
 	PostID  int64  `json:"post_id" jsonschema:"description=发布ID,required"`
 	Type    string `json:"type" jsonschema:"description=投诉类型,required"`
-	Content string `json:"content" jsonschema:"description=投诉内容,required"`
+	Content string `json:"content" jsonschema:"description=投诉内容（可选）"`
 }
 
 type SubmitFeedbackOutput struct {
@@ -34,15 +37,14 @@ func submitFeedbackFunc(ctx context.Context, input *SubmitFeedbackInput) (*Submi
 	feedbackRepo := repo.NewFeedbackRepo()
 	postRepo := repo.NewPostRepo()
 
-	post, err := postRepo.FindById(ctx, input.PostID)
+	_, err := postRepo.FindById(ctx, input.PostID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		nlog.Pick().WithContext(ctx).Infof("[Tool:submit_feedback] 发布记录不存在: post_id=%d", input.PostID)
+		return &SubmitFeedbackOutput{Success: false, Message: "发布记录不存在"}, nil
+	}
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("[Tool:submit_feedback] 查询发布记录失败")
 		return &SubmitFeedbackOutput{Success: false, Message: "查询发布记录失败"}, nil
-	}
-
-	if post == nil {
-		nlog.Pick().WithContext(ctx).Infof("[Tool:submit_feedback] 发布记录不存在: post_id=%d", input.PostID)
-		return &SubmitFeedbackOutput{Success: false, Message: "发布记录不存在"}, nil
 	}
 
 	scr := repo.NewSystemConfigRepo()

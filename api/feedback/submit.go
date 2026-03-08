@@ -4,8 +4,11 @@ import (
 	"app/comm"
 	"app/dao/model"
 	"app/dao/repo"
+	"errors"
 	"reflect"
 	"runtime"
+
+	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 	"github.com/zjutjh/mygo/foundation/reply"
@@ -53,13 +56,13 @@ func (s *SubmitApi) Run(ctx *gin.Context) kit.Code {
 	}
 
 	prp := repo.NewPostRepo()
-	post, err := prp.FindById(ctx, request.PostID)
+	_, err = prp.FindById(ctx, request.PostID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return comm.CodeDataNotFound
+	}
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询物品失败")
 		return comm.CodeServerError
-	}
-	if post == nil {
-		return comm.CodeDataNotFound
 	}
 
 	feedback := &model.Feedback{

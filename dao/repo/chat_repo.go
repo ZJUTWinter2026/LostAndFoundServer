@@ -1,15 +1,12 @@
 package repo
 
 import (
-	"context"
-	"errors"
-	"time"
-
 	"app/dao/model"
+	"context"
+	"time"
 
 	"github.com/bytedance/sonic"
 	"github.com/zjutjh/mygo/ndb"
-	"gorm.io/gorm"
 )
 
 type ChatMessageData struct {
@@ -37,9 +34,6 @@ func (r *ChatRepo) CreateSession(ctx context.Context, session *model.ChatSession
 func (r *ChatRepo) GetSessionByID(ctx context.Context, sessionID string) (*model.ChatSession, error) {
 	var session model.ChatSession
 	err := ndb.Pick().WithContext(ctx).Where("session_id = ?", sessionID).First(&session).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, nil
-	}
 	if err != nil {
 		return nil, err
 	}

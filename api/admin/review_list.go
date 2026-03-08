@@ -4,10 +4,13 @@ import (
 	"app/comm"
 	"app/comm/enum"
 	"app/dao/repo"
+	"errors"
 	"reflect"
 	"runtime"
 	"strings"
 	"time"
+
+	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 	"github.com/zjutjh/mygo/foundation/reply"
@@ -32,7 +35,7 @@ type ReviewListApi struct {
 
 type ReviewListApiRequest struct {
 	Body struct {
-		Type     string `form:"type" binding:"required,oneof=LOST FOUND" desc:"发布类型"`
+		Type     string `form:"type" binding:"omitempty,oneof=LOST FOUND" desc:"发布类型"`
 		Page     int    `form:"page" binding:"required,min=1" desc:"页码"`
 		PageSize int    `form:"page_size" binding:"required,min=1,max=50" desc:"每页数量"`
 	}
@@ -68,11 +71,14 @@ func (r *ReviewListApi) Run(ctx *gin.Context) kit.Code {
 	// 验证管理员权限
 	urp := repo.NewUserRepo()
 	user, err := urp.FindById(ctx, adminID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return comm.CodeAdminPermissionDenied
+	}
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询用户失败")
 		return comm.CodeServerError
 	}
-	if user == nil || user.Usertype != enum.UserTypeAdmin {
+	if user == nil || (user.Usertype != enum.UserTypeAdmin && user.Usertype != enum.UserTypeSystemAdmin) {
 		return comm.CodeAdminPermissionDenied
 	}
 
@@ -94,7 +100,10 @@ func (r *ReviewListApi) Run(ctx *gin.Context) kit.Code {
 	filter := repo.PostListFilter{
 		PublishType: strings.TrimSpace(request.Type),
 		Status:      enum.PostStatusPending,
-		Campus:      user.Campus,
+	}
+
+	if user.Usertype == enum.UserTypeAdmin {
+		filter.Campus = user.Campus
 	}
 
 	posts, total, err := prp.ListByFilter(ctx, filter, offset, pageSize)

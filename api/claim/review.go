@@ -60,12 +60,12 @@ func (r *ReviewApi) Run(ctx *gin.Context) kit.Code {
 	// 查询认领申请
 	crp := repo.NewClaimRepo()
 	claimRecord, err := crp.FindById(ctx, request.ClaimID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return comm.CodeClaimNotFound
+	}
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询认领申请失败")
 		return comm.CodeServerError
-	}
-	if claimRecord == nil {
-		return comm.CodeClaimNotFound
 	}
 
 	// 只能审核待确认状态的申请
@@ -76,12 +76,12 @@ func (r *ReviewApi) Run(ctx *gin.Context) kit.Code {
 	// 查询发布记录，验证权限
 	prp := repo.NewPostRepo()
 	post, err := prp.FindById(ctx, claimRecord.PostID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return comm.CodeDataNotFound
+	}
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询发布记录失败")
 		return comm.CodeServerError
-	}
-	if post == nil {
-		return comm.CodeDataNotFound
 	}
 
 	// 权限判断：发布者本人或管理员
@@ -90,6 +90,10 @@ func (r *ReviewApi) Run(ctx *gin.Context) kit.Code {
 	if !isPublisher {
 		urp := repo.NewUserRepo()
 		user, err := urp.FindById(ctx, reviewerID)
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			nlog.Pick().WithContext(ctx).WithError(err).Warn("查询审核用户失败")
+			return comm.CodeServerError
+		}
 		if err == nil && user != nil && (user.Usertype == enum.UserTypeAdmin || user.Usertype == enum.UserTypeSystemAdmin) {
 			isAdmin = true
 		}

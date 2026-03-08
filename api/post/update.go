@@ -6,9 +6,12 @@ import (
 	"app/dao/repo"
 	"app/pkg/vector"
 	"context"
+	"errors"
 	"reflect"
 	"runtime"
 	"time"
+
+	"gorm.io/gorm"
 
 	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
@@ -63,12 +66,12 @@ func (u *UpdateApi) Run(ctx *gin.Context) kit.Code {
 
 	prp := repo.NewPostRepo()
 	post, err := prp.FindById(ctx, request.PostID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return comm.CodeDataNotFound
+	}
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询发布记录失败")
 		return comm.CodeServerError
-	}
-	if post == nil {
-		return comm.CodeDataNotFound
 	}
 
 	if post.PublisherID != publisherID {

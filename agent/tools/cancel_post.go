@@ -4,6 +4,9 @@ import (
 	"app/comm/enum"
 	"app/dao/repo"
 	"context"
+	"errors"
+
+	"gorm.io/gorm"
 
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/components/tool/utils"
@@ -33,6 +36,10 @@ func cancelPostFunc(ctx context.Context, input *CancelPostInput) (*CancelPostOut
 	vectorRepo := repo.NewVectorRepo()
 
 	post, err := postRepo.FindById(ctx, input.PostID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		nlog.Pick().WithContext(ctx).Infof("[Tool:cancel_post] 发布记录不存在: post_id=%d", input.PostID)
+		return &CancelPostOutput{Success: false, Message: "发布记录不存在"}, nil
+	}
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("[Tool:cancel_post] 查询发布记录失败")
 		return &CancelPostOutput{Success: false, Message: "查询发布记录失败"}, nil

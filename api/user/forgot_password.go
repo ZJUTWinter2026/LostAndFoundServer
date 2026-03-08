@@ -3,8 +3,11 @@ package user
 import (
 	"app/comm"
 	"app/dao/repo"
+	"errors"
 	"reflect"
 	"runtime"
+
+	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 	"github.com/zjutjh/mygo/foundation/reply"
@@ -42,12 +45,12 @@ func (f *ForgotPasswordApi) Run(ctx *gin.Context) kit.Code {
 
 	urp := repo.NewUserRepo()
 	user, err := urp.FindByUsernameAndIDCard(ctx, request.Username, request.IDCard)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return comm.CodeUserNotExist
+	}
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询用户失败")
 		return comm.CodeServerError
-	}
-	if user == nil {
-		return comm.CodeUserNotExist
 	}
 
 	if len(user.IDCard) < 6 {

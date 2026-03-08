@@ -4,11 +4,9 @@ import (
 	"app/comm/enum"
 	"app/dao/model"
 	"context"
-	"errors"
 	"time"
 
 	"github.com/zjutjh/mygo/ndb"
-	"gorm.io/gorm"
 )
 
 type AnnouncementRepo struct{}
@@ -24,9 +22,6 @@ func (r *AnnouncementRepo) Create(ctx context.Context, announcement *model.Annou
 func (r *AnnouncementRepo) FindById(ctx context.Context, id int64) (*model.Announcement, error) {
 	var announcement model.Announcement
 	err := ndb.Pick().WithContext(ctx).Where("id = ?", id).First(&announcement).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, nil
-	}
 	if err != nil {
 		return nil, err
 	}

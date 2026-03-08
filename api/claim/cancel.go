@@ -3,8 +3,11 @@ package claim
 import (
 	"app/comm"
 	"app/dao/repo"
+	"errors"
 	"reflect"
 	"runtime"
+
+	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 	"github.com/zjutjh/mygo/foundation/reply"
@@ -21,7 +24,7 @@ func CancelHandler() gin.HandlerFunc {
 }
 
 type CancelApi struct {
-	Info     struct{}       `name:"取消认领申请" desc:"取消认领申请，只能取消待确认的认领"`
+	Info     struct{} `name:"取消认领申请" desc:"取消认领申请，只能取消待确认的认领"`
 	Request  CancelApiRequest
 	Response CancelApiResponse
 }
@@ -46,12 +49,12 @@ func (c *CancelApi) Run(ctx *gin.Context) kit.Code {
 
 	crp := repo.NewClaimRepo()
 	claimRecord, err := crp.FindById(ctx, req.ID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return comm.CodeClaimNotFound
+	}
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询认领申请失败")
 		return comm.CodeServerError
-	}
-	if claimRecord == nil {
-		return comm.CodeClaimNotFound
 	}
 
 	if claimRecord.ClaimantID != claimantID {

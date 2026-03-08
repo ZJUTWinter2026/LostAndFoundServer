@@ -21,6 +21,7 @@ import (
 	"github.com/zjutjh/mygo/nlog"
 	"github.com/zjutjh/mygo/session"
 	"github.com/zjutjh/mygo/swagger"
+	"gorm.io/gorm"
 )
 
 func StreamHandler() gin.HandlerFunc {
@@ -55,8 +56,11 @@ func (a *StreamApi) Run(ctx *gin.Context) kit.Code {
 	}
 
 	userRepo := repo.NewUserRepo()
-	user, err := userRepo.FindById(ctx, userID)
-	if err != nil || user == nil {
+	_, err = userRepo.FindById(ctx, userID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return comm.CodeNotLoggedIn
+	}
+	if err != nil {
 		return comm.CodeServerError
 	}
 

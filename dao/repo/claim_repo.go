@@ -2,11 +2,9 @@ package repo
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/zjutjh/mygo/ndb"
-	"gorm.io/gorm"
 
 	"app/comm/enum"
 	"app/dao/model"
@@ -27,9 +25,6 @@ func (r *ClaimRepo) Create(ctx context.Context, claim *model.Claim) error {
 func (r *ClaimRepo) FindById(ctx context.Context, id int64) (*model.Claim, error) {
 	var claimRecord model.Claim
 	err := ndb.Pick().WithContext(ctx).Where("id = ?", id).First(&claimRecord).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -93,6 +88,29 @@ func (r *ClaimRepo) ListByClaimant(ctx context.Context, claimantID int64, offset
 	}
 
 	err := db.Order("created_at DESC").Offset(offset).Limit(limit).Find(&claims).Error
+	return claims, total, err
+}
+
+// ListReceivedByPublisher 查询当前用户作为发布者收到的认领申请
+func (r *ClaimRepo) ListReceivedByPublisher(ctx context.Context, publisherID int64, postID int64, status string, offset int, limit int) ([]*model.Claim, int64, error) {
+	var claims []*model.Claim
+	db := ndb.Pick().WithContext(ctx).Model(&model.Claim{}).
+		Joins("JOIN post ON post.id = claim.post_id AND post.deleted_at = 0").
+		Where("post.publisher_id = ?", publisherID)
+
+	if postID > 0 {
+		db = db.Where("claim.post_id = ?", postID)
+	}
+	if status != "" {
+		db = db.Where("claim.status = ?", status)
+	}
+
+	var total int64
+	if err := db.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	err := db.Order("claim.created_at DESC").Offset(offset).Limit(limit).Find(&claims).Error
 	return claims, total, err
 }
 

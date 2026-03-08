@@ -1,8 +1,14 @@
 package feedback
 
 import (
+	"app/comm"
+	"app/comm/enum"
+	"app/dao/repo"
+	"errors"
 	"reflect"
 	"runtime"
+
+	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 	"github.com/zjutjh/mygo/foundation/reply"
@@ -10,10 +16,6 @@ import (
 	"github.com/zjutjh/mygo/nlog"
 	"github.com/zjutjh/mygo/session"
 	"github.com/zjutjh/mygo/swagger"
-
-	"app/comm"
-	"app/comm/enum"
-	"app/dao/repo"
 )
 
 func ProcessHandler() gin.HandlerFunc {
@@ -23,7 +25,7 @@ func ProcessHandler() gin.HandlerFunc {
 }
 
 type ProcessApi struct {
-	Info     struct{}           `name:"处理投诉反馈" desc:"处理投诉反馈"`
+	Info     struct{} `name:"处理投诉反馈" desc:"处理投诉反馈"`
 	Request  ProcessApiRequest
 	Response ProcessApiResponse
 }
@@ -48,6 +50,9 @@ func (p *ProcessApi) Run(ctx *gin.Context) kit.Code {
 
 	urp := repo.NewUserRepo()
 	user, err := urp.FindById(ctx, processorID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return comm.CodePermissionDenied
+	}
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询用户失败")
 		return comm.CodeServerError
@@ -58,12 +63,12 @@ func (p *ProcessApi) Run(ctx *gin.Context) kit.Code {
 
 	frp := repo.NewFeedbackRepo()
 	feedback, err := frp.FindById(ctx, request.FeedbackID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return comm.CodeDataNotFound
+	}
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询投诉记录失败")
 		return comm.CodeServerError
-	}
-	if feedback == nil {
-		return comm.CodeDataNotFound
 	}
 
 	if feedback.Processed {

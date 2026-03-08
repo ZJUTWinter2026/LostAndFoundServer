@@ -5,6 +5,9 @@ import (
 	"app/dao/model"
 	"app/dao/repo"
 	"context"
+	"errors"
+
+	"gorm.io/gorm"
 
 	"github.com/bytedance/sonic"
 	"github.com/cloudwego/eino/components/tool"
@@ -37,14 +40,13 @@ func applyClaimFunc(ctx context.Context, input *ApplyClaimInput) (*ApplyClaimOut
 	postRepo := repo.NewPostRepo()
 
 	post, err := postRepo.FindById(ctx, input.PostID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		nlog.Pick().WithContext(ctx).Infof("[Tool:apply_claim] 发布记录不存在: post_id=%d", input.PostID)
+		return &ApplyClaimOutput{Success: false, Message: "发布记录不存在"}, nil
+	}
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("[Tool:apply_claim] 查询发布记录失败")
 		return &ApplyClaimOutput{Success: false, Message: "查询发布记录失败"}, nil
-	}
-
-	if post == nil {
-		nlog.Pick().WithContext(ctx).Infof("[Tool:apply_claim] 发布记录不存在: post_id=%d", input.PostID)
-		return &ApplyClaimOutput{Success: false, Message: "发布记录不存在"}, nil
 	}
 
 	if post.PublisherID == tc.UserID {

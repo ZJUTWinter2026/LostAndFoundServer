@@ -1,9 +1,15 @@
 package admin
 
 import (
+	"app/comm"
+	"app/comm/enum"
+	"app/dao/repo"
+	"errors"
 	"fmt"
 	"reflect"
 	"runtime"
+
+	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 	"github.com/zjutjh/mygo/foundation/reply"
@@ -11,10 +17,6 @@ import (
 	"github.com/zjutjh/mygo/nlog"
 	"github.com/zjutjh/mygo/session"
 	"github.com/zjutjh/mygo/swagger"
-
-	"app/comm"
-	"app/comm/enum"
-	"app/dao/repo"
 )
 
 // StatisticsHandler API router注册点
@@ -51,6 +53,9 @@ func (s *StatisticsApi) Run(ctx *gin.Context) kit.Code {
 	// 验证管理员权限
 	urp := repo.NewUserRepo()
 	user, err := urp.FindById(ctx, adminID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return comm.CodeAdminPermissionDenied
+	}
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询用户失败")
 		return comm.CodeServerError

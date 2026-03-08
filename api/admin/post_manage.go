@@ -4,11 +4,14 @@ import (
 	"app/comm"
 	"app/comm/enum"
 	"app/dao/repo"
+	"errors"
 	"reflect"
 	"runtime"
 	"strings"
 	"time"
 	"unicode/utf8"
+
+	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 	"github.com/zjutjh/mygo/foundation/reply"
@@ -47,12 +50,12 @@ func (a *ClaimPostApi) Run(ctx *gin.Context) kit.Code {
 
 	prp := repo.NewPostRepo()
 	post, err := prp.FindById(ctx, req.PostID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return comm.CodeDataNotFound
+	}
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询发布记录失败")
 		return comm.CodeServerError
-	}
-	if post == nil {
-		return comm.CodeDataNotFound
 	}
 
 	if post.Status != enum.PostStatusApproved {
@@ -126,12 +129,12 @@ func (a *ArchivePostApi) Run(ctx *gin.Context) kit.Code {
 
 	prp := repo.NewPostRepo()
 	post, err := prp.FindById(ctx, req.PostID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return comm.CodeDataNotFound
+	}
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询发布记录失败")
 		return comm.CodeServerError
-	}
-	if post == nil {
-		return comm.CodeDataNotFound
 	}
 
 	if post.Status != enum.PostStatusApproved {

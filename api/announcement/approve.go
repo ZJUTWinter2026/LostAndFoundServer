@@ -3,8 +3,11 @@ package announcement
 import (
 	"app/comm"
 	"app/dao/repo"
+	"errors"
 	"reflect"
 	"runtime"
+
+	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 	"github.com/zjutjh/mygo/foundation/reply"
@@ -45,12 +48,12 @@ func (a *ApproveApi) Run(ctx *gin.Context) kit.Code {
 
 	arr := repo.NewAnnouncementRepo()
 	announcement, err := arr.FindById(ctx, a.Request.Body.ID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return comm.CodeDataNotFound
+	}
 	if err != nil {
 		nlog.Pick().WithContext(ctx).WithError(err).Warn("查询公告失败")
 		return comm.CodeServerError
-	}
-	if announcement == nil {
-		return comm.CodeDataNotFound
 	}
 
 	if announcement.Status != "PENDING" {

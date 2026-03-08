@@ -2,11 +2,9 @@ package repo
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/zjutjh/mygo/ndb"
-	"gorm.io/gorm"
 
 	"app/dao/model"
 )
@@ -24,9 +22,6 @@ func (r *FeedbackRepo) Create(ctx context.Context, feedback *model.Feedback) err
 func (r *FeedbackRepo) FindById(ctx context.Context, id int64) (*model.Feedback, error) {
 	var feedback model.Feedback
 	err := ndb.Pick().WithContext(ctx).Where("id = ?", id).First(&feedback).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, nil
-	}
 	if err != nil {
 		return nil, err
 	}
